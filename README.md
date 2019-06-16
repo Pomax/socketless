@@ -9,7 +9,7 @@ relatively clean.
 So instead, this framework lets you express the functions that your clients support, and the
 functions your server supports, as a single namespaced API object such as:
 
-```
+```javascript
 const API = {
     admin: {
         client: [
@@ -35,7 +35,7 @@ Which you then use to generate proxy objects that both take care of all the sock
 as well as hide the fact that sockets are even used at all, allowing code to be written as
 if clients and the server have direct references to each other:
 
-```
+```javascript
 class Client {
     ...
 
@@ -64,7 +64,7 @@ sure to pass socket.io's `io` and `socket` values into the right functions.
 As mentioned above, an API collection is created by defining a namespaced API object,
 and then running that through the `buildAsyncFunctions` transformer:
 
-```
+```javascript
 const buildAsyncFunctions = require('async-socket.io');
 const API = {
     user: {
@@ -82,7 +82,7 @@ With the above code in place, you can create a socket.io server however you like
 then use the resulting socket.io server and the `ClientServer` object created
 above to make your life a lot easier:
 
-```
+```javascript
 ...
 
 class Server {
@@ -108,7 +108,7 @@ webserver.listen(0, () =>
 
 Creating a client is similar to creating a server:
 
-```
+```javascript
 ...
 
 class Client {
