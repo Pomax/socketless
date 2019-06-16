@@ -6,7 +6,10 @@ const upgradeSocket = require("./upgrade-socket");
  * @param {*} API
  */
 function buildAsyncFunctions(API) {
-    const mapped = {};
+    const mapped = {
+        client: {},
+        server: {}
+    };
 
     Object.keys(API).map(namespace => {
 
@@ -19,14 +22,7 @@ function buildAsyncFunctions(API) {
             this.socket = upgradeSocket(socketToServer);
         };
 
-        ServerRepresentationAtClient.prototype = {
-            disconnect: function() {
-                this.socket.disconnect(true);
-            },
-            onDisconnect: function(handler) {
-                this.socket.on('disconnect', data => handler(data));
-            }
-        };
+        ServerRepresentationAtClient.prototype = {};
 
         serverFn.forEach(name => {
             ServerRepresentationAtClient.prototype[name] = async function(data) {
@@ -45,14 +41,7 @@ function buildAsyncFunctions(API) {
             this.socket = upgradeSocket(socketFromServer);
         }
 
-        ClientRepresentationAtServer.prototype = {
-            disconnect: function() {
-                this.socket.disconnect(true);
-            },
-            onDisconnect: function(handler) {
-                this.socket.on('disconnect', data => handler(data));
-            }
-        };
+        ClientRepresentationAtServer.prototype = {};
 
         clientFn.forEach(name => {
             ClientRepresentationAtServer.prototype[name] = async function(data) {
@@ -136,17 +125,59 @@ function buildAsyncFunctions(API) {
         // And then we bind these four classes into the
         // same namespace as we used in the API definition.
 
-        mapped[namespace] = {
-            client: {
-                server: ServerRepresentationAtClient,
-                handler: SocketFromServerAtClient
-            },
-            server: {
-                client: ClientRepresentationAtServer,
-                handler: SocketFromClientAtServer
-            }
+        mapped.client[namespace] = {
+            server: ServerRepresentationAtClient,
+            handler: SocketFromServerAtClient
+        };
+
+        mapped.server[namespace] = {
+            client: ClientRepresentationAtServer,
+            handler: SocketFromClientAtServer
         };
     });
+
+    // Set up the convenience functions for bootstrapping all namespaces in one go.
+
+    mapped.client.createServer = (socket, handler) => {
+        Object.keys(API).forEach(namespace => {
+            new mapped.client[namespace].handler(socket, handler);
+        });
+
+        const serverAPIs = {};
+
+        Object.keys(API).forEach(namespace => {
+            serverAPIs[namespace] = new mapped.client[namespace].server(socket);
+        });
+
+        serverAPIs.disconnect = function() { socket.disconnect(true); };
+        serverAPIs.onDisconnect = function(handler) { socket.on('disconnect', data => handler(data)); };
+
+        return serverAPIs;
+    };
+
+    mapped.server.createClient = (socket) => {
+        const clientAPIs = {};
+
+        Object.keys(API).forEach(namespace => {
+            clientAPIs[namespace] = new mapped.server[namespace].client(socket);
+        });
+
+        clientAPIs.disconnect = function() { socket.disconnect(true); };
+        clientAPIs.onDisconnect = function(handler) { socket.on('disconnect', data => handler(data)); };
+
+        return clientAPIs;
+    };
+
+    mapped.server.setupHandlers = (handler, io, onConnect) => {
+        io.on(`connection`, socket => {
+            Object.keys(API).forEach(namespace => {
+                new mapped.server[namespace].handler(socket, handler);
+            });
+            onConnect(socket);
+        });
+    };
+
+    // And we're done!
 
     return mapped;
 }

@@ -6,13 +6,12 @@ const uuid = (function() { let id = 1; return () => id++; })();
  * "lobby" function for clients joining and leaving.
  */
 class Server {
-    constructor(io, builder) {
+    constructor(io, API) {
         this.clients = [];
-
-        io.on(`connection`, socket => {
-            new builder.handler(socket, this);
-            this.addClient(socket, builder);
-        });
+        API.setupHandlers(this, io, socket => {
+            let client = API.createClient(socket);
+            this.addClient(client, socket);
+        })
     }
 
     /**
@@ -21,17 +20,16 @@ class Server {
      * administrative data, adding it to the list, and
      * notifying all other clients of the connection.
      */
-    async addClient(socket, builder) {
+    async addClient(client, socket) {
         // Set up a client object
+        const clientId = uuid();
         const clientObj = {
-            client: new builder.client(socket),
+            client: client,
             socket: socket,
             name: undefined,
-            id: uuid()
+            id: clientId
         };
 
-        const client = clientObj.client;
-        const clientId = clientObj.id;
         console.log(`server> client connected to the server (assigned id ${clientId}).`);
 
         // It's often useful to be able to do something when clients disconnect.
@@ -42,19 +40,19 @@ class Server {
 
         // Register this client
         this.clients.push(clientObj);
-        const confirmed = await client.register(clientId);
+        const confirmed = await client.admin.register(clientId);
         clientObj.confirmed = confirmed;
         console.log(`server> client confirmed registration`);
 
         // Notify all users that this client propely joined
-        otherClients.forEach(clientObj => clientObj.client.userJoined(clientId));
+        otherClients.forEach(clientObj => clientObj.client.user.userJoined(clientId));
 
         // And schdule a call in the future for this client
         // to say what its state digest is, for verification
         // purposes. We don't actually use this for anything
         // real, it's mostly there to show off a call.
         setTimeout(async () => {
-            let digest = await client.getStateDigest();
+            let digest = await client.admin.getStateDigest();
             console.log(`server> client digest = ${digest.value}`);
         }, 1000);
     }
@@ -68,7 +66,7 @@ class Server {
         let pos = this.clients.indexOf(clientObj);
         if (pos !== -1) {
             let removed = this.clients.splice(pos, 1)[0];
-            this.clients.forEach(clientObj => clientObj.client.userLeft(removed.id));
+            this.clients.forEach(clientObj => clientObj.client.user.userLeft(removed.id));
         }
         if (this.clients.length === 0) {
             console.log(`server> nothing left to do, exiting...`);

@@ -6,18 +6,26 @@
  * as which namespace those functions should use.
  */
 const API = {
-    user: { // namespace
-        client: [ // used to generate an "on" handler object, and a client representation for the server
+
+    admin: {
+        client: [
             'register',
-            'userJoined',
-            'userLeft',
             'getStateDigest'
         ],
-        server: [ // used to generate an "on" handler object, and a server representation for the client
+        server: []
+    },
+
+    user: {
+        client: [
+            'userJoined',
+            'userLeft',
+        ],
+        server: [
             'setName',
             'getUserList'
         ]
     }
+
 };
 
 module.exports = API;

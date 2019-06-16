@@ -2,10 +2,9 @@
  * This is a demonstration client.
  */
 class Client {
-    constructor(socket, builder) {
-        this.server = new builder.server(socket);
+    constructor(socket, API) {
+        this.server = API.createServer(socket, this);
         this.server.onDisconnect(() => console.log(`client ${this.id}> disconnected from server.`))
-        this.handler = new builder.handler(socket, this);
         this.users = [];
     }
 
@@ -22,7 +21,7 @@ class Client {
 
         // Request the user list
         console.log(`client ${this.id}> requesting user list`);
-        let list = await this.server.getUserList();
+        let list = await this.server.user.getUserList();
         console.log(`client ${this.id}> received user list`, list);
         this.users = list;
 
