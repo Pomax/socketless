@@ -1,0 +1,28 @@
+{
+  "name": "async-socket.io",
+  "version": "0.1.0",
+  "description": "A framework and methodology for using socket.io without writing any socket code yourself.",
+  "main": "src/buildAsyncFunction.js",
+  "scripts": {
+    "test": "node demo/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Pomax/async-socket.io.git"
+  },
+  "keywords": [
+    "socket.io",
+    "websocket",
+    "javascript",
+    "framework"
+  ],
+  "author": "Pomax",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Pomax/async-socket.io/issues"
+  },
+  "homepage": "https://github.com/Pomax/async-socket.io#readme",
+  "dependencies": {
+    "socket.io": "^2.2.0"
+  }
+}
