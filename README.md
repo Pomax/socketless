@@ -11,6 +11,7 @@ functions your server supports, as a single namespaced API object such as:
 
 ```javascript
 const API = {
+    // the administrative namespace, for admin things.
     admin: {
         client: [
             'register',
@@ -18,6 +19,8 @@ const API = {
         ],
         server: []
     },
+    
+    // the user namespace, for user related actions.
     user: {
         client: [
             'userJoined',
