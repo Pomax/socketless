@@ -102,6 +102,8 @@ class Server {
 And then we use that `Server` class to implement our server:
 
 ```javascript
+[...]
+
 const webserver = require("http").Server();
 const io = require("socket.io")(webserver);
 const Server = require('./server');
@@ -132,6 +134,7 @@ class Client {
 And then we make a(t least one) Client once the server is up:
 
 ```javascript
+[...]
 const Client = require('./client');
 webserver.listen(0, () => {
     const serverURL = `http://*:${webserver.address().port}`;
