@@ -83,8 +83,6 @@ then use the resulting socket.io server and the `ClientServer` object created
 above to make your life a lot easier:
 
 ```javascript
-...
-
 class Server {
     constructor(io, ServerAPI) {
         ServerAPI.setupHandlers(this, io, socket => {
@@ -99,10 +97,14 @@ class Server {
       // ...
     }
 }
+```
 
-// Set up a server and bind socket.io in server mode:
+And then we use that `Server` class to implement our server:
+
+```javascript
 const webserver = require("http").Server();
 const io = require("socket.io")(webserver);
+const Server = require('./server');
 new Server(io, ClientServer.server);
 webserver.listen(0, () =>
     console.log(`started server on port ${server.address().port})
