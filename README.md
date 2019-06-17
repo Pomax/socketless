@@ -116,17 +116,23 @@ webserver.listen(0, () =>
 Creating a client is similar to creating a server:
 
 ```javascript
-...
-
 class Client {
     constructor(socket, ClientAPI) {
         let server = this.server = ClientAPI.createServer(socket, this);
         server.onDisconnect(() => console.log(`client> disconnected from server.`))
     }
 
-    ...
+    // our API definition said the client had a `register`, so: make sure it exists!
+    async register(clientId) {
+      this.id = clientId;
+    }
 }
+```
 
+And then we make a(t least one) Client once the server is up:
+
+```javascript
+const Client = require('./client');
 webserver.listen(0, () => {
     const serverURL = `http://*:${webserver.address().port}`;
     const socketToServer = require(`socket.io-client`)(serverURL);
