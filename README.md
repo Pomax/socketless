@@ -40,7 +40,7 @@ if clients and the server have direct references to each other:
 
 ```javascript
 class Client {
-    ...
+    [...]
 
     async register(clientId) {
         this.id = clientId;
@@ -48,7 +48,7 @@ class Client {
         return { status: `registered` };
     }
 
-    ...
+    [...]
 }
 ```
 
