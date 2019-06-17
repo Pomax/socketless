@@ -97,8 +97,8 @@ class Server {
     }
 
     // our API definition said the server had a `setName`, so: make sure it exists!
-    async setName(clientId, name) {
-      // ...
+    async setName(data) {
+      // unpack data and do something with it...
     }
 }
 ```
