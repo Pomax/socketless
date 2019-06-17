@@ -148,6 +148,60 @@ webserver.listen(0, () => {
 
 ## 4. Start talking to each other
 
+We can now start taking advantage of the "it looks like normal code" part, where we can call
+functions from the client "on" the server, and vice versa, and can even await the result of
+those calls. For example, we can give the server the following code:
+
+```javascript
+class Server {
+    constructor(io, ServerAPI) {
+        this.clients = [];
+        ServerAPI.setupHandlers(this, io, socket => {
+            let client = ServerAPI.createClient(socket);
+            client.onDisconnect(() => console.log(`server> client disconnected`));
+            this.addClient(client, socket);
+        })
+    }
+    
+    async addClient(client,socket) {
+        const clientId = uuid();
+        const clientObj = { client, socket, clientId };
+        const others = this.clients.slice();
+        this.clients.push(clientObj);
+        clientObj.confirmation = await client.admin.register(clientId);
+        others.forEach(clientObj => clientObj.client.user.joined(clientId));
+    }
+}
+```
+
+Here, the server will client a local client represenation when a client connects,
+and will then tell the client it has been registered with a particular uuid, and
+we _wait for the response by the client_ before we notify all other clients that
+a new client joined the collective.
+
+On the client side, all we have to do for this to work is:
+
+```javascript
+class Client {
+    constructor(socket, ClientAPI) {
+        let server = this.server = ClientAPI.createServer(socket, this);
+        server.onDisconnect(() => console.log(`client> disconnected from server.`))
+    }
+
+    async register(clientId) {
+      this.id = clientId;
+      return true;
+    }
+}
+```
+
+And that's it: when the server calls `await client.user.register(clientId)`, the async-socket.io
+framework takes care of the actual web socket transportation and response handling, so on the one
+end we can call `await endpoint.namespace.someFunction()` and on the other end we can simply 
+write out that `async someFunction()` and "things work". If we make the function return any 
+non-falsey value, the framework will make sure that the called gets that value as if it was using
+a call to a local reference.
+
 Have a look at the [demo](https://github.com/Pomax/async-socket.io/tree/master/demo) directory,
 to see an example of a simple client/server setup with code in place that starts a server
 and three clients, has the server inform each client what their `id` is when they connect,
