@@ -1,6 +1,6 @@
 # async-socket.io
 
-This is a framework and methodology for using socket.io without writing any socket code yourself,
+This is a framework and methodology for using [socket.io](https://socket.io/) without writing any socket code yourself,
 and came about from a need to write quite a lot of communication between clients and server,
 which gets _really_ verbose, really fast, if you need to express all your calls as `socket.on`
 and `socket.emit()` instructions, with pass-through handlers if you want your code to stay
