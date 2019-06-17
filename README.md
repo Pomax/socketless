@@ -34,9 +34,10 @@ const API = {
 };
 ```
 
-Which you then use to generate proxy objects that both take care of all the socket.io code,
-as well as hide the fact that sockets are even used at all, allowing code to be written as
-if clients and the server have direct references to each other:
+Which you then run through the async-socket.io framework to auto-generate a set of proxy objects
+that both take care of all the socket.io code, as well as hide the fact that sockets are even
+used at all, allowing code to be written as if clients and the server have direct references
+to each other:
 
 ```javascript
 class Client {
