@@ -90,12 +90,17 @@ class Server {
         ServerAPI.setupHandlers(this, io, socket => {
             let client = ServerAPI.createClient(socket);
             client.onDisconnect(() => console.log(`server> client disconnected`));
-            this.addClient(client, socket);
+            // do something with client!
         })
     }
-    ...
+
+    // our API definition said the server had a `setName`, so: make sure it exists!
+    async setName(clientId, name) {
+      // ...
+    }
 }
 
+// Set up a server and bind socket.io in server mode:
 const webserver = require("http").Server();
 const io = require("socket.io")(webserver);
 new Server(io, ClientServer.server);
