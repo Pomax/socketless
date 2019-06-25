@@ -6,26 +6,15 @@
  * as which namespace those functions should use.
  */
 const API = {
+  admin: {
+    client: ["register", "getStateDigest"],
+    server: []
+  },
 
-    admin: {
-        client: [
-            'register',
-            'getStateDigest'
-        ],
-        server: []
-    },
-
-    user: {
-        client: [
-            'userJoined',
-            'userLeft',
-        ],
-        server: [
-            'setName',
-            'getUserList'
-        ]
-    }
-
+  user: {
+    client: ["userJoined", "userLeft"],
+    server: ["setName", "getUserList"]
+  }
 };
 
 module.exports = API;

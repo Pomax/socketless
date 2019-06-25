@@ -18,7 +18,6 @@
  * And that's just so much nicer than plain Socket.io
  */
 function upgradeSocket(socket) {
-
   // don't upgrade an already-upgraded socket
   if (socket.__upgraded) return socket;
 
@@ -35,21 +34,20 @@ function upgradeSocket(socket) {
    * deciding there is no response forthcoming and to clean
    * up the event listener for that response.
    */
-  socket.emit = async (eventName, data={}, timeout=5000) => {
+  socket.emit = async (eventName, data = {}, timeout = 5000) => {
     return new Promise((resolve, reject) => {
-
       // responses should always be "the event name, with :response added"
       const responseName = `${eventName}:response`;
 
       // cleanup function for the event listener
-      let cleanup = (data=undefined) => {
+      let cleanup = (data = undefined) => {
         // clean up
         socket.removeListener(responseName, listener);
         // send data
         resolve(data);
         // and then become a noop
         cleanup = () => {};
-      }
+      };
 
       // In order to resolve the Promise, we will be listening
       // for that :response, and when we receive it, we'll immediately
@@ -91,7 +89,7 @@ function upgradeSocket(socket) {
   socket.__upgraded = true;
 
   return socket;
-};
+}
 
 // this gets turned into "export default upgradeSocket;" by web serving
 module.exports = upgradeSocket;
