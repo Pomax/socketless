@@ -11,6 +11,7 @@ module.exports = function(clientServer, namespaces) {
     clientAPIs.disconnect = function() {
       socket.disconnect(true);
     };
+
     clientAPIs.onDisconnect = function(handler) {
       socket.on("disconnect", data => handler(data));
     };

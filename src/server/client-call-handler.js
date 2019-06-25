@@ -33,7 +33,7 @@ module.exports = function(namespace, serverFn) {
         );
       }
 
-      let response = await process(data);
+      let response = await process(this.socket.clientServer.client.instance, data);
       if (response) respond(response);
     };
   });

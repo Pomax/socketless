@@ -20,11 +20,10 @@ server.listen(0, () => {
 
   let count = 3;
   console.log(`index> building ${count} clients`);
-
-  (function next() {
+  (function generateClient() {
     if (count--) {
       ClientServer.createClient(serverURL, ClientClass);
-      setTimeout(next, 1000);
+      setTimeout(generateClient, 1000);
     }
   })();
 });

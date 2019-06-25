@@ -12,21 +12,12 @@ functions your server supports, as a single namespaced API object such as:
 ```
 const API = {
     admin: {
-        client: [
-            'register',
-            'getStateDigest'
-        ],
+        client: ['register', 'getStateDigest'],
         server: []
     },
     user: {
-        client: [
-            'userJoined',
-            'userLeft',
-        ],
-        server: [
-            'setName',
-            'getUserList'
-        ]
+        client: ['userJoined', 'userLeft'],
+        server: ['setName', 'getUserList']
     }
 };
 ```
@@ -62,47 +53,58 @@ sure to pass socket.io's `io` and `socket` values into the right functions.
 ## 1. Creating an API collection
 
 As mentioned above, an API collection is created by defining a namespaced API object,
-and then running that through the `buildAsyncFunctions` transformer:
+and then running that through the `generateClientServer` transformer:
 
 ```
-const buildAsyncFunctions = require('async-socket.io');
+const generateClientServer = require('async-socket.io');
 const API = {
     user: {
-        client: [ 'register' ],
-        server: [ 'setName' ]
+        client: [ 'register', ...],
+        server: [ 'setName', ... ]
     }
 };
-const ClientServer = buildAsyncFunctions(API);
+const ClientServer = generateClientServer(API);
 ```
 
 ## 2. Creating a Server
 
-With the above code in place, you can create a socket.io server however you like
-(using node's `http`, or Express.js, or whatever else socket.io supports), and
-then use the resulting socket.io server and the `ClientServer` object created
-above to make your life a lot easier:
+With the above code in place, you can create a Server class for actual API call handling,
+including an implementation for the mandatory `addClient(client)` function, and then
+create a websocket server with a single call:
 
 ```
 ...
 
-class Server {
-    constructor(io, ServerAPI) {
-        ServerAPI.setupHandlers(this, io, socket => {
-            let client = ServerAPI.createClient(socket);
-            client.onDisconnect(() => console.log(`server> client disconnected`));
-            this.addClient(client, socket);
-        })
+class ServerClass {
+    constructor() {
+        this.clients = [];
     }
-    ...
+
+    addClient(client) {
+        this.clients.push(client);
+        let clientId = this.clients.length;
+        client.admin.register(clientId);
+    }
+
+    async setName(from, name) {
+        let client = this.clients.find(c => c === from);
+        client.name = name;
+    }
 }
 
-const webserver = require("http").Server();
-const io = require("socket.io")(webserver);
-new Server(io, ClientServer.server);
-webserver.listen(0, () =>
+const server = ClientServer.createServer(ServerClass)
+server.listen(0, () =>
     console.log(`started server on port ${server.address().port})
 );
 ```
+
+Note that all API handling functions in a server class are passed
+a reference to the client that made the API call as the `from`
+argument, universally passed as the first argument to any API
+call handling function.
+
+If the client calls `server.doThing(data)`, the server should have
+a handling function with signature `async doThing(from, data) { ... }`.
 
 ## 3. Creating a Client
 
@@ -111,21 +113,28 @@ Creating a client is similar to creating a server:
 ```
 ...
 
-class Client {
-    constructor(socket, ClientAPI) {
-        let server = this.server = ClientAPI.createServer(socket, this);
-        server.onDisconnect(() => console.log(`client> disconnected from server.`))
+class ClientClass {
+    constructor() {
+        this.id = -1;
     }
 
-    ...
+    async register(clientId) {
+        this.id = clientId;
+        let name = this.name = generateRandomName();
+        this.server.user.setName(name);
+    }
 }
 
-webserver.listen(0, () => {
-    const serverURL = `http://*:${webserver.address().port}`;
-    const socketToServer = require(`socket.io-client`)(serverURL);
-    new Client(socketToServer, ClientServer.client);
+server.listen(0, () => {
+    const serverURL = `http://*:${server.address().port}`;
+    ClientServer.createClient(serverURL, ClientClass);
 });
 ```
+
+API call handling functions for clients are not passed a `from`,
+as clients are connected to a single server. The origin of the
+call is always known, and the server proxy can always be referenced
+as `this.server` inside any API handling function.
 
 ## 4. Start talking to each other
 

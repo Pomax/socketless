@@ -10,10 +10,6 @@ module.exports = function(clientServer) {
     const instance = new ClientClass(/* clientServer.client */);
 
     // create the server proxy for the client to make direct calls to.
-    const server = clientServer.client.createServer(socketToServer, instance);
-    const onDisconnect = instance.onDisconnect.bind(instance);
-
-    server.onDisconnect(onDisconnect);
-    instance.server = server;
+    instance.server = clientServer.client.createServer(socketToServer, instance);
   };
 };

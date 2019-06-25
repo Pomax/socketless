@@ -25,6 +25,7 @@ module.exports = function(clientServer, namespaces) {
           }" is missing the addClient(client) function`
         );
       }
+      socket.clientServer = { client: { instance: client } };
       instance.addClient(client);
     });
 

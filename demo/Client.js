@@ -22,6 +22,11 @@ class Client {
     console.log(`client> received registration id ${clientId}`);
     this.id = clientId;
 
+    // come up with a random name
+    let name = this.name = (new Array(10)).fill(0).map(v => String.fromCharCode(97 + (26*Math.random()))).join('');
+    console.log(`client ${this.id} setting name to ${name}`);
+    this.server.user.setName(name);
+
     // Request the user list
     console.log(`client ${this.id}> requesting user list`);
     let list = await this.server.user.getUserList();

@@ -13,6 +13,7 @@ module.exports = function(clientServer, namespaces) {
     serverAPIs.disconnect = function() {
       socket.disconnect(true);
     };
+
     serverAPIs.onDisconnect = function(handler) {
       socket.on("disconnect", data => handler(data));
     };

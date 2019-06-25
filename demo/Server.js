@@ -4,8 +4,8 @@
  */
 class Server {
   constructor() {
+    this.clientIdCounter = 0;
     this.clients = [];
-    this.clientId = 1;
   }
 
   /**
@@ -16,7 +16,7 @@ class Server {
    */
   async addClient(client) {
     // Set up a client object
-    const clientId = this.clientId++;
+    const clientId = this.clientIdCounter++;
     const clientObj = {
       client: client,
       name: undefined,
@@ -34,7 +34,7 @@ class Server {
     const otherClients = this.clients.slice();
 
     // Register this client
-    this.clients.push(clientObj);
+    this.clients[clientId] = clientObj;
     const confirmed = await client.admin.register(clientId);
     clientObj.confirmed = confirmed;
     console.log(`server> client confirmed registration`);
@@ -58,7 +58,7 @@ class Server {
    * When a client disconnects, remove them from the userlist;
    * If this was the last connected client: shut down.
    */
-  async onDisconnect(clientObj) {
+  async disconnectClient(clientObj) {
     console.log(`server> client ${clientObj.id} disconnected.`);
     let pos = this.clients.indexOf(clientObj);
     if (pos !== -1) {
@@ -80,10 +80,10 @@ class Server {
   /**
    * Record the fact that a client provided a (new) name.
    */
-  async setName(data) {
-    let { clientId, name } = data;
-    this.clients[clientId].name = name;
-    console.log(`server> client ${clientId} is now called ${name}`);
+  async setName(from, name) {
+    const client = this.clients.find(v => v.client===from);
+    client.name = name;
+    console.log(`server> client ${client.clientId} is now called "${name}"`);
   }
 
   /**
