@@ -52,6 +52,7 @@ class Server {
 
     async addClient(client) {
         this.clients.push(client);
+        client.users.register(getNextClientId())
     }
 
     async getUserList() {
