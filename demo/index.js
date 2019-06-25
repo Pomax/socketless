@@ -1,33 +1,29 @@
-// Build our API objects
-const API = require('./API');
-const buildAsyncFunctions = require('../src/buildAsyncFunctions');
-const ClientServer = buildAsyncFunctions(API);
+// Build our API objects:
+const API = require("./API");
+const generateClientServer = require("../src/generate-client-server.js");
+const ClientServer = generateClientServer(API);
 
-// Load the classes that will make use of these API objects
-const Server = require('./Server');
-const Client = require('./Client');
+// And load the classes that will actually service API calls:
+const ClientClass = require("./Client");
+const ServerClass = require("./Server");
 
 // Set up the server:
-const webserver = require("http").Server();
-const io = require("socket.io")(webserver);
-new Server(io, ClientServer.server);
+const server = ClientServer.createServer(ServerClass);
 
 // (and start it)
-webserver.listen(0, () => {
-    const port = webserver.address().port;
-    const serverURL = `http://localhost:${port}`;
+server.listen(0, () => {
+  const port = server.address().port;
+  const serverURL = `http://localhost:${port}`;
+  console.log(`index> server listening on ${port}`);
 
-    console.log(`index> pretend server listening on ${port}`);
+  // And once the server is up, create a few clients:
 
-    // Set up a client:
-    const newClient = () => {
-        const socketToServer = require(`socket.io-client`)(serverURL);
-        new Client(socketToServer, ClientServer.client);
-        setTimeout(next, 1000);
-    };
-
-    let count = 3;
-    console.log(`index> building ${count} clients`);
-    function next() { if(count--) newClient() }
-    next();
+  let count = 3;
+  console.log(`index> building ${count} clients`);
+  (function generateClient() {
+    if (count--) {
+      ClientServer.createClient(serverURL, ClientClass);
+      setTimeout(generateClient, 1000);
+    }
+  })();
 });

@@ -13,23 +13,14 @@ functions your server supports, as a single namespaced API object such as:
 const API = {
     // the administrative namespace, for admin things.
     admin: {
-        client: [
-            'register',
-            'getStateDigest'
-        ],
+        client: ['register', 'getStateDigest'],
         server: []
     },
     
     // the user namespace, for user related actions.
     user: {
-        client: [
-            'userJoined',
-            'userLeft',
-        ],
-        server: [
-            'setName',
-            'getUserList'
-        ]
+        client: ['userJoined', 'userLeft'],
+        server: ['setName', 'getUserList']
     }
 };
 ```
@@ -66,39 +57,44 @@ sure to pass socket.io's `io` and `socket` values into the right functions.
 ## 1. Creating an API collection
 
 As mentioned above, an API collection is created by defining a namespaced API object,
-and then running that through the `buildAsyncFunctions` transformer:
+and then running that through the `generateClientServer` transformer:
 
 ```javascript
-const buildAsyncFunctions = require('async-socket.io');
+const generateClientServer = require('async-socket.io');
+
 const API = {
     user: {
-        client: [ 'register' ],
-        server: [ 'setName' ]
+        client: [ 'register', ...],
+        server: [ 'setName', ... ]
     }
 };
-const ClientServer = buildAsyncFunctions(API);
+
+const ClientServer = generateClientServer(API);
 ```
 
 ## 2. Creating a Server
 
-With the above code in place, you can create a socket.io server however you like
-(using node's `http`, or Express.js, or whatever else socket.io supports), and
-then use the resulting socket.io server and the `ClientServer` object created
-above to make your life a lot easier:
+With the above code in place, you can create a Server class for actual API call handling,
+including an implementation for the mandatory `addClient(client)` function, and then
+create a websocket server with a single call:
 
 ```javascript
-class Server {
-    constructor(io, ServerAPI) {
-        ServerAPI.setupHandlers(this, io, socket => {
-            let client = ServerAPI.createClient(socket);
-            client.onDisconnect(() => console.log(`server> client disconnected`));
-            // do something with client!
-        })
+...
+
+class ServerClass {
+    constructor() {
+        this.clients = [];
     }
 
-    // our API definition said the server had a `setName`, so: make sure it exists!
-    async setName(data) {
-      // unpack data and do something with it...
+    addClient(client) {
+        this.clients.push(client);
+        let clientId = this.clients.length;
+        client.admin.register(clientId);
+    }
+
+    async setName(from, name) {
+        let client = this.clients.find(c => c === from);
+        client.name = name;
     }
 }
 ```
@@ -108,29 +104,36 @@ And then we use that `Server` class to implement our server:
 ```javascript
 [...]
 
-const webserver = require("http").Server();
-const io = require("socket.io")(webserver);
-const Server = require('./server');
-new Server(io, ClientServer.server);
-webserver.listen(0, () =>
+const server = ClientServer.createServer(ServerClass)
+server.listen(0, () =>
     console.log(`started server on port ${server.address().port})
 );
 ```
+
+Note that all API handling functions in a server class are passed
+a reference to the client that made the API call as the `from`
+argument, universally passed as the first argument to any API
+call handling function.
+
+If the client calls `server.doThing(data)`, the server should have
+a handling function with signature `async doThing(from, data) { ... }`.
 
 ## 3. Creating a Client
 
 Creating a client is similar to creating a server:
 
 ```javascript
-class Client {
-    constructor(socket, ClientAPI) {
-        let server = this.server = ClientAPI.createServer(socket, this);
-        server.onDisconnect(() => console.log(`client> disconnected from server.`))
+...
+
+class ClientClass {
+    constructor() {
+        this.id = -1;
     }
 
-    // our API definition said the client had a `register`, so: make sure it exists!
     async register(clientId) {
-      this.id = clientId;
+        this.id = clientId;
+        let name = this.name = generateRandomName();
+        this.server.user.setName(name);
     }
 }
 ```
@@ -140,75 +143,25 @@ And then we make a(t least one) Client once the server is up:
 ```javascript
 [...]
 
-const Client = require('./client');
-webserver.listen(0, () => {
-    const serverURL = `http://*:${webserver.address().port}`;
-    const socketToServer = require(`socket.io-client`)(serverURL);
-    new Client(socketToServer, ClientServer.client);
+server.listen(0, () => {
+    const serverURL = `http://*:${server.address().port}`;
+    ClientServer.createClient(serverURL, ClientClass);
 });
 ```
 
+API call handling functions for clients are not passed a `from`,
+as clients are connected to a single server. The origin of the
+call is always known, and the server proxy can always be referenced
+as `this.server` inside any API handling function.
+
 ## 4. Start talking to each other
-
-We can now start taking advantage of the "it looks like normal code" part, where we can call
-functions from the client "on" the server, and vice versa, and can even await the result of
-those calls. For example, we can give the server the following code:
-
-```javascript
-class Server {
-    constructor(io, ServerAPI) {
-        this.clients = [];
-        ServerAPI.setupHandlers(this, io, socket => {
-            let client = ServerAPI.createClient(socket);
-            client.onDisconnect(() => console.log(`server> client disconnected`));
-            this.addClient(client, socket);
-        })
-    }
-    
-    async addClient(client,socket) {
-        const clientId = uuid();
-        const clientObj = { client, socket, clientId };
-        const others = this.clients.slice();
-        this.clients.push(clientObj);
-        clientObj.confirmation = await client.admin.register(clientId);
-        others.forEach(clientObj => clientObj.client.user.joined(clientId));
-    }
-}
-```
-
-Here, the server will client a local client represenation when a client connects,
-and will then tell the client it has been registered with a particular uuid, and
-we _wait for the response by the client_ before we notify all other clients that
-a new client joined the collective.
-
-On the client side, all we have to do for this to work is:
-
-```javascript
-class Client {
-    constructor(socket, ClientAPI) {
-        let server = this.server = ClientAPI.createServer(socket, this);
-        server.onDisconnect(() => console.log(`client> disconnected from server.`))
-    }
-
-    async register(clientId) {
-      this.id = clientId;
-      return true;
-    }
-}
-```
-
-And that's it: when the server calls `await client.user.register(clientId)`, the async-socket.io
-framework takes care of the actual web socket transportation and response handling, so on the one
-end we can call `await endpoint.namespace.someFunction()` and on the other end we can simply 
-write out that `async someFunction()` and "things work". If we make the function return any 
-non-falsey value, the framework will make sure that the called gets that value as if it was using
-a call to a local reference.
 
 Have a look at the [demo](https://github.com/Pomax/async-socket.io/tree/master/demo) directory,
 to see an example of a simple client/server setup with code in place that starts a server
 and three clients, has the server inform each client what their `id` is when they connect,
-adding them to a list of known users, and where each client asks the server for that user list
-after connecting, automatically getting notified of individual join/leave actions when they
-occur.
+adding them to a list of known users, and where each client invents a random name for themselves
+upon registration, informeds the server of that name and then asks the server for the user list
+that the server's maintaining, automatically getting notified of individual join/leave actions
+when they occur.
 
 You can run this demo using `npm test` in the `async-socket.io` directory.
