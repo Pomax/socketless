@@ -1,13 +1,17 @@
 # Socketless
 
-This is a framework and methodology for using [socket.io](https://socket.io/) without writing any socket code yourself,
-and came about from a need to write quite a lot of communication between clients and server,
-which gets _really_ verbose, really fast, if you need to express all your calls as `socket.on`
-and `socket.emit()` instructions, with pass-through handlers if you want your code to stay
-relatively clean.
+This is a framework and methodology for implementing a websocket client/server
+solution in which you specify the API and handler functions, without every writing
+socket-related code, or even _seeing_ socket-related code.
 
-So instead, this framework lets you express the functions that your clients support, and the
-functions your server supports, as a single namespaced API object such as:
+This project was born out of a need to write quite a lot of communication between
+a game server and its clients, which gets _really_ verbose, really fast, if you need to
+express all your calls in terms of `socket.on` and `socket.emit()` instructions, especially
+if you're also writing pass-through handlers in order to keep your code to stay relatively
+clean and maintainable.
+
+So, instead, this framework lets you express the functions that your clients support, and
+the functions your server supports, as a single namespaced API object such as:
 
 ```javascript
 const API = {
@@ -25,14 +29,14 @@ const API = {
 };
 ```
 
-Which you then run through the async-socket.io framework to auto-generate a set of proxy objects
-that both take care of all the socket.io code, as well as hide the fact that sockets are even
+You then run this API through the `socketless` transform, which generates a set of proxy objects
+that both take care of all the websocket code, as well as hide the fact that sockets are even
 used at all, allowing code to be written as if clients and the server have direct references
 to each other:
 
 ```javascript
 class Client {
-    [...]
+    ...
 
     async register(clientId) {
         this.id = clientId;
@@ -40,27 +44,43 @@ class Client {
         return { status: `registered` };
     }
 
-    [...]
+    ...
+}
+
+class Server {
+    ...
+
+    async addClient(client) {
+        this.clients.push(client);
+    }
+
+    async getUserList() {
+        return this.clients.map(...);
+    }
+
+    ...
 }
 ```
 
 You'll notice that `async` keyword, which is critically important: in order to allow
 not just automatic socket handling, but also automatic data routing, all the functions
 you promised would exist in the API must be declared as `async` functions, because this
-lets the framework treat socket communication as promises, with automatica regitration
-and deregistration of response events.
+lets the framework treat socket communication as promises, with automatic registration
+and unregistration of response events.
 
 That's a technical detail, though; the important part is that using this framework, you
-don't have to think about the fact that you're using sockets in any way, outside of making
-sure to pass socket.io's `io` and `socket` values into the right functions.
+don't have to think about the fact that you're using sockets in any way. In fact, you
+don't even need to know which websocket technology is being used to make it all work:
+
+**it just works.**
 
 ## 1. Creating an API collection
 
 As mentioned above, an API collection is created by defining a namespaced API object,
-and then running that through the `generateClientServer` transformer:
+and then running that through the `socketless` transformer:
 
 ```javascript
-const generateClientServer = require('async-socket.io');
+const generateClientServer = require('socketless');
 
 const API = {
     user: {
@@ -156,7 +176,7 @@ as `this.server` inside any API handling function.
 
 ## 4. Start talking to each other
 
-Have a look at the [demo](https://github.com/Pomax/async-socket.io/tree/master/demo) directory,
+Have a look at the [demo](https://github.com/Pomax/socketless/tree/master/demo) directory,
 to see an example of a simple client/server setup with code in place that starts a server
 and three clients, has the server inform each client what their `id` is when they connect,
 adding them to a list of known users, and where each client invents a random name for themselves
@@ -164,7 +184,7 @@ upon registration, informeds the server of that name and then asks the server fo
 that the server's maintaining, automatically getting notified of individual join/leave actions
 when they occur.
 
-You can run this demo using `npm test` in the `async-socket.io` directory.
+You can run this demo using `npm test` in the `socketless` directory.
 
 This test can also be run using independent processes for the clients and server, by using
 `npm test:distributed`, but this will spawn genuinely independent processes, and mostly exists
