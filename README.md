@@ -99,7 +99,7 @@ class ServerClass {
 }
 ```
 
-And then we use that `Server` class to implement our server:
+And then we use that `ServerClass` to implement our server:
 
 ```javascript
 [...]
