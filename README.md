@@ -1,4 +1,4 @@
-# async-socket.io
+# Socketless
 
 This is a framework and methodology for using [socket.io](https://socket.io/) without writing any socket code yourself,
 and came about from a need to write quite a lot of communication between clients and server,
