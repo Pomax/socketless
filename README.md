@@ -1,6 +1,6 @@
 # async-socket.io
 
-This is a framework and methodology for using socket.io without writing any socket code yourself,
+This is a framework and methodology for using [socket.io](https://socket.io/) without writing any socket code yourself,
 and came about from a need to write quite a lot of communication between clients and server,
 which gets _really_ verbose, really fast, if you need to express all your calls as `socket.on`
 and `socket.emit()` instructions, with pass-through handlers if you want your code to stay
@@ -9,12 +9,15 @@ relatively clean.
 So instead, this framework lets you express the functions that your clients support, and the
 functions your server supports, as a single namespaced API object such as:
 
-```
+```javascript
 const API = {
+    // the administrative namespace, for admin things.
     admin: {
         client: ['register', 'getStateDigest'],
         server: []
     },
+    
+    // the user namespace, for user related actions.
     user: {
         client: ['userJoined', 'userLeft'],
         server: ['setName', 'getUserList']
@@ -22,13 +25,14 @@ const API = {
 };
 ```
 
-Which you then use to generate proxy objects that both take care of all the socket.io code,
-as well as hide the fact that sockets are even used at all, allowing code to be written as
-if clients and the server have direct references to each other:
+Which you then run through the async-socket.io framework to auto-generate a set of proxy objects
+that both take care of all the socket.io code, as well as hide the fact that sockets are even
+used at all, allowing code to be written as if clients and the server have direct references
+to each other:
 
-```
+```javascript
 class Client {
-    ...
+    [...]
 
     async register(clientId) {
         this.id = clientId;
@@ -36,7 +40,7 @@ class Client {
         return { status: `registered` };
     }
 
-    ...
+    [...]
 }
 ```
 
@@ -55,14 +59,16 @@ sure to pass socket.io's `io` and `socket` values into the right functions.
 As mentioned above, an API collection is created by defining a namespaced API object,
 and then running that through the `generateClientServer` transformer:
 
-```
+```javascript
 const generateClientServer = require('async-socket.io');
+
 const API = {
     user: {
         client: [ 'register', ...],
         server: [ 'setName', ... ]
     }
 };
+
 const ClientServer = generateClientServer(API);
 ```
 
@@ -72,7 +78,7 @@ With the above code in place, you can create a Server class for actual API call 
 including an implementation for the mandatory `addClient(client)` function, and then
 create a websocket server with a single call:
 
-```
+```javascript
 ...
 
 class ServerClass {
@@ -91,6 +97,12 @@ class ServerClass {
         client.name = name;
     }
 }
+```
+
+And then we use that `Server` class to implement our server:
+
+```javascript
+[...]
 
 const server = ClientServer.createServer(ServerClass)
 server.listen(0, () =>
@@ -110,7 +122,7 @@ a handling function with signature `async doThing(from, data) { ... }`.
 
 Creating a client is similar to creating a server:
 
-```
+```javascript
 ...
 
 class ClientClass {
@@ -124,6 +136,12 @@ class ClientClass {
         this.server.user.setName(name);
     }
 }
+```
+
+And then we make a(t least one) Client once the server is up:
+
+```javascript
+[...]
 
 server.listen(0, () => {
     const serverURL = `http://*:${server.address().port}`;
@@ -141,8 +159,9 @@ as `this.server` inside any API handling function.
 Have a look at the [demo](https://github.com/Pomax/async-socket.io/tree/master/demo) directory,
 to see an example of a simple client/server setup with code in place that starts a server
 and three clients, has the server inform each client what their `id` is when they connect,
-adding them to a list of known users, and where each client asks the server for that user list
-after connecting, automatically getting notified of individual join/leave actions when they
-occur.
+adding them to a list of known users, and where each client invents a random name for themselves
+upon registration, informeds the server of that name and then asks the server for the user list
+that the server's maintaining, automatically getting notified of individual join/leave actions
+when they occur.
 
 You can run this demo using `npm test` in the `async-socket.io` directory.
