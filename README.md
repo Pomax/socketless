@@ -102,7 +102,7 @@ class ServerClass {
 And then we use that `ServerClass` to implement our server:
 
 ```javascript
-[...]
+...
 
 const server = ClientServer.createServer(ServerClass)
 server.listen(0, () =>
@@ -138,10 +138,10 @@ class ClientClass {
 }
 ```
 
-And then we make a(t least one) Client once the server is up:
+And then we make one (or more) Client(s) once the server is up:
 
 ```javascript
-[...]
+...
 
 server.listen(0, () => {
     const serverURL = `http://*:${server.address().port}`;
