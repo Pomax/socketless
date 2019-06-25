@@ -4,7 +4,10 @@
   "description": "A framework and methodology for using socket.io without writing any socket code yourself.",
   "main": "src/generate-client-server.js",
   "scripts": {
-    "test": "node demo/index.js"
+    "test": "node demo/index.js",
+    "test:distributed": "node test/index.js",
+    "test:client": "node test/test-client.js",
+    "test:server": "node test/test-server.js"
   },
   "repository": {
     "type": "git",

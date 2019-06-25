@@ -16,7 +16,7 @@ const API = {
         client: ['register', 'getStateDigest'],
         server: []
     },
-    
+
     // the user namespace, for user related actions.
     user: {
         client: ['userJoined', 'userLeft'],
@@ -165,3 +165,7 @@ that the server's maintaining, automatically getting notified of individual join
 when they occur.
 
 You can run this demo using `npm test` in the `async-socket.io` directory.
+
+This test can also be run using independent processes for the clients and server, by using
+`npm test:distributed`, but this will spawn genuinely independent processes, and mostly exists
+to show "things work" rather than offering you an easy way to examine what actually happens.
