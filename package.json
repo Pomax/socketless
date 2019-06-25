@@ -1,5 +1,5 @@
 {
-  "name": "async-socket.io",
+  "name": "socketless",
   "version": "0.2.1",
   "description": "A framework and methodology for using socket.io without writing any socket code yourself.",
   "main": "src/generate-client-server.js",
@@ -11,7 +11,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Pomax/async-socket.io.git"
+    "url": "git+https://github.com/Pomax/socketless.git"
   },
   "keywords": [
     "client",
@@ -24,7 +24,7 @@
   "author": "Pomax",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/Pomax/async-socket.io/issues"
+    "url": "https://github.com/Pomax/socketless/issues"
   },
   "homepage": "https://github.com/Pomax/async-socket.io#readme",
   "dependencies": {
