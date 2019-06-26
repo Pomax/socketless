@@ -22,12 +22,15 @@ class Client {
   /**
    * Register ourselves as being part of the collective now.
    */
-  async register(clientId) {
+  async admin$register(clientId) {
     console.log(`client> received registration id ${clientId}`);
     this.id = clientId;
 
     // come up with a random name
-    let name = this.name = (new Array(10)).fill(0).map(v => String.fromCharCode(97 + (26*Math.random()))).join('');
+    let name = (this.name = new Array(10)
+      .fill(0)
+      .map(v => String.fromCharCode(97 + 26 * Math.random()))
+      .join(""));
     console.log(`client ${this.id}> setting name to ${name}`);
     this.server.user.setName(name);
 
@@ -40,16 +43,28 @@ class Client {
     // Schedule a disconnect 5 seconds in the future.
     setTimeout(async () => {
       console.log(`client ${this.id}> disconnecting from server.`);
-      this.server.disconnect()
+      this.server.disconnect();
     }, 5000);
 
     return { status: `registered` };
   }
 
   /**
+   * Provide the server with a full state digest upon request.
+   * This is something a server may occasionally call in order
+   * to verify that the client's knowledge of "all the things"
+   * has not been corrupted (due to networking/timing issues,
+   * for example, or because someone modified their client).
+   */
+  async "admin:getStateDigest"() {
+    console.log(`client ${this.id}> state digest requested.`);
+    return { value: Math.random() };
+  }
+
+  /**
    * Record the fact that another user joined the collective
    */
-  async userJoined(id) {
+  async "user:joined"(id) {
     if (this.users.indexOf(id) === -1) this.users.push(id);
     console.log(
       `client ${this.id}> user ${id} joined. Known users:`,
@@ -60,32 +75,17 @@ class Client {
   /**
    * Record the fact that some user left the collective
    */
-  async userLeft(id) {
+  async "user:left"(id) {
     let pos = this.users.findIndex(u => u === id);
     if (pos > -1) this.users.splice(pos, 1);
-    console.log(
-      `client ${this.id}> user ${id} left. Known users:`,
-      this.users
-    );
+    console.log(`client ${this.id}> user ${id} left. Known users:`, this.users);
   }
 
   /**
    * Note that a user changed their name
    */
-  async userChangedName({ id, name }) {
+  async "user:changedName"({ id, name }) {
     console.log(`client ${this.id}> user ${id} changed name to ${name}.`);
-  }
-
-  /**
-   * Provide the server with a full state digest upon request.
-   * This is something a server may occasionally call in order
-   * to verify that the client's knowledge of "all the things"
-   * has not been corrupted (due to networking/timing issues,
-   * for example, or because someone modified their client).
-   */
-  async getStateDigest() {
-    console.log(`client ${this.id}> state digest requested.`);
-    return { value: Math.random() };
   }
 }
 

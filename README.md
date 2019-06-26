@@ -117,7 +117,26 @@ class ServerClass {
 }
 ```
 
-And then we use that `ServerClass` to instantiate our server:
+Should you wish to explicitly namespace each handling function (e.g. to prevent call conflicts that might arise from having the same function name in two or more namespaces) you can do this in two ways: either by using the dollar symbol, `$`, as namespace separator:
+
+
+```javascript
+    async user$setName(from, name) {
+        let client = this.clients.find(c => c === from);
+        client.name = name;
+    }
+```
+
+Or by using the colon, `:`, as namespace separator. However, note that `:` is not a legal character in function names, and so the full function name **must** be placed in quotes:
+
+```javascript
+    async "user:setName"(from, name) {
+        let client = this.clients.find(c => c === from);
+        client.name = name;
+    }
+```
+
+With that taken care of, we use that `ServerClass` to instantiate our server:
 
 ```javascript
 ...
@@ -151,6 +170,8 @@ class ClientClass {
     }
 }
 ```
+
+(Again, explicit namespacing can be achieved using either `$` or `:` with the function name in quotes). 
 
 And then we make one (or more) Client(s) once the server is up:
 
@@ -289,7 +310,7 @@ const API = {
 
 This is then used to generate an actual `ClientServer` object as:
 
-```
+```javascript
 const API = ...
 const { generateClientServer } = require('socketless');
 const ClientServer = generateClientServer(API);
@@ -297,17 +318,45 @@ const ClientServer = generateClientServer(API);
 
 After which the `ClientServer` object can be used to bootstrap both clients and servers.
 
-### `ClientServer.createClient(serverURL:urlstring, ClientClass:class)`
+### • Creating clients: `ClientServer.createClient`
 
-Creates a socket client to the indicated URL, with all the bells and whistles taken care of. This function does not return a reference to the client, as clients are responsible for their own life cycle as implemented in their `ClientClass`.
+This function has the following signature:
+
+> **ClientServer.createClient(serverURL:urlstring, ClientClass:class)**
+
+
+This function creates a socket client to the indicated URL, with all the bells and whistles taken care of. This function does not return a reference to the client, as clients are responsible for their own life cycle as implemented in their `ClientClass`.
 
 The `ClientClass` _may_ implement `onConnect()` and `onDisconnect()` to receive server connection and disconnection notifications, respectively.
 
 Any function in the `ClientClass` (except the constructor) can use `this.server` to making API calls to the server. See the [Structuring client/server calls](#structuring-client-server-calls) section for more details.
 
-### `server = ClientServer.createServer(ServerClass:class [,https:boolean])`
 
-Creates a web+socket server. If the `https` argument is set to `true`, this will create an HTTPS server, otherwise an HTTP server will be stood up. This function returns a reference to the server, which will either be a Node.js [Http.Server](https://nodejs.org/api/http.html#http_class_http_server) or a Node.js [Https.Server](https://nodejs.org/api/https.html#https_class_https_server), both of which inherit from the Node.js [net.Server](https://nodejs.org/api/net.html#net_class_net_server) class.
+#### namespacing API call handler functions
+
+Any API call handling function in the `ClientClass` may explicitly use the same namespacing as was indicated in the `API` object, either by using `$` as namespace separator:
+
+```javascript
+async namespace$name(...) {
+    ...
+}
+```
+
+or by using `:` as namespace separator, with the full function name in quotes:
+
+```javascript
+async "namespace:name"(...) {
+    ...
+}
+```  
+
+### • Creating servers: `ClientServer.createServer`
+
+This function has the following signature:
+
+> **server = ClientServer.createServer(ServerClass:class [,https:boolean])**
+
+This function creates a web+socket server. If the `https` argument is set to `true`, this will create an HTTPS server, otherwise an HTTP server will be stood up. This function returns a reference to the server, which will either be a Node.js [Http.Server](https://nodejs.org/api/http.html#http_class_http_server) or a Node.js [Https.Server](https://nodejs.org/api/https.html#https_class_https_server), both of which inherit from the Node.js [net.Server](https://nodejs.org/api/net.html#net_class_net_server) class.
 
 In order to start the server, use the standard Node.js server listen pattern (either using an explicit port, or 0 to automatically pick whatever open port is available):
 
@@ -323,3 +372,21 @@ The `client` argument to `addClient(client)` is an object with the following API
 
 - `.disconnect()`, a function that can be called to force a client to disconnect from the server
 - `.onDisconnect(fn)`, function that _may_ be called in order to bind a function that will run when the client disconnects from the server.
+
+#### namespacing API call handler functions
+
+Any API call handling function in the `ServerClass` may explicitly use the same namespacing as was indicated in the `API` object, either by using `$` as namespace separator:
+
+```javascript
+async namespace$name(...) {
+    ...
+}
+```
+
+or by using `:` as namespace separator, with the full function name in quotes:
+
+```javascript
+async "namespace:name"(...) {
+    ...
+}
+```

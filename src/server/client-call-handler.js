@@ -21,11 +21,15 @@ module.exports = function(namespace, serverFn) {
 
   serverFn.forEach(name => {
     ClientCallHandler.prototype[name] = async function(data, respond) {
-      let process = this.handler[name].bind(this.handler);
+      let process = this.handler[`${namespace}:${name}`];
+      if (!process) process = this.handler[`${namespace}$${name}`];
+      if (!process) process = this.handler[name];
 
       if (!process) {
         throw new Error(`Missing handler.${name} in ClientCallHandler.${name}`);
       }
+
+      process = process.bind(this.handler);
 
       if (process.constructor.name !== "AsyncFunction") {
         throw new Error(
@@ -33,7 +37,10 @@ module.exports = function(namespace, serverFn) {
         );
       }
 
-      let response = await process(this.socket.clientServer.client.instance, data);
+      let response = await process(
+        this.socket.clientServer.client.instance,
+        data
+      );
       if (response) respond(response);
     };
   });

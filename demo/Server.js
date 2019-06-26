@@ -41,7 +41,7 @@ class Server {
 
     // Notify all users that this client propely joined
     otherClients.forEach(clientObj =>
-      clientObj.client.user.userJoined(clientId)
+      clientObj.client.user.joined(clientId)
     );
 
     // And schdule a call in the future for this client
@@ -63,7 +63,7 @@ class Server {
     if (pos !== -1) {
       let removed = this.clients.splice(pos, 1)[0];
       this.clients.forEach(clientObj =>
-        clientObj.client.user.userLeft(removed.id)
+        clientObj.client.user.left(removed.id)
       );
     }
 
@@ -82,14 +82,14 @@ class Server {
   /**
    * Record the fact that a client provided a (new) name.
    */
-  async setName(from, name) {
+  async "user:setName"(from, name) {
     const client = this.clients.find(v => v.client===from);
     client.name = name;
     console.log(`server> client ${client.id} is now called "${name}"`);
 
     this.clients.forEach(other => {
       if (other===client) return;
-      other.client.user.userChangedName({
+      other.client.user.changedName({
         id: client.id,
         name: client.name
       });
@@ -99,7 +99,7 @@ class Server {
   /**
    * Provide a client with the current userlist.
    */
-  async getUserList() {
+  async "user:getUserList"() {
     console.log(`server> sending user list`);
     return this.clients.map(c => c.id);
   }
