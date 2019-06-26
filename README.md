@@ -41,7 +41,6 @@ class Client {
     async register(clientId) {
         this.id = clientId;
         this.users = await this.server.user.getUserList();
-        return { status: `registered` };
     }
 
     ...
@@ -52,7 +51,7 @@ class Server {
 
     async addClient(client) {
         this.clients.push(client);
-        client.users.register(getNextClientId())
+        let confirmation = client.user.register(getNextClientId())
     }
 
     async getUserList() {
@@ -97,7 +96,9 @@ const ClientServer = generateClientServer(API);
 
 With the above code in place, you can create a Server class for actual API call handling,
 including an implementation for the mandatory `addClient(client)` function, and then
-create a websocket server with a single call:
+create a websocket server with a single call.
+
+First, our server class:
 
 ```javascript
 ...
@@ -110,7 +111,7 @@ class ServerClass {
     addClient(client) {
         this.clients.push(client);
         let clientId = this.clients.length;
-        client.admin.register(clientId);
+        client.user.register(clientId);
     }
 
     async setName(from, name) {
@@ -120,7 +121,7 @@ class ServerClass {
 }
 ```
 
-And then we use that `ServerClass` to implement our server:
+And then we use that `ServerClass` to instantiate our server:
 
 ```javascript
 ...
