@@ -307,9 +307,15 @@ Any function in the `ClientClass` (except the constructor) can use `this.server`
 
 ### `server = ClientServer.createServer(ServerClass:class [,https:boolean])`
 
-Creates a web+socket server. If the `https` argument is set to `true`, this will create an HTTPS server, otherwise an HTTP server will be stood up.
+Creates a web+socket server. If the `https` argument is set to `true`, this will create an HTTPS server, otherwise an HTTP server will be stood up. This function returns a reference to the server, which will either be a Node.js [Http.Server](https://nodejs.org/api/http.html#http_class_http_server) or a Node.js [Https.Server](https://nodejs.org/api/https.html#https_class_https_server), both of which inherit from the Node.js [net.Server](https://nodejs.org/api/net.html#net_class_net_server) class.
 
-This function returns a reference to the server, which will either be a Node.js [Http.Server](https://nodejs.org/api/http.html#http_class_http_server) or a Node.js [Https.Server](https://nodejs.org/api/https.html#https_class_https_server), both of which inherit from the Node.js [net.Server](https://nodejs.org/api/net.html#net_class_net_server) class.
+In order to start the server, use the standard Node.js server listen pattern (either using an explicit port, or 0 to automatically pick whatever open port is available):
+
+```javascript
+server.listen(0, () => {
+    console.log(`Server running on port ${server.address().port}`);
+});
+```
 
 The `ServerClass` **must** implement the `addClient(client)` function.
 
