@@ -1,17 +1,17 @@
 # Socketless
 
-This is a framework and methodology for implementing a websocket client/server
-solution in which you specify the API and handler functions, without every writing
-socket-related code, or even _seeing_ socket-related code.
+This is a framework and methodology for implementing a websocket client/server solution in which you specify the API and handler functions, without every writing socket-related code, or even _seeing_ socket-related code.
 
-This project was born out of a need to write quite a lot of communication between
-a game server and its clients, which gets _really_ verbose, really fast, if you need to
-express all your calls in terms of `socket.on` and `socket.emit()` instructions, especially
-if you're also writing pass-through handlers in order to keep your code to stay relatively
-clean and maintainable.
+1. [Introduction](#introduction)
+2. [Quick-start](#quick-start)
+3. [Conventions](#conventions)
+4. [The `socketless` API](#the-socketless-api)
 
-So, instead, this framework lets you express the functions that your clients support, and
-the functions your server supports, as a single namespaced API object such as:
+## Introduction
+
+This project was born out of a need to write quite a lot of communication between a game server and its clients, which gets _really_ verbose, really fast, if you need to express all your calls in terms of `socket.on` and `socket.emit()` instructions, especially if you're also writing pass-through handlers in order to keep your code to stay relatively clean and maintainable.
+
+So, instead, this framework lets you express the functions that your clients support, and the functions your server supports, as a single namespaced API object such as:
 
 ```javascript
 const API = {
@@ -29,10 +29,7 @@ const API = {
 };
 ```
 
-You then run this API through the `socketless` transform, which generates a set of proxy objects
-that both take care of all the websocket code, as well as hide the fact that sockets are even
-used at all, allowing code to be written as if clients and the server have direct references
-to each other:
+You then run this API through the `socketless` transform, which generates a set of proxy objects that both take care of all the websocket code, as well as hide the fact that sockets are even used at all, allowing code to be written as if clients and the server have direct references to each other:
 
 ```javascript
 class Client {
@@ -62,25 +59,26 @@ class Server {
 }
 ```
 
-You'll notice that `async` keyword, which is critically important: in order to allow
-not just automatic socket handling, but also automatic data routing, all the functions
-you promised would exist in the API must be declared as `async` functions, because this
-lets the framework treat socket communication as promises, with automatic registration
-and unregistration of response events.
+You'll notice that `async` keyword, which is critically important: in order to allow not just automatic socket handling, but also automatic data routing, all the functions you promised would exist in the API must be declared as `async` functions, because this lets the framework treat socket communication as promises, with automatic registration and unregistration of response events.
 
-That's a technical detail, though; the important part is that using this framework, you
-don't have to think about the fact that you're using sockets in any way. In fact, you
-don't even need to know which websocket technology is being used to make it all work:
+That's a technical detail, though; the important part is that using this framework, you don't have to think about the fact that you're using sockets in any way. In fact, you don't even need to know which websocket technology is being used to make it all work:
 
 **it just works.**
 
-## 1. Creating an API collection
+## Quick-start
 
-As mentioned above, an API collection is created by defining a namespaced API object,
-and then running that through the `socketless` transformer:
+Install this library using `npm` (or npm-compatible package manager) using:
+
+```
+npm install socketless --save
+```
+
+### 1. Creating an API collection
+
+As mentioned above, an API collection is created by defining a namespaced API object, and then running that through the `socketless` transformer:
 
 ```javascript
-const generateClientServer = require('socketless');
+const { generateClientServer } = require('socketless');
 
 const API = {
     user: {
@@ -92,11 +90,9 @@ const API = {
 const ClientServer = generateClientServer(API);
 ```
 
-## 2. Creating a Server
+### 2. Creating a Server
 
-With the above code in place, you can create a Server class for actual API call handling,
-including an implementation for the mandatory `addClient(client)` function, and then
-create a websocket server with a single call.
+With the above code in place, you can create a Server class for actual API call handling, including an implementation for the mandatory `addClient(client)` function, and then create a websocket server with a single call.
 
 First, our server class:
 
@@ -132,15 +128,11 @@ server.listen(0, () =>
 );
 ```
 
-Note that all API handling functions in a server class are passed
-a reference to the client that made the API call as the `from`
-argument, universally passed as the first argument to any API
-call handling function.
+Note that all API handling functions in a server class are passed a reference to the client that made the API call as the `from` argument, universally passed as the first argument to any API call handling function.
 
-If the client calls `server.doThing(data)`, the server should have
-a handling function with signature `async doThing(from, data) { ... }`.
+If the client calls `server.doThing(data)`, the server should have a handling function with signature `async doThing(from, data) { ... }`.
 
-## 3. Creating a Client
+### 3. Creating a Client
 
 Creating a client is similar to creating a server:
 
@@ -171,23 +163,157 @@ server.listen(0, () => {
 });
 ```
 
-API call handling functions for clients are not passed a `from`,
-as clients are connected to a single server. The origin of the
-call is always known, and the server proxy can always be referenced
-as `this.server` inside any API handling function.
+API call handling functions for clients are not passed a `from`, as clients are connected to a single server. The origin of the call is always known, and the server proxy can always be referenced as `this.server` inside any API handling function.
 
-## 4. Start talking to each other
+### 4. Start talking to each other
 
-Have a look at the [demo](https://github.com/Pomax/socketless/tree/master/demo) directory,
-to see an example of a simple client/server setup with code in place that starts a server
-and three clients, has the server inform each client what their `id` is when they connect,
-adding them to a list of known users, and where each client invents a random name for themselves
-upon registration, informeds the server of that name and then asks the server for the user list
-that the server's maintaining, automatically getting notified of individual join/leave actions
-when they occur.
+Have a look at the [demo](https://github.com/Pomax/socketless/tree/master/demo) directory, to see an example of a simple client/server setup with code in place that starts a server and three clients, has the server inform each client what their `id` is when they connect, adding them to a list of known users, and where each client invents a random name for themselves upon registration, informeds the server of that name and then asks the server for the user list that the server's maintaining, automatically getting notified of individual join/leave actions when they occur.
 
 You can run this demo using `npm test` in the `socketless` directory.
 
-This test can also be run using independent processes for the clients and server, by using
-`npm test:distributed`, but this will spawn genuinely independent processes, and mostly exists
-to show "things work" rather than offering you an easy way to examine what actually happens.
+This test can also be run using independent processes for the clients and server, by using `npm test:distributed`, but this will spawn genuinely independent processes, and mostly exists to show "things work" rather than offering you an easy way to examine what actually happens.
+
+## Conventions
+
+This is a mildly opinionated framework, and so there are a few conventions that apply both to the code you write and the way you structure calls.
+
+### Your API is a promise
+
+The `API` object that you write, with namespaced lists of call names for clients and servers, is a promise about what your actual Client and Server classes will be implementing. You will recognize this pattern if you've ever worked in languages that use header files or interfaces.
+
+Any call that you list in your `API` object but do not have an implementation for in your client or server class will cause a hard error when invoking the `socketless` transform operation.
+
+### Structuring client/server calls
+
+Both clients and servers can initial calls to one another, which can be either "fire and forget" or "wait for a response", with the only distinction between the two being the use of `await`.
+
+Irrespective of whether you will be using `await` in an API handling function, all such functions **must** use the `async` keyword, as these calls map to network traffic, which is an inherently asynchronous affair.
+
+#### Fire-and-forget
+
+Fire-and-forget calls simply call the relevant API function and move on:
+
+```javascript
+class ClientClass {
+    ...
+    async triggerDoThing() {       
+        server.namespace.doThingPlease();
+        console.log('done');
+    }
+    ...
+}
+```
+
+This will send a trigger for the `doThingPlease` API handler function on the server and immediately move on to the next line of code, logging `done` to the console.
+
+#### Calls that should return some data
+
+If a call should return some data, such as asking a server for a user list, or needing a client to confirm receiving something, the call should be prefixed with `await`:
+
+```javascript
+class ClientClass {
+    ...
+    async triggerDoThing() {       
+        let result = await server.namespace.doThingPlease();
+        console.log(result);
+    }
+    ...
+}
+```
+
+This will send a trigger for the `doThingPlease` API handler function on the server and then wait for the server to send back whatever data it is expected to send back. As such, our next line of code will _not_ run until the server has responded with data that we can then immediately make use of.
+
+### Structuring client/server code
+
+In order to keep your code easy to maintain, it is recommended that you write your ClientClass and ServerClass classes as minimally as possible, with your real Client and Server classes extending these, so that your Client/Server classes primarily contain normal code, inheriting the actual API handling from their superclass. You don't _have_ to do this of course, but the whole reason this library exist is to keep code easy to maintain, so: keep your classes small and focussed. It makes your life easier.   
+
+#### Server specifics
+
+Server classes must implement the `addClient(client)` function, which is called automatically when clients connect to the server. Any code that should run based on clients connecting should be either in, or called in, this function. This function does not need to be marked `async` as far as the framework is concerned, but of course if you're going to be writing anything that has an `await`, you'll need to mark it as `async` simply because you can't use `await` in a plain function.
+
+The `client` argument passed to the `addClient(client)` function is the proxy instance that can be used to make remote calls by writing code that looks like local calls. In addition to the namespaced API functions it will have due to your own setup, this `client` also has an `.onDisconnect(fn)` function that can be called to "do something" when the client disconnects from the server, with `fn` being any function that should run.
+
+You typically want to combine these two functions:
+
+```javascript
+class ServerClass{
+    ...
+    async addClient(client) {
+      this.clients.push(client);
+      client.onDisconnect(() => this.removeClient(client));
+      ...
+    }
+    async removeClient(client) {
+      let pos = this.clients.find(v => v===client);
+      list.splice(pos, 1);
+    }
+    ...
+```
+
+The `client` argument passed to the `addClient(client)` function also has a `.disconnect()` function that can be called by the server to force a client to disconnect and clean up the socket connection between the two.  
+
+#### Client specifics
+
+Client classes are not passed a reference to the server they connected to, instead they can rely on the fact that `this.server` always resolves inside any class function. Note that this does _not_ include the constructor, as clients need to constructed before they can be connected to a server.
+
+Client classes may implement the `onConnect()` function, which is called when a client instance has connected to the server. This function does not take any arguments. This function does not require the `async` keyword.
+
+Client classes may implement the `onDisconnect()` function, which is called when the server explicitly disconnects the client, whether intentionally (e.g. because the client requested to be disconnected) or not (e.g. the server got shut down). This function does not take any arguments. This function does not require the `async` keyword.
+
+```javascript
+class Client {
+    ...
+    onConnect() {
+        console.log(`client> connected to server.`);
+    }
+    onDisconnect() {
+        console.log(`client> was disconnected from server.`);
+    }
+    ...
+}
+```
+
+## The `socketless` API
+
+The `socketless` library exports a single function called `generateClientServer` that acts as transformer for namespaced API object of the form:
+
+```javascript
+const API = {
+    namespace: {
+        client: ['APIfunctionName', ...],
+        server: [...]
+    },
+    ...
+}
+```
+
+This is then used to generate an actual `ClientServer` object as:
+ 
+```
+const API = ...
+const { generateClientServer } = require('socketless');
+const ClientServer = generateClientServer(API); 
+```
+
+After which the `ClientServer` object can be used to bootstrap both clients and servers.
+
+### `ClientServer.createClient(ClientClass:class)`
+
+Creates a socket client with all the bells and whistles taken care of. This function does not return a reference to the client, as clients are responsible for their own life cycle as implemented in their `ClientClass`.
+
+The `ClientClass` _may_ implement `onConnect()` and `onDisconnect()` to receive server connection and disconnection notifications, respectively.
+
+Any function in the `ClientClass` (except the constructor) can use `this.server` to making API calls to the server. See the [Structuring client/server calls](#structuring-client-server-calls) section for more details.
+
+### `server = ClientServer.createServer(ServerClass:class [,https:boolean])`
+
+Creates a web+socket server. If the `https` argument is set to `true`, this will create an HTTPS server, otherwise an HTTP server will be stood up. 
+
+This function returns a reference to the server, which will either be a Node.js [Http.Server](https://nodejs.org/api/http.html#http_class_http_server) or a Node.js [Https.Server](https://nodejs.org/api/https.html#https_class_https_server), both of which inherit from the Node.js [net.Server](https://nodejs.org/api/net.html#net_class_net_server) class.
+
+The `ServerClass` **must** implement the `addClient(client)` function.
+
+The `client` argument to `addClient(client)` is an object with the following API:
+
+- `.disconnect()`, a function that can be called to force a client to disconnect from the server
+- `.onDisconnect(fn)`, function that _may_ be called in order to bind a function that will run when the client disconnects from the server.

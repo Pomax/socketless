@@ -7,8 +7,12 @@ class Client {
     this.users = [];
   }
 
+  onConnect() {
+    console.log(`client> connected to server.`);
+  }
+
   onDisconnect() {
-    console.log(`client ${this.id}> disconnected from server.`);
+    console.log(`client ${this.id}> was disconnected from server.`);
   }
 
   // ========================================================
@@ -24,7 +28,7 @@ class Client {
 
     // come up with a random name
     let name = this.name = (new Array(10)).fill(0).map(v => String.fromCharCode(97 + (26*Math.random()))).join('');
-    console.log(`client ${this.id} setting name to ${name}`);
+    console.log(`client ${this.id}> setting name to ${name}`);
     this.server.user.setName(name);
 
     // Request the user list
@@ -34,7 +38,10 @@ class Client {
     this.users = list;
 
     // Schedule a disconnect 5 seconds in the future.
-    setTimeout(async () => this.server.disconnect(), 5000);
+    setTimeout(async () => {
+      console.log(`client ${this.id}> disconnecting from server.`);
+      this.server.disconnect()
+    }, 5000);
 
     return { status: `registered` };
   }
@@ -42,10 +49,10 @@ class Client {
   /**
    * Record the fact that another user joined the collective
    */
-  async userJoined(user) {
-    if (this.users.indexOf(user) === -1) this.users.push(user);
+  async userJoined(id) {
+    if (this.users.indexOf(id) === -1) this.users.push(id);
     console.log(
-      `client ${this.id}> user ${user} joined. Known users:`,
+      `client ${this.id}> user ${id} joined. Known users:`,
       this.users
     );
   }
@@ -53,13 +60,20 @@ class Client {
   /**
    * Record the fact that some user left the collective
    */
-  async userLeft(user) {
-    let pos = this.users.findIndex(u => u === user);
+  async userLeft(id) {
+    let pos = this.users.findIndex(u => u === id);
     if (pos > -1) this.users.splice(pos, 1);
     console.log(
-      `client ${this.id}> user ${user} left. Known users:`,
+      `client ${this.id}> user ${id} left. Known users:`,
       this.users
     );
+  }
+
+  /**
+   * Note that a user changed their name
+   */
+  async userChangedName({ id, name }) {
+    console.log(`client ${this.id}> user ${id} changed name to ${name}.`);
   }
 
   /**

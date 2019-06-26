@@ -2,20 +2,20 @@ module.exports = function(clientServer, namespaces) {
   // ... docs go here ...
 
   return socket => {
-    const clientAPIs = {};
+    const clientProxy = {};
 
     namespaces.forEach(namespace => {
-      clientAPIs[namespace] = new clientServer.server[namespace].client(socket);
+      clientProxy[namespace] = new clientServer.server[namespace].client(socket);
     });
 
-    clientAPIs.disconnect = function() {
+    clientProxy.disconnect = function() {
       socket.disconnect(true);
     };
 
-    clientAPIs.onDisconnect = function(handler) {
+    clientProxy.onDisconnect = function(handler) {
       socket.on("disconnect", data => handler(data));
     };
 
-    return clientAPIs;
+    return clientProxy;
   };
 };

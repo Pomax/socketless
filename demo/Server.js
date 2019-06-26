@@ -59,7 +59,6 @@ class Server {
    * If this was the last connected client: shut down.
    */
   async disconnectClient(clientObj) {
-    console.log(`server> client ${clientObj.id} disconnected.`);
     let pos = this.clients.indexOf(clientObj);
     if (pos !== -1) {
       let removed = this.clients.splice(pos, 1)[0];
@@ -67,6 +66,9 @@ class Server {
         clientObj.client.user.userLeft(removed.id)
       );
     }
+
+    console.log(`server> client ${clientObj.id} was disconnected.`);
+
     if (this.clients.length === 0) {
       console.log(`server> nothing left to do, exiting...`);
       process.exit();
@@ -83,7 +85,15 @@ class Server {
   async setName(from, name) {
     const client = this.clients.find(v => v.client===from);
     client.name = name;
-    console.log(`server> client ${client.clientId} is now called "${name}"`);
+    console.log(`server> client ${client.id} is now called "${name}"`);
+
+    this.clients.forEach(other => {
+      if (other===client) return;
+      other.client.user.userChangedName({
+        id: client.id,
+        name: client.name
+      });
+    });
   }
 
   /**

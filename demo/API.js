@@ -12,7 +12,7 @@ const API = {
   },
 
   user: {
-    client: ["userJoined", "userLeft"],
+    client: ["userJoined", "userLeft", "userChangedName"],
     server: ["setName", "getUserList"]
   }
 };

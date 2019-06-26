@@ -35,14 +35,24 @@ function generateClientServer(API) {
    * can make direct calls against as if the server were a
    * locally accessible resource.
    */
-  factory.client.createServer = build.createServerProxy(factory, namespaces);
+  Object.defineProperty(factory.client, 'createServer', {
+    enumerable: false,
+    configurable: false,
+    writable: false,
+    value: build.createServerProxy(factory, namespaces)
+  });
 
   /**
    * This function creates a client-proxy object that servers
    * can make direct calls against as if the client were a
    * locally accessible resource.
    */
-  factory.server.createClient = build.createClientProxy(factory, namespaces);
+  Object.defineProperty(factory.server, 'createClient', {
+    enumerable: false,
+    configurable: false,
+    writable: false,
+    value: build.createClientProxy(factory, namespaces)
+  });
 
   /**
    * This function allows people to setup a web+socket server
@@ -60,4 +70,4 @@ function generateClientServer(API) {
   return factory;
 }
 
-module.exports = generateClientServer;
+module.exports = { generateClientServer };

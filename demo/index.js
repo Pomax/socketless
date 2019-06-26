@@ -1,6 +1,6 @@
 // Build our API objects:
 const API = require("./API");
-const generateClientServer = require("../src/generate-client-server.js");
+const { generateClientServer } = require("../src/generate-client-server.js");
 const ClientServer = generateClientServer(API);
 
 // And load the classes that will actually service API calls:
