@@ -17,6 +17,7 @@ class Client {
 
   // ========================================================
   // Client's API functions, which get "called" by the server
+  //    and use the $ symbol to effect handler namespacing
   // ========================================================
 
   /**
@@ -56,7 +57,7 @@ class Client {
    * has not been corrupted (due to networking/timing issues,
    * for example, or because someone modified their client).
    */
-  async "admin:getStateDigest"() {
+  async admin$getStateDigest() {
     console.log(`client ${this.id}> state digest requested.`);
     return { value: Math.random() };
   }
@@ -64,7 +65,7 @@ class Client {
   /**
    * Record the fact that another user joined the collective
    */
-  async "user:joined"(id) {
+  async user$joined(id) {
     if (this.users.indexOf(id) === -1) this.users.push(id);
     console.log(
       `client ${this.id}> user ${id} joined. Known users:`,
@@ -75,7 +76,7 @@ class Client {
   /**
    * Record the fact that some user left the collective
    */
-  async "user:left"(id) {
+  async user$left(id) {
     let pos = this.users.findIndex(u => u === id);
     if (pos > -1) this.users.splice(pos, 1);
     console.log(`client ${this.id}> user ${id} left. Known users:`, this.users);
@@ -84,7 +85,7 @@ class Client {
   /**
    * Note that a user changed their name
    */
-  async "user:changedName"({ id, name }) {
+  async user$changedName({ id, name }) {
     console.log(`client ${this.id}> user ${id} changed name to ${name}.`);
   }
 }

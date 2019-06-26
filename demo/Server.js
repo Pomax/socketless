@@ -77,6 +77,7 @@ class Server {
 
   // ========================================================
   // Server's API functions, which get "called" by the client
+  // and use the : symbol, with quotes, to effect namespacing
   // ========================================================
 
   /**
