@@ -1,11 +1,12 @@
 # Socketless
 
-This is a framework and methodology for implementing a websocket client/server solution in which you specify the API and handler functions, without every writing socket-related code, or even _seeing_ socket-related code.
+This is a framework and methodology for implementing a websocket client/server solution in which you specify the API and handler functions, without ever writing socket-related code, or even _seeing_ socket-related code.
 
 1. [Introduction](#introduction)
 2. [Quick-start](#quick-start)
 3. [Conventions](#conventions)
 4. [The `socketless` API](#the-socketless-api)
+5. [Bugs, feature-requests, and discussions](#bugs-feature-requests-and-discussions)
 
 ## Introduction
 
@@ -23,13 +24,13 @@ const API = {
 
     // the user namespace, for user related actions.
     user: {
-        client: ['userJoined', 'userLeft'],
+        client: ['joined', 'left'],
         server: ['setName', 'getUserList']
     }
 };
 ```
 
-You then run this API through the `socketless` transform, which generates a set of proxy objects that both take care of all the websocket code, as well as hide the fact that sockets are even used at all, allowing code to be written as if clients and the server have direct references to each other:
+You then run this API through the `generateClientServer` transform that `socketless` provides, which generates a set of proxy objects that both take care of all the websocket code, as well as hide the fact that sockets are even used at all, allowing code to be written as if clients and the server have direct references to each other:
 
 ```javascript
 class Client {
@@ -48,7 +49,7 @@ class Server {
 
     async addClient(client) {
         this.clients.push(client);
-        let confirmation = client.user.register(getNextClientId())
+        client.user.register(getNextClientId())
     }
 
     async getUserList() {
@@ -75,7 +76,7 @@ npm install socketless --save
 
 ### 1. Creating an API collection
 
-As mentioned above, an API collection is created by defining a namespaced API object, and then running that through the `socketless` transformer:
+As mentioned above, an API collection is created by defining a namespaced API object, and then running that through the `generateClientServer` transformer that `socketless` provides:
 
 ```javascript
 const { generateClientServer } = require('socketless');
@@ -105,8 +106,8 @@ class ServerClass {
     }
 
     addClient(client) {
-        this.clients.push(client);
         let clientId = this.clients.length;
+        this.clients.push(client);
         client.user.register(clientId);
     }
 
@@ -143,7 +144,7 @@ With that taken care of, we use that `ServerClass` to instantiate our server:
 
 const server = ClientServer.createServer(ServerClass)
 server.listen(0, () =>
-    console.log(`started server on port ${server.address().port})
+    console.log(`started server on port ${server.address().port}`)
 );
 ```
 
@@ -171,7 +172,7 @@ class ClientClass {
 }
 ```
 
-(Again, explicit namespacing can be achieved using either `$` or `:` with the function name in quotes). 
+(Again, explicit namespacing can be achieved using either `$`, or `:` with the function name in quotes).
 
 And then we make one (or more) Client(s) once the server is up:
 
@@ -202,13 +203,13 @@ This is a mildly opinionated framework, and so there are a few conventions that 
 
 The `API` object that you write, with namespaced lists of call names for clients and servers, is a promise about what your actual Client and Server classes will be implementing. You will recognize this pattern if you've ever worked in languages that use header files or interfaces.
 
-Any call that you list in your `API` object but do not have an implementation for in your client or server class will cause a hard error when invoking the `socketless` transform operation.
+Any call that you list in your `API` object but do not have an implementation for in your client or server class will generate a runtime error when invoked.
 
 ### Structuring client/server calls
 
-Both clients and servers can initial calls to one another, which can be either "fire and forget" or "wait for a response", with the only distinction between the two being the use of `await`.
+Both clients and servers can initiate calls to one another, which can be either "fire and forget" or "wait for a response", with the only distinction between the two being the use of `await`.
 
-Irrespective of whether you will be using `await` in an API handling function, all such functions **must** use the `async` keyword, as these calls map to network traffic, which is an inherently asynchronous affair.
+Irrespective of whether you will be using `await` in an API handling function, all handling functions **must** use the `async` keyword, as these calls map to network traffic, which is an inherently asynchronous affair.
 
 #### Fire-and-forget
 
@@ -242,7 +243,7 @@ class ClientClass {
 }
 ```
 
-This will send a trigger for the `doThingPlease` API handler function on the server and then wait for the server to send back whatever data it is expected to send back. As such, our next line of code will _not_ run until the server has responded with data that we can then immediately make use of.
+This will send a trigger for the `doThingPlease` API handler function on the server and then wait for the server to send back whatever data it is expected to send back. As such, our next line of code will _not_ run until the server has responded with data that we can then immediately make use of. However, our code is not _stalled_ on this operation, and will continue to service other incoming calls in a way that, for practical purposes, can be treated as normal parallel processing.
 
 ### Structuring client/server code
 
@@ -275,11 +276,11 @@ The `client` argument passed to the `addClient(client)` function also has a `.di
 
 #### Client specifics
 
-Client classes are not passed a reference to the server they connected to, instead they can rely on the fact that `this.server` always resolves inside any class function. Note that this does _not_ include the constructor, as clients need to constructed before they can be connected to a server.
+Client classes are not passed a reference to the server they connected to. Instead, they can rely on the fact that `this.server` always resolves inside any class function. Note that this does _not_ include the constructor, as clients need to constructed before they can be connected to a server.
 
-Client classes may implement the `onConnect()` function, which is called when a client instance has connected to the server. This function does not take any arguments. This function does not require the `async` keyword.
+Client classes may implement the `onConnect()` function, which is called when a client instance has connected to the server. This function does not take any arguments, and does not require the `async` keyword.
 
-Client classes may implement the `onDisconnect()` function, which is called when the server explicitly disconnects the client, whether intentionally (e.g. because the client requested to be disconnected) or not (e.g. the server got shut down). This function does not take any arguments. This function does not require the `async` keyword.
+Client classes may implement the `onDisconnect()` function, which is called when the server explicitly disconnects the client, whether intentionally (e.g. because the client requested to be disconnected) or not (e.g. the server got shut down). This function also does not take any arguments, and also does not require the `async` keyword.
 
 ```javascript
 class Client {
@@ -296,7 +297,7 @@ class Client {
 
 ## The `socketless` API
 
-The `socketless` library exports a single function called `generateClientServer` that acts as transformer for namespaced API object of the form:
+The `socketless` library exports a single function called `generateClientServer` that acts as transformer for namespaced API objects of the form:
 
 ```javascript
 const API = {
@@ -329,7 +330,7 @@ This function creates a socket client to the indicated URL, with all the bells a
 
 The `ClientClass` _may_ implement `onConnect()` and `onDisconnect()` to receive server connection and disconnection notifications, respectively.
 
-Any function in the `ClientClass` (except the constructor) can use `this.server` to making API calls to the server. See the [Structuring client/server calls](#structuring-client-server-calls) section for more details.
+Any function in the `ClientClass` (except the constructor) can use `this.server` to make API calls to the server. See the [Structuring client/server calls](#structuring-client-server-calls) section for more details.
 
 
 #### namespacing API call handler functions
@@ -348,7 +349,7 @@ or by using `:` as namespace separator, with the full function name in quotes:
 async "namespace:name"(...) {
     ...
 }
-```  
+```
 
 ### • Creating servers: `ClientServer.createServer`
 
@@ -358,7 +359,7 @@ This function has the following signature:
 
 This function creates a web+socket server. If the `https` argument is set to `true`, this will create an HTTPS server, otherwise an HTTP server will be stood up. This function returns a reference to the server, which will either be a Node.js [Http.Server](https://nodejs.org/api/http.html#http_class_http_server) or a Node.js [Https.Server](https://nodejs.org/api/https.html#https_class_https_server), both of which inherit from the Node.js [net.Server](https://nodejs.org/api/net.html#net_class_net_server) class.
 
-In order to start the server, use the standard Node.js server listen pattern (either using an explicit port, or 0 to automatically pick whatever open port is available):
+In order to start the server, use the standard Node.js server listen pattern (either using an explicit port, or 0 to automatically pick whiever open port is available):
 
 ```javascript
 server.listen(0, () => {
@@ -370,8 +371,8 @@ The `ServerClass` **must** implement the `addClient(client)` function.
 
 The `client` argument to `addClient(client)` is an object with the following API:
 
-- `.disconnect()`, a function that can be called to force a client to disconnect from the server
-- `.onDisconnect(fn)`, function that _may_ be called in order to bind a function that will run when the client disconnects from the server.
+- `.disconnect()`, which can be called to force a client to disconnect from the server
+- `.onDisconnect(fn)`, which _may_ be called in order to bind a function that will run when the client disconnects from the server.
 
 #### namespacing API call handler functions
 
@@ -390,3 +391,9 @@ async "namespace:name"(...) {
     ...
 }
 ```
+
+## Bugs, feature-requests, and discussions
+
+Please head on over to the [issue tracker]() for the `socketless` library if you think you've found any bugs, have ideas that you would like to express as one or more feature requests, or have questions that you think need to be discussed regarding this library, the framework it offers, and the conventions it uses.
+
+For more casual interaction, you can always [tweet](https://twitter.com/TheRealPomax) or [toot](https://mastodon.cloud/web/accounts/112330) at me.
