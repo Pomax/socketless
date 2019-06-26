@@ -196,7 +196,7 @@ Fire-and-forget calls simply call the relevant API function and move on:
 ```javascript
 class ClientClass {
     ...
-    async triggerDoThing() {       
+    async triggerDoThing() {
         server.namespace.doThingPlease();
         console.log('done');
     }
@@ -213,7 +213,7 @@ If a call should return some data, such as asking a server for a user list, or n
 ```javascript
 class ClientClass {
     ...
-    async triggerDoThing() {       
+    async triggerDoThing() {
         let result = await server.namespace.doThingPlease();
         console.log(result);
     }
@@ -225,7 +225,7 @@ This will send a trigger for the `doThingPlease` API handler function on the ser
 
 ### Structuring client/server code
 
-In order to keep your code easy to maintain, it is recommended that you write your ClientClass and ServerClass classes as minimally as possible, with your real Client and Server classes extending these, so that your Client/Server classes primarily contain normal code, inheriting the actual API handling from their superclass. You don't _have_ to do this of course, but the whole reason this library exist is to keep code easy to maintain, so: keep your classes small and focussed. It makes your life easier.   
+In order to keep your code easy to maintain, it is recommended that you write your ClientClass and ServerClass classes as minimally as possible, with your real Client and Server classes extending these, so that your Client/Server classes primarily contain normal code, inheriting the actual API handling from their superclass. You don't _have_ to do this of course, but the whole reason this library exist is to keep code easy to maintain, so: keep your classes small and focussed. It makes your life easier.
 
 #### Server specifics
 
@@ -250,7 +250,7 @@ class ServerClass{
     ...
 ```
 
-The `client` argument passed to the `addClient(client)` function also has a `.disconnect()` function that can be called by the server to force a client to disconnect and clean up the socket connection between the two.  
+The `client` argument passed to the `addClient(client)` function also has a `.disconnect()` function that can be called by the server to force a client to disconnect and clean up the socket connection between the two.
 
 #### Client specifics
 
@@ -288,18 +288,18 @@ const API = {
 ```
 
 This is then used to generate an actual `ClientServer` object as:
- 
+
 ```
 const API = ...
 const { generateClientServer } = require('socketless');
-const ClientServer = generateClientServer(API); 
+const ClientServer = generateClientServer(API);
 ```
 
 After which the `ClientServer` object can be used to bootstrap both clients and servers.
 
-### `ClientServer.createClient(ClientClass:class)`
+### `ClientServer.createClient(serverURL:urlstring, ClientClass:class)`
 
-Creates a socket client with all the bells and whistles taken care of. This function does not return a reference to the client, as clients are responsible for their own life cycle as implemented in their `ClientClass`.
+Creates a socket client to the indicated URL, with all the bells and whistles taken care of. This function does not return a reference to the client, as clients are responsible for their own life cycle as implemented in their `ClientClass`.
 
 The `ClientClass` _may_ implement `onConnect()` and `onDisconnect()` to receive server connection and disconnection notifications, respectively.
 
@@ -307,7 +307,7 @@ Any function in the `ClientClass` (except the constructor) can use `this.server`
 
 ### `server = ClientServer.createServer(ServerClass:class [,https:boolean])`
 
-Creates a web+socket server. If the `https` argument is set to `true`, this will create an HTTPS server, otherwise an HTTP server will be stood up. 
+Creates a web+socket server. If the `https` argument is set to `true`, this will create an HTTPS server, otherwise an HTTP server will be stood up.
 
 This function returns a reference to the server, which will either be a Node.js [Http.Server](https://nodejs.org/api/http.html#http_class_http_server) or a Node.js [Https.Server](https://nodejs.org/api/https.html#https_class_https_server), both of which inherit from the Node.js [net.Server](https://nodejs.org/api/net.html#net_class_net_server) class.
 
