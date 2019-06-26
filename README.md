@@ -396,4 +396,4 @@ async "namespace:name"(...) {
 
 Please head on over to the [issue tracker]() for the `socketless` library if you think you've found any bugs, have ideas that you would like to express as one or more feature requests, or have questions that you think need to be discussed regarding this library, the framework it offers, and the conventions it uses.
 
-For more casual interaction, you can always [tweet](https://twitter.com/TheRealPomax) or [toot](https://mastodon.cloud/web/accounts/112330) at me.
+For more casual interaction, you can always [tweet](https://twitter.com/TheRealPomax) or [toot](https://mastodon.cloud/@TheRealPomax) at me.
