@@ -42,7 +42,7 @@ class ServerClass {
 
 You then pass these two classes to the `generateClientServer` transform that `socketless` provides, which generates a set of proxy objects that both take care of all the websocket code, as well as hides the fact that sockets are even used at all, allowing code to be written as if clients and the server have direct references to each other.
 
-All _you_ need to do is stand you clients and server with a few lines of code:
+All _you_ need to do is stand up your clients and server with a few lines of code:
 
 ```javascript
 const ClientClass = ...;
