@@ -169,7 +169,7 @@ server.listen(8080, () => {
 
 ### 5. Read through an example
 
-Have a look at the [demo](https://github.com/Pomax/socketless/tree/master/demo) directory, to see an example of a simple client/server setup with code in place that starts a server and three clients, has the server inform each client what their `id` is when they connect, adding them to a list of known users, and where each client invents a random name for themselves upon registration, informeds the server of that name and then asks the server for the user list that the server's maintaining, automatically getting notified of individual join/leave actions when they occur.
+Have a look at the [demo](https://github.com/Pomax/socketless/tree/master/demo) directory, to see an example of a simple client/server setup with code in place that starts a server and three clients, has the server inform each client what their `id` is when they connect, adding them to a list of known users, and where each client invents a random name for themselves upon registration, informs the server of that name and then asks the server for the user list that the server's maintaining, automatically getting notified of individual join/leave actions when they occur.
 
 You can run this demo using `npm test` in the `socketless` directory.
 
