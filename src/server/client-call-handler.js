@@ -20,28 +20,38 @@ module.exports = function(namespace, serverFn) {
   ClientCallHandler.prototype = {};
 
   serverFn.forEach(name => {
+    // The initial binding has to "find" the function that needs to be used.
     ClientCallHandler.prototype[name] = async function(data, respond) {
+      const clientCallHandler = this;
+
+      // Determing whether we can use explicit namespacing:
       let process = this.handler[`${namespace}:${name}`];
       if (!process) process = this.handler[`${namespace}$${name}`];
       if (!process) process = this.handler[name];
 
+      // Throw if there is no processing function at all:
       if (!process) {
         throw new Error(`Missing handler.${name} in ClientCallHandler.${name}`);
       }
 
-      process = process.bind(this.handler);
-
+      // Throw if this is a processing function, but it's not declared async:
       if (process.constructor.name !== "AsyncFunction") {
         throw new Error(
           `Missing 'async' keyword for handler.${name} in ClientCallHandler.${name}`
         );
       }
 
-      let response = await process(
-        this.socket.clientServer.client.instance,
-        data
-      );
+      // ensure that the function will run with the
+      // correct object as its execution context:
+      process = process.bind(this.handler);
+
+      // As we now know which function to actually route through, rebind
+      // the servercallhandler function so that it immediately uses that.
+      const client = this.socket.clientServer.client.instance;
+      const response = await process(client, data);
       if (response) respond(response);
+
+      // TODO: optimise this so that ClientCallHandler.prototype[name] gets rebound after the initial process() lookup.
     };
   });
 

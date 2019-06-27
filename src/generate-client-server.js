@@ -1,5 +1,14 @@
 const build = require("./build.js");
 
+function attach(object, fname, value) {
+  Object.defineProperty(object, fname, {
+    enumerable: false,
+    configurable: false,
+    writable: false,
+    value: value
+  });
+}
+
 /**
  * Turn an API definition, like above, into an object with the four classes
  * required by the clients and server.
@@ -35,36 +44,26 @@ function generateClientServer(API) {
    * can make direct calls against as if the server were a
    * locally accessible resource.
    */
-  Object.defineProperty(factory.client, 'createServer', {
-    enumerable: false,
-    configurable: false,
-    writable: false,
-    value: build.createServerProxy(factory, namespaces)
-  });
+  attach(factory.client, 'createServer', build.createServerProxy(factory, namespaces));
 
   /**
    * This function creates a client-proxy object that servers
    * can make direct calls against as if the client were a
    * locally accessible resource.
    */
-  Object.defineProperty(factory.server, 'createClient', {
-    enumerable: false,
-    configurable: false,
-    writable: false,
-    value: build.createClientProxy(factory, namespaces)
-  });
+  attach(factory.server, 'createClient', build.createClientProxy(factory, namespaces));
 
   /**
    * This function allows people to setup a web+socket server
    * without having to ever explicitly write socketio code.
    */
-  factory.createServer = build.createServer(factory, namespaces);
+  attach(factory, 'createServer', build.createServer(factory, namespaces));
 
   /**
    * This allows people to setup a socket client without
    * having to ever explicitly write socketio code.
    */
-  factory.createClient = build.createClient(factory);
+  attach(factory, 'createClient', build.createClient(factory));
 
   // And we're done!
   return factory;
