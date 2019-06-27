@@ -1,6 +1,6 @@
 {
   "name": "socketless",
-  "version": "0.6.2",
+  "version": "0.6.3",
   "description": "A framework and methodology for using socket.io without writing any socket code yourself.",
   "main": "src/generate-client-server.js",
   "scripts": {
