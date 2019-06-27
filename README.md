@@ -1,6 +1,6 @@
 # Socketless
 
-This is a framework and methodology for implementing a websocket client/server solution in which you specify the API and handler functions, without ever writing socket-related code, or even _seeing_ socket-related code.
+This is a framework and methodology for implementing a websocket client/server solution in which you write your code as normal, using namespaced function names, without ever having to think about how the network side of things is supposed to work. It'll simply work, and you can write code as if you're working on a socketless code base. 
 
 1. [Introduction](#introduction)
 2. [Quick-start](#quick-start)
@@ -12,7 +12,7 @@ This is a framework and methodology for implementing a websocket client/server s
 
 This project was born out of a need to write quite a lot of communication between a game server and its clients, which gets _really_ verbose, really fast, if you need to express all your calls in terms of `socket.on` and `socket.emit()` instructions, especially if you're also writing pass-through handlers in order to keep your code to stay relatively clean and maintainable.
 
-So, instead, this framework lets you a Client class, with namespaced functions (using either `async namespace$name()` or `async "namespace:name"()` format), and a Server class, with namespaced functions (using the same convention):
+So, instead, this framework lets you specify a Client class, with namespaced functions (using either `async namespace$name()` or `async "namespace:name"()` format), and a Server class, with namespaced functions (using the same convention), as all the code you need to write:
 
 ```javascript
 class ClientClass {
@@ -40,7 +40,9 @@ class ServerClass {
 }
 ```
 
-You then pass these two classes to the `generateClientServer` transform that `socketless` provides, which generates a set of proxy objects that both take care of all the websocket code, as well as hide the fact that sockets are even used at all, allowing code to be written as if clients and the server have direct references to each other:
+You then pass these two classes to the `generateClientServer` transform that `socketless` provides, which generates a set of proxy objects that both take care of all the websocket code, as well as hides the fact that sockets are even used at all, allowing code to be written as if clients and the server have direct references to each other.
+
+All _you_ need to do is stand you clients and server with a few lines of code:
 
 ```javascript
 const ClientClass = ...;
@@ -48,7 +50,7 @@ const ServerClass = ...;
 const { generateClientServer } = require('socketless');
 const ClientServer = generateClientServer(ClientClass, ServerClass);
 
-// create a server:
+// stand up a server:
 const server = ClientServer.createServer();
 
 // fire up the server and connect three clients:
@@ -61,11 +63,11 @@ server.listen(8080, () => {
 });
 ```
 
-And we're done.
+And that's it, we're done.
 
 Seriously: that's all we have to do.
 
-we now have a fully functional websocket client/server setup, where both clients and server can talk to each other as if they had local references to each other's functions.
+We now have a fully functional websocket client/server setup, where both clients and server can talk to each other as if they had local references to each other's functions.
 
 You might have noticed that both the Client and Server classes use the `async` keyword for their API functions: this is critically important. In order to allow not just automatic socket handling, but also automatic data routing over an inherently asynchronous network connection, all functions must be declared `async`. This lets the framework treat socket communication as promises, with automatic registration and deregistration of response events.
 
