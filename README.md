@@ -1,6 +1,6 @@
 # Socketless
 
-This is a framework and methodology for implementing a websocket client/server solution in which you write your code as normal, using namespaced function names, without ever having to think about how the network side of things is supposed to work. It'll simply work, and you can write code as if you're working on a socketless code base. 
+This is a framework and methodology for implementing a websocket client/server solution in which you write your code as normal, using namespaced function names, without ever having to think about how the network side of things is supposed to work. It'll simply work, and you can write code as if you're working on a socketless code base.
 
 1. [Introduction](#introduction)
 2. [Quick-start](#quick-start)
@@ -98,7 +98,7 @@ Create a Server class with namespaced functions for everything you want the serv
 
 For namespacing you have two choices: you can either use `async namespace$name()`, or `async "namespace:name"()`, the first uses the legal-in-names character `$`, but may look quite ugly to many developers, the second uses the illegal-in-names character `:` and so requires the full function name to be written in quotes. Pick whichever you like best.
 
-For the purpose of this quick start, we'll use the `async "namespace:name"()` format: 
+For the purpose of this quick start, we'll use the `async "namespace:name"()` format:
 
 ```javascript
 
@@ -173,7 +173,7 @@ Have a look at the [demo](https://github.com/Pomax/socketless/tree/master/demo) 
 
 You can run this demo using `npm test` in the `socketless` directory.
 
-This test can also be run using independent processes for the clients and server, by using `npm test:distributed`, which runs separate node processes for the server and each client so you can verify that things don't work just because we build the server and clients in the same script. However, because this spawns genuinely independent processes, this test mostly exists to demonstrate that "things work", rather than offering you an easy way to examine what actually happens. 
+This test can also be run using independent processes for the clients and server, by using `npm test:distributed`, which runs separate node processes for the server and each client so you can verify that things don't work just because we build the server and clients in the same script. However, because this spawns genuinely independent processes, this test mostly exists to demonstrate that "things work", rather than offering you an easy way to examine what actually happens.
 
 ## Conventions
 
@@ -355,6 +355,6 @@ server.listen(0, () => {
 
 ## Bugs, feature-requests, and discussions
 
-Please head on over to the [issue tracker]() for the `socketless` library if you think you've found any bugs, have ideas that you would like to express as one or more feature requests, or have questions that you think need to be discussed regarding this library, the framework it offers, and the conventions it uses.
+Please head on over to the [issue tracker](https://github.com/Pomax/socketless/issues) for the `socketless` library if you think you've found any bugs, have ideas that you would like to express as one or more feature requests, or have questions that you think need to be discussed regarding this library, the framework it offers, and the conventions it uses.
 
 For more casual interaction, you can always [tweet](https://twitter.com/TheRealPomax) or [toot](https://mastodon.cloud/@TheRealPomax) at me.
