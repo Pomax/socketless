@@ -1,14 +1,11 @@
-// Build our API objects:
-const API = require("./API");
+// Build our ClientServer object:
 const { generateClientServer } = require("../src/generate-client-server.js");
-const ClientServer = generateClientServer(API);
-
-// And load the classes that will actually service API calls:
-const ClientClass = require("./Client");
-const ServerClass = require("./Server");
+const ClientClass = require("./Client.js");
+const ServerClass = require("./Server.js");
+const ClientServer = generateClientServer(ClientClass, ServerClass);
 
 // Set up the server:
-const server = ClientServer.createServer(ServerClass);
+const server = ClientServer.createServer();
 
 // (and start it)
 server.listen(0, () => {
@@ -22,7 +19,7 @@ server.listen(0, () => {
   console.log(`index> building ${count} clients`);
   (function generateClient() {
     if (count--) {
-      ClientServer.createClient(serverURL, ClientClass);
+      ClientServer.createClient(serverURL);
       setTimeout(generateClient, 1000);
     }
   })();

@@ -25,17 +25,16 @@ module.exports = function(namespace, clientFn) {
       // Determing whether we can use explicit namespacing:
       let process = this.handler[`${namespace}:${name}`];
       if (!process) process = this.handler[`${namespace}$${name}`];
-      if (!process) process = this.handler[name];
 
       // Throw if there is no processing function at all:
       if (!process) {
-        throw new Error(`Missing handler.${name} in ServerCallHandler.${name}`);
+        throw new Error(`Missing handler.${namespace}:${name} in ServerCallHandler.${namespace}.${name}`);
       }
 
       // Throw if this is a processing function, but it's not declared async:
       if (process.constructor.name !== "AsyncFunction") {
         throw new Error(
-          `Missing 'async' keyword for handler.${name} in ServerCallHandler.${name}`
+          `Missing 'async' keyword for handler.${handler}:${name} in ServerCallHandler.${namespace}.${name}`
         );
       }
 
