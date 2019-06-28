@@ -5,7 +5,7 @@
 class Server {
   constructor() {
     this.clientIdCounter = 0;
-    this.clients = [];
+    this.users = [];
   }
 
   /**
@@ -15,31 +15,24 @@ class Server {
    * notifying all other clients of the connection.
    */
   async onConnect(client) {
-    client = {
-      id: this.clientIdCounter++,
-      api: client
-    };
-
-    this.clients.push(client);
-
-    console.log(
-      `server> client connected to the server (assigned id ${client.id}).`
-    );
+    const user = { id: this.clientIdCounter++, client };
+    this.users.push(user);
+    console.log(`server> client (id=${user.id}) connected to the server.`);
 
     // Clone the user list so we can notify "everyone except this client" of the join
-    const otherClients = this.clients.slice();
-    await client.api.admin.register(client.id);
+    const otherUsers = this.users.slice();
+    await client.admin.register(user.id);
     console.log(`server> client confirmed registration`);
 
     // Notify all users that this client propely joined
-    otherClients.forEach(other => other.api.user.joined(client.id));
+    otherUsers.forEach(other => other.client.user.joined(user.id));
 
     // And schdule a call in the future for this client
     // to say what its state digest is, for verification
     // purposes. We don't actually use this for anything
     // real, it's mostly there to show off a call.
     setTimeout(async () => {
-      let digest = await client.api.admin.getStateDigest();
+      let digest = await client.admin.getStateDigest();
       console.log(`server> client digest = ${digest.value}`);
     }, 1000);
   }
@@ -49,16 +42,15 @@ class Server {
    * If this was the last connected client: shut down.
    */
   async onDisconnect(client) {
-    client = this.clients.find(v => v.api===client);
-
-    console.log(`server> client ${client.id} was disconnected.`);
+    const user = this.users.find(v => v.client === client);
+    console.log(`server> client ${user.id} was disconnected.`);
 
     if (this.getConnectedClients().length === 0) {
       console.log(`server> nothing left to do, exiting...`);
       process.exit();
     }
 
-    this.clients.forEach(other => other.api.user.left(client.id));
+    this.users.forEach(other => other.client.user.left(user.id));
   }
 
   // ========================================================
@@ -70,13 +62,13 @@ class Server {
    * Record the fact that a client provided a (new) name.
    */
   async "user:setName"(from, name) {
-    const client = this.clients.find(v => v.api === from);
-    client.name = name;
-    console.log(`server> client ${client.id} is now called "${name}"`);
+    const user = this.users.find(v => v.client === from);
+    user.name = name;
+    console.log(`server> client ${user.id} is now called "${name}"`);
 
-    this.clients.forEach(other => {
-      if (other === client) return;
-      other.api.user.changedName({ id: client.id, name: client.name });
+    this.users.forEach(other => {
+      if (other === user) return;
+      other.client.user.changedName({ id: user.id, name: user.name });
     });
   }
 
@@ -85,7 +77,7 @@ class Server {
    */
   async "user:getUserList"() {
     console.log(`server> sending user list`);
-    return this.clients.map(c => c.id);
+    return this.users.map(c => c.id);
   }
 }
 
