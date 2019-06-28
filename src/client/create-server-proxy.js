@@ -7,7 +7,11 @@ module.exports = function(clientServer, namespaces) {
     namespaces.forEach(namespace => {
       let clientAPI = clientServer.client[namespace];
       new clientAPI.handler(socket, handler);
-      serverProxy[namespace] = new clientAPI.server(socket);
+      Object.defineProperty(serverProxy, namespace, {
+        configurable: false,
+        writable: false,
+        value: new clientAPI.server(socket)
+      });
     });
 
     serverProxy.disconnect = function() {
@@ -16,6 +20,12 @@ module.exports = function(clientServer, namespaces) {
 
     serverProxy.onDisconnect = function(handler) {
       socket.on("disconnect", data => handler(data));
+    };
+
+    serverProxy.broadcast = function(functionref, data) {
+      let fname = functionref.name.replace(/\$/g, `:`);
+      let evtname = `broadcast:${fname}`;
+      socket.emit(evtname, data);
     };
 
     return serverProxy;

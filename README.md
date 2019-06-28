@@ -16,9 +16,6 @@ So, instead, this framework lets you specify a Client class, with namespaced fun
 
 ```javascript
 class ClientClass {
-    constructor() {
-        this.id = -1;
-    }
     async "admin:register"(clientId) {
         this.id = clientId;
         this.users = await this.server.user.getUserList();
@@ -26,12 +23,8 @@ class ClientClass {
 }
 
 class ServerClass {
-    constructor() {
-        this.clients = [];
-    }
     async addClient(client) {
         client.id = getNextClientId();
-        this.clients.push(client);
         client.admin.register(client.id);
     }
     async "user:getUserList"() {
@@ -94,7 +87,7 @@ const ClientServer = generateClientServer(ClientClass, ServerClass);
 
 ### 2. Create a Server class
 
-Create a Server class with namespaced functions for everything you want the server to be able to do, as well as a function with signature `addClient(client)`, which gets called by `socketless` any time a client connects to your server.
+Create a Server class with namespaced functions for everything you want the server to be able to do. This class may implement two special functions for custom logic when clients connect and disconnect, using the `onConnect(client)` and `onDisconnect(client)` signatures.
 
 For namespacing you have two choices: you can either use `async namespace$name()`, or `async "namespace:name"()`, the first uses the legal-in-names character `$`, but may look quite ugly to many developers, the second uses the illegal-in-names character `:` and so requires the full function name to be written in quotes. Pick whichever you like best.
 
@@ -103,14 +96,9 @@ For the purpose of this quick start, we'll use the `async "namespace:name"()` fo
 ```javascript
 
 class ServerClass {
-    constructor() {
-        this.clients = [];
-    }
-
-    addClient(client) {
-        let clientId = this.clients.length;
-        this.clients.push(client);
-        client.admin.register(clientId);
+    onConnect(client) {
+        client.id = this.clients.length;
+        client.admin.register(client.id);
     }
 
     async "user:setName"(from, name) {
@@ -120,7 +108,11 @@ class ServerClass {
 }
 ```
 
-Note that all API handling functions in a server class are passed a reference to the client that made the API call as the `from` argument, universally passed as the first argument to any API call handling function.
+You might notice a few things:
+
+1. There is a `this.clients` that is (unsurprisingly) the list of all clients connected to this server. This list is maintained for you by `socketless`.
+2. You can set properties on clients. Normally this would be incredibly unsafe because it means you could overwrite API functions, but `socketless` binds those with write protection, so even if you did try to overwrite them, your code would throw a runtime exception. 
+3. all API handling functions in a server class are passed a reference to the client that made the API call as the `from` argument, universally passed as the first argument to any API call handling function:
 
 If you have code in your Client class that calls `this.server.namespace.doThing(data)`, then your Server class should have a handling function with signature `async "namespace:doThing"(from, data) { ... }` (or `async namespace$doThing(from, data) { ... }` depending on your preferred style of namespacing).
 
@@ -134,15 +126,27 @@ class ClientClass {
         this.id = -1;
     }
 
-    async "admin:register"(clientId) {
-        this.id = clientId;
+    async "admin:register"(id) {
+        this.id = id;
         let name = this.name = generateRandomName();
         this.server.user.setName(name);
+		this.server.broadcast(this["chat:message"], {
+            name: name,
+            message: "hello!"
+        });
     }
+
+    async "chat:message"(name, message) {
+        if (name !== this.name) {
+            console.log(`${name}> ${message}`);
+        }
+    } 
 }
 ```
 
 Note that API call handling functions for clients are not passed a `from`, as clients are connected to a single server. The origin of the call is always known, and the server proxy can always be referenced as `this.server` inside any API handling function that the client makes use of.
+
+Also, you may notice that `broadcast` call, which points to the client's own `chat:message` function. This lets clients send a message "to everyone connected to the server" (including themselves). Also, rather than passing a string, which can have typos, or even be a functions that doesn't exist, you refer _directly_ to the function that needs to get called: all clients are built off of the same class, so we already know which function is supposed to be handling the data that's getting broadcast. 
 
 ### 4. Start talking to each other
 
@@ -181,7 +185,77 @@ This is a mildly opinionated framework, and so there are a few conventions that 
 
 ### You know your API
 
-The code relies on any client or server call you make having a corresponding handler defined in the server and client classes you write. As such, any call that you list in your `API` object but do not have an implementation for in your client or server class will generate a runtime error when invoked: this library cannot "inspect" your code to warn you about calls for which you didn't write any handling functions.
+The code relies on the fact that you know which functions exist, with client and server calls mapping to the corresponding functions in your client and server classes. However, the code can't automatically check that every call you're making doesn't have a typo, or points to a missing function, so rather than trying to parse your code to see whether there are any missing call handlers, `socketless` assumes you know which functions exist, and will throw a runtime error if you make any calls that don't have a corresponding handling function.
+
+Also, if you're manually specifying your API interface (see section below), any call that you list in your `API` object that does not have a corresponding handler implemented (either namespaced or namespaceless) will throw a runtime error.
+
+#### Bypassing the magic: manually specifying the API
+
+If you don't want to use namespacing, or you have functions in the client or server that are placeholders and not meant to be called "yet", you can manually specify the API interface that `generateClientServer` uses to build up all the internal code. 
+
+To do this, create an object of the form:
+
+```
+const API = {
+    namespace1: {
+        client: ['functionname1', 'functionname2', ...],
+        server: [...]
+    }, 
+    namespace2: {
+        ...
+    }, 
+    ...
+};
+```
+
+And then call `generateClientServer` with this API as third argument:
+
+```
+const ClientClass = require('./client-class.js');
+const ServerClass = require('./server-class.js');
+const API = ...
+const { generateClientServer } = require('socketless');
+const ClientServer = generateClientServer(ClientClass, ServerClass, API);
+``` 
+
+When using this approach, call handlers do not _need_ to be namespaced (although you'll run into naming conflicts if you declare the same handling function name for different namespaces):
+
+```
+const API = {
+    admin: {
+        client: ["register"],
+        server: []
+    },
+    chat: {
+        client: ["chatMessage"],
+        server: []
+    }
+}
+
+class ClientClass {
+    async register(id) {
+        this.id = id;
+        this.server.broadcast(this.chatMessage, {
+            id: id,
+            msg: "hi"
+        });
+    }
+    async chatMessage({ id, msg }) {
+      ...
+    }
+}
+
+let clientId = 0;
+
+class ServerClass {
+    onConnect(client) {
+        client.admin.register(clientId++);
+    }
+}
+
+const { generateClientServer } = require('socketless');
+const ClientServer = generateClientServer(ClientClass, ServerClass, API);
+``` 
 
 ### Structuring client/server calls
 
@@ -229,28 +303,13 @@ In order to keep your code easy to maintain, it is recommended that you write yo
 
 #### Server class specifics
 
-Server classes **must** implement the `addClient(client)` function, which is called automatically when clients connect to the server. Any code that should run based on clients connecting should be either in, or called in, this function. This function does not need to be marked `async` as far as the framework is concerned, but of course if you're going to be writing anything that has an `await`, you'll need to mark it as `async` simply because you can't use `await` in a plain function.
+Server classes receive a `this.getConnectedClients()` function for inspecting the list of connected clients. 
 
-The `client` argument passed to the `addClient(client)` function is the proxy instance that can be used to make remote calls by writing code that looks like local calls. In addition to the namespaced API functions it will have due to your own setup, this `client` also has an `.onDisconnect(fn)` function that can be called to "do something" when the client disconnects from the server, with `fn` being any function that should run.
+Server classes _may_ implement the `onConnect(client)` function, which is called after a client has been connected to the server and recorded in the internal client list. This function does not need to be marked `async` as far as the framework is concerned, but of course if you're going to be writing anything that has an `await`, you'll need to mark it as `async` simply because you can't use `await` in a plain function.
 
-You typically want to combine these two functions:
+Similarly, server classes _may_ implement the `onDisconnect(client)` function, which is called after a client has been disconnected from the server and removed from the internal client list. This function also does not need to be marked `async`.
 
-```javascript
-class ServerClass{
-    ...
-    async addClient(client) {
-      this.clients.push(client);
-      client.onDisconnect(() => this.removeClient(client));
-      ...
-    }
-    async removeClient(client) {
-      let pos = this.clients.find(v => v===client);
-      list.splice(pos, 1);
-    }
-    ...
-```
-
-The `client` argument passed to the `addClient(client)` function also has a `.disconnect()` function that can be called by the server to forcefully disconnect a client and clean up the socket connection that was used.
+The `client` argument passed to the `onConnect` and `onDisconnect` functions is a proxy instance that can be used to make remote calls by writing code that looks like local calls. In addition to the namespaced API functions it will have due to the code you wrote for clients, this `client` also has a `disconnect()` function to force it to disconnect from the server.
 
 #### Client class specifics
 
@@ -292,6 +351,19 @@ The `ClientClass` _may_ implement `onConnect()` and `onDisconnect()` to receive 
 
 Any function in the `ClientClass` (except the constructor) can use `this.server` to make API calls to the server. See the [Structuring client/server calls](#structuring-client-server-calls) section for more details.
 
+Any function in the `ClientClass` (except the constructor) can use `this.server.broadcast(functionReference, data)`, which will get routed to every client connected to the server, _including the sender_. The `functionReference` is literally a reference to one of the client's own functions:
+
+```
+class ClientClass {
+    async someFunction() {
+        this.server.broadcast(this.someOtherFunction, "test");
+    }
+    async someOtherFunction(stringData) {
+        console.log(`triggered by broadcast: ${stringData}`);
+    }
+}
+``` 
+
 #### namespacing of call handler functions
 
 Any API call handling function in a Client class **must** be namespaced, using either `$` as namespace separator:
@@ -316,12 +388,14 @@ This function creates a socket client to the indicated URL, with all the bells a
 
 ### • Server classes
 
-The `ServerClass` **must** implement the `addClient(client)` function.
+The `ServerClass` _may_ implement the `onConnect(client)` function.
 
-The `client` argument to `addClient(client)` is an object with the following API:
+The `ServerClass` _may_ implement the `onDisconnect(client)` function.
 
-- `.disconnect()`, which can be called to force a client to disconnect from the server
-- `.onDisconnect(fn)`, which _may_ be called in order to bind a function that will run when the client disconnects from the server.
+The `client` argument to these functions is a client proxy object with one extra function:
+
+- `client.disconnect()`, which can be called to force a client to disconnect from the server
+
 
 #### namespacing API call handler functions
 

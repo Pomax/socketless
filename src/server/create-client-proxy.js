@@ -5,7 +5,11 @@ module.exports = function(clientServer, namespaces) {
     const clientProxy = {};
 
     namespaces.forEach(namespace => {
-      clientProxy[namespace] = new clientServer.server[namespace].client(socket);
+      Object.defineProperty(clientProxy, namespace, {
+        configurable: false,
+        writable: false,
+        value: new clientServer.server[namespace].client(socket)
+      });
     });
 
     clientProxy.disconnect = function() {
