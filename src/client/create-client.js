@@ -7,7 +7,7 @@ module.exports = function(clientServer, ClientClass) {
   return function(serverURL) {
     // Set up a connection to the socket server and build a client instance.
     const socketToServer = require(`socket.io-client`)(serverURL);
-    const instance = new ClientClass(/* clientServer.client */);
+    const instance = new ClientClass();
 
     // Ensure that clients receive a trigger when they connect to the server.
     socketToServer.on('connect', (...data) => {

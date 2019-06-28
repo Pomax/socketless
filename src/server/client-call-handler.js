@@ -1,6 +1,6 @@
 const upgradeSocket = require("../upgrade-socket");
 
-module.exports = function(namespace, serverFn) {
+module.exports = function(namespace, serverFn, resolveWithoutNamespace) {
   // Define the handler object that the server can use to respond to
   // messages initiated by the client. (although responses may not be
   // required on a per-message basis).
@@ -22,11 +22,11 @@ module.exports = function(namespace, serverFn) {
   serverFn.forEach(name => {
     // The initial binding has to "find" the function that needs to be used.
     ClientCallHandler.prototype[name] = async function(data, respond) {
-      const clientCallHandler = this;
 
       // Determing whether we can use explicit namespacing:
       let process = this.handler[`${namespace}:${name}`];
       if (!process) process = this.handler[`${namespace}$${name}`];
+      if (!process && resolveWithoutNamespace) process = this.handler[name];
 
       // Throw if there is no processing function at all:
       if (!process) {

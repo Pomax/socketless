@@ -43,29 +43,36 @@ function generateAPIfromClasses(ClientClass, ServerClass, API = {}) {
  * @param {class} ClientClass    a class definition with namespaces functions.
  * @param {class} ServerClass    a class definition with namespaces functions.
  */
-function generateClientServer(ClientClass, ServerClass) {
-  // first off, generate the shared API definition
-  const API = generateAPIfromClasses(ClientClass, ServerClass);
+function generateClientServer(ClientClass, ServerClass, API = false) {
+  // If we're given an API object, resolve down to bare
+  // functions in client/server call handling.
+  const resolveWithoutNamespace = !!API;
+
+  // generate the shared API definition if not prespecified.
+  API = API || generateAPIfromClasses(ClientClass, ServerClass);
 
   // get the list of all namespaces we'll be building proxies for.
   const namespaces = Object.keys(API);
 
   // This is the thing we'll be building up
-  const factory = { client: {}, server: {} };
+  const factory = {
+    client: {},
+    server: {}
+  };
 
-  // Craete client/server proxies and call handlers for each namespace:
+  // Create client/server proxies and call handlers for each namespace:
   namespaces.map(namespace => {
     const clientAPI = API[namespace].client;
     const serverAPI = API[namespace].server;
 
     factory.client[namespace] = {
       server: build.serverProxyAtClient(namespace, serverAPI),
-      handler: build.serverCallHandler(namespace, clientAPI)
+      handler: build.serverCallHandler(namespace, clientAPI, resolveWithoutNamespace)
     };
 
     factory.server[namespace] = {
       client: build.clientProxyAtServer(namespace, clientAPI),
-      handler: build.clientCallHandler(namespace, serverAPI)
+      handler: build.clientCallHandler(namespace, serverAPI, resolveWithoutNamespace)
     };
   });
 
@@ -98,7 +105,7 @@ function generateClientServer(ClientClass, ServerClass) {
   attach(
     factory,
     "createServer",
-    build.createServer(factory, namespaces, ServerClass)
+    build.createServer(factory, namespaces, ServerClass, API)
   );
 
   /**

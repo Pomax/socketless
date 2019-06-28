@@ -1,7 +1,7 @@
 // First, turn the API into a ClientServer object
-const { generateClientServer } = require("../src/generate-client-server.js");
 const ClientClass = require("../demo/Client.js");
 const ServerClass = require("../demo/Server.js");
+const { generateClientServer } = require("../src/generate-client-server.js");
 const ClientServer = generateClientServer(ClientClass, ServerClass);
 
 // Then create a server using the ClientServer object

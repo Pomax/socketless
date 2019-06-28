@@ -1,3 +1,9 @@
+function generateRandomName() {
+  let empty = new Array(10).fill(0);
+  let chars = empty.map(v => String.fromCharCode(97 + 26 * Math.random()));
+  return chars.join("");
+}
+
 /**
  * This is a demonstration client.
  */
@@ -28,10 +34,7 @@ class Client {
     this.id = clientId;
 
     // come up with a random name
-    let name = (this.name = new Array(10)
-      .fill(0)
-      .map(v => String.fromCharCode(97 + 26 * Math.random()))
-      .join(""));
+    let name = (this.name = generateRandomName());
     console.log(`client ${this.id}> setting name to ${name}`);
     this.server.user.setName(name);
 
@@ -40,6 +43,13 @@ class Client {
     let list = await this.server.user.getUserList();
     console.log(`client ${this.id}> received user list`, list);
     this.users = list;
+
+    // broadcast a random message to all clients
+    console.log(`client ${this.id}> broadcasting a chat message`);
+    this.server.broadcast(this.chat$message, {
+      id: clientId,
+      message: `test ${Math.random()}`
+    });
 
     // Schedule a disconnect 5 seconds in the future.
     setTimeout(async () => {
@@ -87,6 +97,14 @@ class Client {
    */
   async user$changedName({ id, name }) {
     console.log(`client ${this.id}> user ${id} changed name to ${name}.`);
+  }
+
+  // ...TEST...
+  async chat$message({ id, message }) {
+    if (id === this.id) return;
+    console.log(
+      `client ${this.id}> received chat message from ${id}: ${message}`
+    );
   }
 }
 
