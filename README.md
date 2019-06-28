@@ -80,7 +80,7 @@ npm install socketless --save
 
 We start with this library's boilerplate code:
 
-```
+```javascript
 const { generateClientServer } = require('socketless');
 const ClientServer = generateClientServer(ClientClass, ServerClass);
 ```
@@ -94,7 +94,6 @@ For namespacing you have two choices: you can either use `async namespace$name()
 For the purpose of this quick start, we'll use the `async "namespace:name"()` format:
 
 ```javascript
-
 class ServerClass {
     onConnect(client) {
         client.id = this.clients.length;
@@ -195,7 +194,7 @@ If you don't want to use namespacing, or you have functions in the client or ser
 
 To do this, create an object of the form:
 
-```
+```javascript
 const API = {
     namespace1: {
         client: ['functionname1', 'functionname2', ...],
@@ -210,7 +209,7 @@ const API = {
 
 And then call `generateClientServer` with this API as third argument:
 
-```
+```javascript
 const ClientClass = require('./client-class.js');
 const ServerClass = require('./server-class.js');
 const API = ...
@@ -220,7 +219,7 @@ const ClientServer = generateClientServer(ClientClass, ServerClass, API);
 
 When using this approach, call handlers do not _need_ to be namespaced (although you'll run into naming conflicts if you declare the same handling function name for different namespaces):
 
-```
+```javascript
 const API = {
     admin: {
         client: ["register"],
@@ -353,7 +352,7 @@ Any function in the `ClientClass` (except the constructor) can use `this.server`
 
 Any function in the `ClientClass` (except the constructor) can use `this.server.broadcast(functionReference, data)`, which will get routed to every client connected to the server, _including the sender_. The `functionReference` is literally a reference to one of the client's own functions:
 
-```
+```javascript
 class ClientClass {
     async someFunction() {
         this.server.broadcast(this.someOtherFunction, "test");
