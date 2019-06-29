@@ -16,6 +16,7 @@ class Server {
    */
   async onConnect(client) {
     const user = { id: this.clientIdCounter++, client };
+
     this.users.push(user);
     console.log(`server> client (id=${user.id}) connected to the server.`);
 

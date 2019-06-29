@@ -1,4 +1,6 @@
-const server = ClientServer.createServer();
+import ClientClass from "./client-class.js";
+
+const { server } = ClientServer.generateClientServer(ClientClass);
 
 let quit = document.querySelector('#quit');
 quit.addEventListener('click', () => server.quit());

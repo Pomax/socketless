@@ -1,43 +1,35 @@
 const fs = require(`fs`);
 const path = require(`path`);
-
-const objectToString = require("./obj-to-str.js");
-const getContentType = require("./get-content-type.js");
-const sanitizeLocation = require("./sanitize-location.js");
-const generate404 = require("./404.js");
-const nodeToESM = require("./node-to-esm.js");
 const upgradeSocket = require("../upgrade-socket.js");
+const generateProxyClientServer = require("./generate-proxy-client-server.js");
+const getState = require("./get-state.js");
 
 module.exports = function(factory, namespaces, ClientClass, ServerClass, API) {
-
   // create a "bundle" consisting of:
   // - node_modules/socket.io-client/dist/socket.io.dev.js
   // - src/upgrade-socket.js
   // - custom code that sets up window.createServer() that yields an object that
   //   connects to this web server, with the same API as the "real" server.
   let socketlessjs = [
-    `const ClientServer = { createServer: function() {`,
+    `const ClientServer = { generateClientServer: function(WebClientClass) {`,
     `const exports = {};`,
-    fs.readFileSync(path.join(__dirname, `..`, `..`, `node_modules`,`socket.io-client`,`dist`,`socket.io.dev.js`)).toString('utf-8'),
-    fs.readFileSync(path.join(__dirname, `..`, `upgrade-socket.js`)).toString('utf-8').replace(`module.exports = upgradeSocket;`, ``),
+    fs
+      .readFileSync(
+        path.join(
+          __dirname,
+          `../../node_modules/socket.io-client/dist/socket.io.dev.js`
+        )
+      )
+      .toString("utf-8"),
+    fs
+      .readFileSync(path.join(__dirname, `../upgrade-socket.js`))
+      .toString("utf-8")
+      .replace(`module.exports = upgradeSocket;`, ``),
     `
-    const socket = upgradeSocket(exports.io(window.location.toString()));
     const namespaces = ${JSON.stringify(namespaces)};
     const API = ${JSON.stringify(API)};
-    const proxyServer = {};
-
-    namespaces.forEach(namespace => {
-      proxyServer[namespace] = {};
-      API[namespace].server.forEach(fname => {
-        proxyServer[namespace][fname] = async function(data) {
-          return await socket.emit(namespace + ":" + fname, data);
-        };
-      });
-    });
-
-    proxyServer.quit = () => socket.emit('quit', {});
-
-    return proxyServer;`,
+    return ${generateProxyClientServer.toString()}(WebClientClass);
+    `,
     `}}`
   ].join(`\n`);
 
@@ -49,82 +41,81 @@ module.exports = function(factory, namespaces, ClientClass, ServerClass, API) {
   return function(serverURL, publicDir, https = false) {
     const rootDir = `${__dirname}/../`;
 
-    class CustomClientClass extends ClientClass {
-      constructor(...args) { super(...args); }
-    };
+    // socket from this client to the server
+    const sockets = { client: false, browser: false };
 
-    Object.getOwnPropertyNames(ClientClass.prototype).forEach(function(name) {
-      CustomClientClass.prototype[name] = async function(...args) {
-        // pass-through: we can't use `super` in prototype-land.
-        return ClientClass.prototype[name].bind(this)(...args);
+    // Proxy class
+    class WebClientClass extends ClientClass {
+      constructor(...args) {
+        super(...args);
+      }
+    }
+
+    Object.getOwnPropertyNames(ClientClass.prototype).forEach(name => {
+      WebClientClass.prototype[name] = async function(data) {
+        let evt = name.replace("$", ":");
+        // first call the "real" client code
+        let response = await ClientClass.prototype[name].bind(this)(data);
+        // then pass-through to the browser
+        if (sockets.browser) response = await sockets.browser.emit(evt, data);
+        return response;
       };
     });
 
-    client = factory.createClient(serverURL, CustomClientClass);
+    // bind a client socket to the server
+    sockets.client = factory.createClient(serverURL, WebClientClass);
 
-    // set an immutable flag that marks this as a web client
-    Object.defineProperty(client, "is_web_client", {
+    // and set an immutable flag that marks this as a web client
+    Object.defineProperty(sockets.client, "is_web_client", {
       configurable: false,
       writable: false,
       value: true
     });
 
-    // Create a route handler for our local web server
-    const routes = (request, response) => {
-      const url = request.url;
-
-      // special handling for socketless.js
-      if (url === '/socketless.js') {
-        response.writeHead(200, { "Content-Type": getContentType(".js") });
-        response.end(socketlessjs, `utf-8`);
-        return;
-      }
-
-      var location = sanitizeLocation(request.url, rootDir, publicDir);
-
-      console.log(`WEBSERVER> GET ${location}`);
-      fs.readFile(location, (error, content) => {
-        if (error) return generate404(location, response);
-        content = nodeToESM(location, content);
-        response.writeHead(200, { "Content-Type": getContentType(location) });
-        response.end(content, `utf-8`);
-      });
-    };
-
     // Set up the web+socket server for browser connections
+    const routes = require("./routes.js")(rootDir, publicDir, socketlessjs);
     const webserver = require(https ? "https" : "http").createServer(routes);
     const io = require("socket.io")(webserver);
 
-    // Create a local reference to the browser's socket connection:
-    let browser = false;
-
     // Allow for socket binding and setting up call handling
-    const setBrowser = socket => {
-      if (browser) return;
-      browser = upgradeSocket(socket);
-      socket.on("quit", () => {
-        console.log(`PROXY QUIT`);
-        client.server.disconnect();
-      });
+    const setBrowser = function(socket) {
+      let client = sockets.client;
+      let server = client.server;
 
-      // Proxy functions for routing browser => server
-      // (very similar to the proxyServer code above)
+      // record connection from browser and send a bootstrap instruction.
+      browser = sockets.browser = upgradeSocket(socket);
+      client.browser_connected = true;
+
+      const bypassTheseProperties = [
+        "is_web_client",
+        "browser_connected",
+        "server"
+      ];
+
+      socket.emit(
+        `bootstrap:self`,
+        getState(sockets.client, bypassTheseProperties)
+      );
+
+      // Set up proxy functions for routing browser => server
       namespaces.forEach(namespace => {
         API[namespace].server.forEach(fname => {
-          socket.on(`${namespace}:${fname}`, async(data, respond) => {
-            let result = await client.server[namespace][fname](data);
-            respond(result);
+          socket.on(`${namespace}:${fname}`, async (data, respond) => {
+            respond(await server[namespace][fname](data));
           });
         });
       });
 
-      // Proxy functions for routing server => browser
-      // TODO: continue
+      // Add a quit() handler so the browser can "kill" the client:
+      socket.on("quit", () => server.disconnect());
     };
 
     // Set up connect/disconnect handling for browser
-    io.on(`connection`, socket => setBrowser(socket));
-    io.on(`disconnect`, () => (browser = false));
+    io.on(`connection`, setBrowser);
+    io.on(
+      `disconnect`,
+      () => (sockets.client.browser_connected = sockets.browser = false)
+    );
 
     return webserver;
   };

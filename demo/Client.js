@@ -24,7 +24,6 @@ class Client {
   // ========================================================
   // Client's API functions, which get "called" by the server
   //    and use the $ symbol to effect handler namespacing
-  // ========================================================
 
   /**
    * Register ourselves as being part of the collective now.
