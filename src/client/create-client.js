@@ -1,10 +1,10 @@
-module.exports = function(clientServer, ClientClass) {
+module.exports = function(clientServer, DefaultClientClass) {
   /**
    * This function creates a socket.io client with all the bells and
    * whistles taken care of so the user doesn't ever need to write
    * any socket.io code explicitly.
    */
-  return function(serverURL) {
+  return function(serverURL, ClientClass=DefaultClientClass) {
     // Set up a connection to the socket server and build a client instance.
     const socketToServer = require(`socket.io-client`)(serverURL);
     const instance = new ClientClass();

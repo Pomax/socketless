@@ -52,10 +52,12 @@ class Client {
     });
 
     // Schedule a disconnect 5 seconds in the future.
-    setTimeout(async () => {
-      console.log(`client ${this.id}> disconnecting from server.`);
-      this.server.disconnect();
-    }, 5000);
+    if (!this.is_web_client) {
+      setTimeout(async () => {
+        console.log(`client ${this.id}> disconnecting from server.`);
+        this.server.disconnect();
+      }, 5000);
+    }
 
     return { status: `registered` };
   }

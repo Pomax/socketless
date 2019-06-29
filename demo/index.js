@@ -14,13 +14,24 @@ server.listen(0, () => {
   console.log(`index> server listening on ${port}`);
 
   // And once the server is up, create a few clients:
-
   let count = 3;
   console.log(`index> building ${count} clients`);
   (function generateClient() {
     if (count--) {
       ClientServer.createClient(serverURL);
-      setTimeout(generateClient, 1000);
+      return setTimeout(generateClient, 1000);
     }
+
+    // Plus one special browser-proxying client
+    let webclient = ClientServer.createWebClient(
+      serverURL,
+      `${__dirname}/public`
+    );
+
+    webclient.listen(0, () =>
+      console.log(
+        `web client listening on http://localhost:${webclient.address().port}`
+      )
+    );
   })();
 });
