@@ -130,7 +130,7 @@ function generateClientServer(ClientClass, ServerClass, API = false) {
   attach(
     factory,
     "createWebClient",
-    build.createWebClient(factory, namespaces, ClientClass, ServerClass, API)
+    build.createWebClient(factory, namespaces, ClientClass, API)
   );
 
   // And we're done!

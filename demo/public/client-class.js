@@ -2,10 +2,18 @@
  * This is a demonstration client.
  */
 class ClientClass {
-  async updated(data) {
-    // Called when connecting the browser to the real client,
-    // to ensure the browser has the same state.
-    console.log("client was bootstrapped using", data);
+  async updated() {
+    // update the page in a silly way
+    document.querySelector('#clientid').textContent = this.id;
+
+    const el = document.createElement('ul');
+    this.users.forEach(u => {
+      let li = document.createElement('li');
+      li.textContent = u;
+      el.appendChild(li);
+    });
+    let ul = document.querySelector('#list ul');
+    ul.parentNode.replaceChild(el, ul);
   }
 
   async "admin:register"(clientId) {
@@ -19,7 +27,10 @@ class ClientClass {
   }
 
   async "user:joined"(id) {
-    if (this.users.indexOf(id) === -1) this.users.push(id);
+    if (this.users.indexOf(id) === -1) {
+      this.users.push(id);
+      this.updated();
+    }
     console.log(
       `browser client ${this.id}> user ${id} joined. Known users:`,
       this.users
@@ -28,7 +39,10 @@ class ClientClass {
 
   async "user:left"(id) {
     let pos = this.users.findIndex(u => u === id);
-    if (pos > -1) this.users.splice(pos, 1);
+    if (pos > -1) {
+      this.users.splice(pos, 1);
+      this.updated();
+    }
     console.log(
       `browser client ${this.id}> user ${id} left. Known users:`,
       this.users

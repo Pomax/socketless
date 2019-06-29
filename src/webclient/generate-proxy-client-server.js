@@ -25,7 +25,7 @@ function generateClientServer(WebClientClass) {
 
   // ensure that bootstrap instructions are processed
   socket.on(`bootstrap:self`, data => {
-    Object.keys(data).forEach(key => (handler.key = data[key]));
+    Object.keys(data).forEach(key => (handler[key]= data[key]));
     if (handler.updated) { handler.updated(data); }
   });
 

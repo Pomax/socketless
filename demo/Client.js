@@ -50,12 +50,12 @@ class Client {
       message: `test ${Math.random()}`
     });
 
-    // Schedule a disconnect 5 seconds in the future.
+    // Schedule a disconnect after 15 seconds.
     if (!this.is_web_client) {
       setTimeout(async () => {
         console.log(`client ${this.id}> disconnecting from server.`);
         this.server.disconnect();
-      }, 5000);
+      }, 15000);
     }
 
     return { status: `registered` };

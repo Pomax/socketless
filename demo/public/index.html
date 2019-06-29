@@ -7,9 +7,17 @@
     </head>
 
     <body>
-        <h1>Test</h1>
-        <button id="list">list</button>
-        <button id="quit">quit</button>
+        <h1>Test client <span id="clientid"></span></h1>
+
+        <div id="list">
+            <h2>Known users:</h2>
+            <ul></ul>
+            <button>refresh list</button>
+        </div>
+
+        <div>
+            <p>Disconnect from the server: <button id="quit">quit</button></p>
+        </div>
     </body>
 
     <script src="socketless.js"></script>
