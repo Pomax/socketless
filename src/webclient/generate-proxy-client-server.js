@@ -1,4 +1,6 @@
 /**
+ * TARGET:BROWSER
+ *
  * This function is converted to a string, wholesale, and
  * sent over to the browser, where it will be executed.
  *
@@ -9,6 +11,7 @@ function generateClientServer(WebClientClass) {
   const socketToClient = exports.io(window.location.toString());
   const socket = upgradeSocket(socketToClient);
   const proxyServer = {};
+  const handler = new WebClientClass();
 
   // Add the browser => client => server forwarding
   namespaces.forEach(namespace => {
@@ -21,31 +24,55 @@ function generateClientServer(WebClientClass) {
     });
   });
 
-  const handler = new WebClientClass();
+  // Set up a state update function
+  const updateState = data => {
+    // TODO: make this a diff application rather than full state copies
+    if (handler.setState) handler.setState(data);
+    else Object.keys(data).forEach(key => (handler[key] = data[key]));
+    if (handler.update) {
+      handler.update();
+    }
+  };
 
   // ensure that bootstrap instructions are processed
-  socket.on(`bootstrap:self`, data => {
-    Object.keys(data).forEach(key => (handler[key]= data[key]));
-    if (handler.updated) { handler.updated(data); }
-  });
+  socket.on(`sync`, updateState);
 
-  // Add the server => client => browser forwarding
+  // and offer a sync() function to manually trigger a bootstrap
+  handler.sync = async () => updateState(await socket.emit(`sync`));
+
+  // Then: add the server => client => browser forwarding
   namespaces.forEach(namespace => {
     API[namespace].client.forEach(fname => {
       let evt = namespace + ":" + fname;
       let process = handler[evt];
       if (!process) process = handler[evt.replace(":", "$")];
-      if (!process) throw new Error(`Browser class does not implement ${evt}`);
-      socket.on(evt, async(data, respond) => {
-        let response = await process.bind(handler)(data);
-        respond(response);
-      });
+
+      // Web clients need not implement the full interface, as some
+      // things don't need to be handled by the browser at all.
+      if (process) {
+        socket.on(evt, async (data, respond) => {
+          let response = await process.bind(handler)(data);
+          respond(response);
+        });
+      }
+
+      // If they don't, signal an undefined response, mostly to
+      // make sure that the response listener gets cleaned up
+      // immediately on the true client's side, and request a
+      // sync() to ensure the browser reflects the client.
+      else {
+        socket.on(evt, async (_data, respond) => {
+          respond();
+          handler.sync();
+        });
+      }
     });
   });
 
-  // dedicated .quit() function so browsers can effect a disconnect
+  // Add a dedicated .quit() function so browsers can effect a disconnect
   proxyServer.quit = () => socket.emit("quit", {});
 
+  // And we're done building this object
   return {
     client: handler,
     server: proxyServer

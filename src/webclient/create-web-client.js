@@ -1,8 +1,14 @@
 const upgradeSocket = require("../upgrade-socket.js");
 const generateSocketless = require("./generate-socketless.js");
-const getState = require("./get-state.js");
+const getState = require("./utils/get-state.js");
+const getStateDiff = require("./utils/get-state-diff.js");
 
-module.exports = function createWebClient(factory, namespaces, ClientClass, API) {
+module.exports = function createWebClient(
+  factory,
+  namespaces,
+  ClientClass,
+  API
+) {
   /**
    * This function creates a socket.io server with all the bells and
    * whistles taken care of so the user doesn't ever need to write
@@ -21,13 +27,14 @@ module.exports = function createWebClient(factory, namespaces, ClientClass, API)
       }
     }
 
+    // Proxy calls by first having the ClientClass deal with them,
+    // and then forwarding them on to the browser.
     Object.getOwnPropertyNames(ClientClass.prototype).forEach(name => {
       WebClientClass.prototype[name] = async function(data) {
         let evt = name.replace("$", ":");
-        // first call the "real" client code
         let response = await ClientClass.prototype[name].bind(this)(data);
-        // then pass-through to the browser
-        if (sockets.browser) response = await sockets.browser.emit(evt, data);
+        if (sockets.browser)
+          response = response || (await sockets.browser.emit(evt, data));
         return response;
       };
     });
@@ -43,12 +50,16 @@ module.exports = function createWebClient(factory, namespaces, ClientClass, API)
     });
 
     // Set up the web+socket server for browser connections
-    const routes = require("./routes.js")(rootDir, publicDir, generateSocketless(API));
+    const routes = require("./utils/routes.js")(
+      rootDir,
+      publicDir,
+      generateSocketless(API)
+    );
     const webserver = require(https ? "https" : "http").createServer(routes);
     const io = require("socket.io")(webserver);
 
     // Allow for socket binding and setting up call handling
-    const setBrowser = function(socket) {
+    function connectBrowser(socket) {
       let client = sockets.client;
       let server = client.server;
 
@@ -56,16 +67,31 @@ module.exports = function createWebClient(factory, namespaces, ClientClass, API)
       browser = sockets.browser = upgradeSocket(socket);
       client.browser_connected = true;
 
+      // set up the sync functionality
+
       const bypassTheseProperties = [
         "is_web_client",
         "browser_connected",
         "server"
       ];
 
-      socket.emit(
-        `bootstrap:self`,
-        getState(sockets.client, bypassTheseProperties)
-      );
+      // Our state update is based on state diffs, because sending
+      // a full state every time is quite silly.
+      let prevState = {};
+
+      const getStateUpdate = () => {
+        const state = getState(sockets.client, bypassTheseProperties)
+        const stateDiff = getStateDiff(state, prevState)
+        prevState = state;
+        return stateDiff;
+      }
+
+      // sync request from browser to client
+      socket.on(`sync`, (_data, respond) => respond(getStateUpdate()));
+
+      // sync data from client to browser:
+      // and of course, send an initial sync
+      socket.emit(`sync`, getStateUpdate());
 
       // Set up proxy functions for routing browser => server
       namespaces.forEach(namespace => {
@@ -80,12 +106,11 @@ module.exports = function createWebClient(factory, namespaces, ClientClass, API)
       socket.on("quit", () => server.disconnect());
     };
 
-    // Set up connect/disconnect handling for browser
-    io.on(`connection`, setBrowser);
-    io.on(
-      `disconnect`,
-      () => (sockets.client.browser_connected = sockets.browser = false)
-    );
+    io.on(`connection`, connectBrowser);
+
+    io.on(`disconnect`, () => {
+      sockets.client.browser_connected = sockets.browser = false;
+    });
 
     return webserver;
   };

@@ -4,6 +4,7 @@
   "description": "A framework and methodology for using socket.io without writing any socket code yourself.",
   "main": "src/generate-client-server.js",
   "scripts": {
+    "prettier": "prettier --write **/*.js",
     "test": "node demo/index.js",
     "test:distributed": "node test/index.js",
     "test:client": "node test/test-client.js",
@@ -29,5 +30,8 @@
   "homepage": "https://github.com/Pomax/async-socket.io#readme",
   "dependencies": {
     "socket.io": "^2.2.0"
+  },
+  "devDependencies": {
+    "prettier": "^1.18.2"
   }
 }

@@ -9,13 +9,13 @@
  * We're not string-serializing, just state-extracting.
  */
 module.exports = function getState(object, removals) {
-    let state = {};
-    Object.getOwnPropertyNames(object).forEach(key => {
-        if (removals.indexOf(key) !== -1) return;
-        let value = object[key];
-        if (typeof value !== "function") {
-            state[key] = value;
-        }
-    });
-    return state;
+  let state = {};
+  Object.getOwnPropertyNames(object).forEach(key => {
+    if (removals.indexOf(key) !== -1) return;
+    let value = object[key];
+    if (typeof value !== "function") {
+      state[key] = value;
+    }
+  });
+  return state;
 };

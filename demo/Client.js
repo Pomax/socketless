@@ -43,12 +43,15 @@ class Client {
     console.log(`client ${this.id}> received user list`, list);
     this.users = list;
 
-    // broadcast a random message to all clients
-    console.log(`client ${this.id}> broadcasting a chat message`);
-    this.server.broadcast(this.chat$message, {
-      id: clientId,
-      message: `test ${Math.random()}`
-    });
+    // Broadcast a chat message after 10 seconds.
+    setTimeout(() => {
+      console.log(`client ${this.id}> broadcasting a chat message`);
+      // TODO: find out why this isn't working?
+      this.server.broadcast(this.chat$message, {
+        id: clientId,
+        message: `test ${Math.random()}`
+      });
+    }, 10000);
 
     // Schedule a disconnect after 15 seconds.
     if (!this.is_web_client) {
@@ -100,7 +103,10 @@ class Client {
     console.log(`client ${this.id}> user ${id} changed name to ${name}.`);
   }
 
-  // ...TEST...
+  /**
+   * Handle chat messages, which we know are the result of
+   * client broadcasts, so we need to ignore any sent "by us".
+   */
   async chat$message({ id, message }) {
     if (id === this.id) return;
     console.log(

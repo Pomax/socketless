@@ -4,6 +4,7 @@ This is a framework and methodology for implementing a websocket client/server s
 
 1. [Introduction](#introduction)
 2. [Quick-start](#quick-start)
+   - [Adding a browser-based client](#adding-a-browser-based-client)
 3. [Conventions](#conventions)
 4. [The `socketless` API](#the-socketless-api)
 5. [Bugs, feature-requests, and discussions](#bugs-feature-requests-and-discussions)
@@ -110,7 +111,7 @@ class ServerClass {
 You might notice a few things:
 
 1. There is a `this.clients` that is (unsurprisingly) the list of all clients connected to this server. This list is maintained for you by `socketless`.
-2. You can set properties on clients. Normally this would be incredibly unsafe because it means you could overwrite API functions, but `socketless` binds those with write protection, so even if you did try to overwrite them, your code would throw a runtime exception. 
+2. You can set properties on clients. Normally this would be incredibly unsafe because it means you could overwrite API functions, but `socketless` binds those with write protection, so even if you did try to overwrite them, your code would throw a runtime exception.
 3. all API handling functions in a server class are passed a reference to the client that made the API call as the `from` argument, universally passed as the first argument to any API call handling function:
 
 If you have code in your Client class that calls `this.server.namespace.doThing(data)`, then your Server class should have a handling function with signature `async "namespace:doThing"(from, data) { ... }` (or `async namespace$doThing(from, data) { ... }` depending on your preferred style of namespacing).
@@ -129,7 +130,7 @@ class ClientClass {
         this.id = id;
         let name = this.name = generateRandomName();
         this.server.user.setName(name);
-		this.server.broadcast(this["chat:message"], {
+        this.server.broadcast(this["chat:message"], {
             name: name,
             message: "hello!"
         });
@@ -139,13 +140,13 @@ class ClientClass {
         if (name !== this.name) {
             console.log(`${name}> ${message}`);
         }
-    } 
+    }
 }
 ```
 
 Note that API call handling functions for clients are not passed a `from`, as clients are connected to a single server. The origin of the call is always known, and the server proxy can always be referenced as `this.server` inside any API handling function that the client makes use of.
 
-Also, you may notice that `broadcast` call, which points to the client's own `chat:message` function. This lets clients send a message "to everyone connected to the server" (including themselves). Also, rather than passing a string, which can have typos, or even be a functions that doesn't exist, you refer _directly_ to the function that needs to get called: all clients are built off of the same class, so we already know which function is supposed to be handling the data that's getting broadcast. 
+Also, you may notice that `broadcast` call, which points to the client's own `chat:message` function. This lets clients send a message "to everyone connected to the server" (including themselves). Also, rather than passing a string, which can have typos, or even be a functions that doesn't exist, you refer _directly_ to the function that needs to get called: all clients are built off of the same class, so we already know which function is supposed to be handling the data that's getting broadcast.
 
 ### 4. Start talking to each other
 
@@ -188,9 +189,9 @@ The code relies on the fact that you know which functions exist, with client and
 
 Also, if you're manually specifying your API interface (see section below), any call that you list in your `API` object that does not have a corresponding handler implemented (either namespaced or namespaceless) will throw a runtime error.
 
-#### Bypassing the magic: manually specifying the API
+#### Bypassing the magic: manually specifying the functional interface
 
-If you don't want to use namespacing, or you have functions in the client or server that are placeholders and not meant to be called "yet", you can manually specify the API interface that `generateClientServer` uses to build up all the internal code. 
+If you don't want to use namespacing, or you have functions in the client or server that are placeholders and not meant to be called "yet", you can manually specify the API interface that `generateClientServer` uses to build up all the internal code.
 
 To do this, create an object of the form:
 
@@ -199,10 +200,10 @@ const API = {
     namespace1: {
         client: ['functionname1', 'functionname2', ...],
         server: [...]
-    }, 
+    },
     namespace2: {
         ...
-    }, 
+    },
     ...
 };
 ```
@@ -215,7 +216,7 @@ const ServerClass = require('./server-class.js');
 const API = ...
 const { generateClientServer } = require('socketless');
 const ClientServer = generateClientServer(ClientClass, ServerClass, API);
-``` 
+```
 
 When using this approach, call handlers do not _need_ to be namespaced (although you'll run into naming conflicts if you declare the same handling function name for different namespaces):
 
@@ -254,7 +255,7 @@ class ServerClass {
 
 const { generateClientServer } = require('socketless');
 const ClientServer = generateClientServer(ClientClass, ServerClass, API);
-``` 
+```
 
 ### Structuring client/server calls
 
@@ -302,7 +303,7 @@ In order to keep your code easy to maintain, it is recommended that you write yo
 
 #### Server class specifics
 
-Server classes receive a `this.getConnectedClients()` function for inspecting the list of connected clients. 
+Server classes receive a `this.getConnectedClients()` function for inspecting the list of connected clients.
 
 Server classes _may_ implement the `onConnect(client)` function, which is called after a client has been connected to the server and recorded in the internal client list. This function does not need to be marked `async` as far as the framework is concerned, but of course if you're going to be writing anything that has an `await`, you'll need to mark it as `async` simply because you can't use `await` in a plain function.
 
@@ -361,7 +362,7 @@ class ClientClass {
         console.log(`triggered by broadcast: ${stringData}`);
     }
 }
-``` 
+```
 
 #### namespacing of call handler functions
 
@@ -424,6 +425,21 @@ In order to start the server, use the standard Node.js server listen pattern (ei
 server.listen(0, () => {
     console.log(`Server running on port ${server.address().port}`);
 });
+```
+
+### • Creating web clients: `ClientServer.createWebClient(ServerURL:urlstring, publicDir:pathstring)`
+
+This function creates a client that pulls double duty as both a regular client and a web server that a user can connect to with their browser.
+
+- WebClientClass, partial API
+
+```html
+<script src="socketless.js"></script>
+```
+
+```javascript
+import ClientClass from "./client-class.js";
+const { client, server } = ClientServer.generateClientServer(ClientClass);
 ```
 
 ## Bugs, feature-requests, and discussions
