@@ -1,5 +1,5 @@
 // Build our ClientServer object:
-const { generateClientServer } = require("../src/generate-client-server.js");
+const { generateClientServer } = require("../../src/generate-client-server.js");
 const ClientClass = require("./Client.js");
 const ServerClass = require("./Server.js");
 const ClientServer = generateClientServer(ClientClass, ServerClass);

@@ -5,10 +5,10 @@
   "main": "src/generate-client-server.js",
   "scripts": {
     "prettier": "prettier --write **/*.js",
-    "test": "node demo/index.js",
-    "test:distributed": "node test/index.js",
-    "test:client": "node test/test-client.js",
-    "test:server": "node test/test-server.js"
+    "test": "node demo/simple/index.js",
+    "test:distributed": "node demo/test-distributed/index.js",
+    "test:client": "node demo/test-distributed/test-client.js",
+    "test:server": "node demo/test-distributed/test-server.js"
   },
   "repository": {
     "type": "git",
