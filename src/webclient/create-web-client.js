@@ -31,6 +31,10 @@ module.exports = function createWebClient(factory, ClientClass, API) {
           response = response || (await sockets.browser.emit(evt, data));
         return response;
       };
+      // We need to bind the function's name so that we can resolve
+      // it during broadcasts, which look for the function.name property,
+      // which is undefined in the above anonymous function binding.
+      WebClientClass.prototype[name].customname = name;
     });
 
     // bind a client socket to the server

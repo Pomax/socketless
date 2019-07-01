@@ -46,7 +46,6 @@ class Client {
     // Broadcast a chat message after 10 seconds.
     setTimeout(() => {
       console.log(`client ${this.id}> broadcasting a chat message`);
-      // TODO: find out why this isn't working?
       this.server.broadcast(this.chat$message, {
         id: clientId,
         message: `test ${Math.random()}`

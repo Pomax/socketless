@@ -23,7 +23,7 @@ module.exports = function(clientServer, namespaces) {
     };
 
     serverProxy.broadcast = function(functionref, data) {
-      let fname = functionref.name.replace(/\$/g, `:`);
+      let fname = (functionref.name || functionref.customname).replace(/\$/g, `:`);
       let evtname = `broadcast:${fname}`;
       socket.emit(evtname, data);
     };
