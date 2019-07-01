@@ -10,7 +10,9 @@ const CONTENT_TYPES = {
 const DEFAULT_CONTENT_TYPE = `text/plain`;
 
 module.exports = function getContentType(location) {
-    let key = Object.keys(CONTENT_TYPES).find(key => (location.slice(-key.length) === key));
-    let contentType = CONTENT_TYPES[key] || DEFAULT_CONTENT_TYPE;
-    return contentType;
+  let key = Object.keys(CONTENT_TYPES).find(
+    key => location.slice(-key.length) === key
+  );
+  let contentType = CONTENT_TYPES[key] || DEFAULT_CONTENT_TYPE;
+  return contentType;
 };

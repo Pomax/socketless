@@ -1,4 +1,5 @@
-module.exports = function getStateDiff(state, prevState) {
-  // TODO: actually implement this
-  return state;
+const { createPatch } = require('rfc6902');
+
+module.exports = function getStateDiff(newState, oldState) {
+  return createPatch(oldState, newState);
 };

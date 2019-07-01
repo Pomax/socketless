@@ -22,7 +22,6 @@ module.exports = function(namespace, serverFn, resolveWithoutNamespace) {
   serverFn.forEach(name => {
     // The initial binding has to "find" the function that needs to be used.
     ClientCallHandler.prototype[name] = async function(data, respond) {
-
       // Determing whether we can use explicit namespacing:
       let process = this.handler[`${namespace}:${name}`];
       if (!process) process = this.handler[`${namespace}$${name}`];
@@ -30,7 +29,9 @@ module.exports = function(namespace, serverFn, resolveWithoutNamespace) {
 
       // Throw if there is no processing function at all:
       if (!process) {
-        throw new Error(`Missing handler.${namespace}:${name} in ClientCallHandler.${namespace}.${name}`);
+        throw new Error(
+          `Missing handler.${namespace}:${name} in ClientCallHandler.${namespace}.${name}`
+        );
       }
 
       // Throw if this is a processing function, but it's not declared async:

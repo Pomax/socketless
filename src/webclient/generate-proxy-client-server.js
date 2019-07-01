@@ -11,7 +11,10 @@ function generateClientServer(WebClientClass) {
   const socketToClient = exports.io(window.location.toString());
   const socket = upgradeSocket(socketToClient);
   const proxyServer = {};
+
+  // Create a client instances
   const handler = new WebClientClass();
+  handler.__seq_num = 0;
 
   // Add the browser => client => server forwarding
   namespaces.forEach(namespace => {
@@ -24,21 +27,32 @@ function generateClientServer(WebClientClass) {
     });
   });
 
-  // Set up a state update function
-  const updateState = data => {
-    // TODO: make this a diff application rather than full state copies
-    if (handler.setState) handler.setState(data);
-    else Object.keys(data).forEach(key => (handler[key] = data[key]));
-    if (handler.update) {
-      handler.update();
+  // bind all new state values
+  function updateState(newstate) {
+    if (handler.setState) handler.setState(newstate);
+    else Object.keys(newstate).forEach(key => (handler[key] = newstate[key]));
+    if (handler.update) handler.update();
+  }
+
+  // turn a state diff into a state update
+  function handleStateDiff(patch) {
+    const seqnum = patch.slice(-1)[0].value;
+    if (seqnum === handler.__seq_num + 1) {
+      const state = jsonpatch.apply_patch(handler, patch);
+      return updateState(state);
     }
-  };
+
+    // if we get here, wee're no longer in sync and need to
+    // request a full state instead of a differential state.
+    socket.emit(`sync:full`, { last_seq_num: handler.__seq_num });
+  }
 
   // ensure that bootstrap instructions are processed
-  socket.on(`sync`, updateState);
+  socket.on(`sync`, diff => handleStateDiff(diff));
+  socket.on(`sync:full`, state => updateState(state));
 
   // and offer a sync() function to manually trigger a bootstrap
-  handler.sync = async () => updateState(await socket.emit(`sync`));
+  handler.sync = async () => handleStateDiff(await socket.emit(`sync`));
 
   // Then: add the server => client => browser forwarding
   namespaces.forEach(namespace => {

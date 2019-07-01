@@ -29,6 +29,8 @@
   },
   "homepage": "https://github.com/Pomax/async-socket.io#readme",
   "dependencies": {
+    "jsonpatch": "^3.0.1",
+    "rfc6902": "^3.0.2",
     "socket.io": "^2.2.0"
   },
   "devDependencies": {

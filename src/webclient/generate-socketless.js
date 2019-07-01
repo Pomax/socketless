@@ -14,8 +14,19 @@ module.exports = function generateSocketless(API) {
   const namespaces = Object.keys(API);
 
   return [
+    fs
+    .readFileSync(
+      path.join(
+        __dirname,
+        `../../node_modules/jsonpatch/jsonpatch.min.js`
+      )
+    )
+    .toString("utf-8"),
+
     `const ClientServer = { generateClientServer: function(WebClientClass) {`,
+
     `const exports = {};`,
+
     fs
       .readFileSync(
         path.join(
@@ -24,15 +35,18 @@ module.exports = function generateSocketless(API) {
         )
       )
       .toString("utf-8"),
+
     fs
       .readFileSync(path.join(__dirname, `../upgrade-socket.js`))
       .toString("utf-8")
       .replace(`module.exports = upgradeSocket;`, ``),
+
     `
       const namespaces = ${JSON.stringify(namespaces)};
       const API = ${JSON.stringify(API)};
       return ${generateProxyClientServer.toString()}(WebClientClass);
-      `,
+    `,
+
     `}}`
   ].join(`\n`);
 };

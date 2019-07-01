@@ -13,7 +13,7 @@ module.exports = {
   createServerProxy: require("./client/create-server-proxy.js"),
 
   // factory functions for the actual socket.io client/server.
-  createClient: require('./client/create-client.js'),
-  createWebClient: require('./webclient/create-web-client.js'),
-  createServer: require('./server/create-server.js')
+  createClient: require("./client/create-client.js"),
+  createWebClient: require("./webclient/create-web-client.js"),
+  createServer: require("./server/create-server.js")
 };

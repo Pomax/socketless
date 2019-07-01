@@ -9,4 +9,6 @@ const ClientServer = generateClientServer(ClientClass, ServerClass);
 const server = ClientServer.createServer();
 
 // And then start the server, so clients can connect.
-server.listen(8080, () => console.log(`index> server listening on http://localhost:8080`));
+server.listen(8080, () =>
+  console.log(`index> server listening on http://localhost:8080`)
+);
