@@ -14,6 +14,7 @@ function generateClientServer(WebClientClass) {
 
   // Create a client instances
   const handler = new WebClientClass();
+  handler.server = proxyServer;
   handler.__seq_num = 0;
 
   // Add the browser => client => server forwarding

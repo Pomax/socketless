@@ -15,13 +15,10 @@ module.exports = function generateSocketless(API) {
 
   return [
     fs
-    .readFileSync(
-      path.join(
-        __dirname,
-        `../../node_modules/jsonpatch/jsonpatch.min.js`
+      .readFileSync(
+        path.join(__dirname, `../../node_modules/jsonpatch/jsonpatch.min.js`)
       )
-    )
-    .toString("utf-8"),
+      .toString("utf-8"),
 
     `const ClientServer = { generateClientServer: function(WebClientClass) {`,
 

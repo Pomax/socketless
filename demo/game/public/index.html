@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Demo mahjong</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="socketless.js" defer></script>
+  <script src="web-client-class.js" type="module" defer></script>
+  <script src="script.js" type="module" defer></script>
+</head>
+
+<body>
+  <header>
+    <h1>Super simple "socketless" mahjong</h1>
+    <p>A simple game description</p>
+  </header>
+
+  <meain>
+    <section id="gamelist">
+      <ul id="games"></ul>
+    </section>
+
+    <section id="lobby">
+      <ul id="users"></ul>
+      <ul id="chat"></ul>
+    </section>
+    </main>
+
+    <footer>
+      <p>Create a game: <button id="create">create</button></p>
+      <p>Disconnect from the server: <button id="quit">quit</button></p>
+    </footer>
+</body>
+
+</html>

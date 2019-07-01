@@ -53,12 +53,15 @@ module.exports = function(clientServer, namespaces, ServerClass, API) {
     };
 
     // Ensure that we bind API handlers for each client that connects
-    io.on(`connection`, function(socket) {
+    const connectSocket = function(socket) {
       namespaces.forEach(namespace => {
         new clientServer.server[namespace].handler(socket, instance);
       });
       onConnect(socket);
-    });
+    };
+
+    io.on(`connection`, connectSocket);
+    io.on(`reconnect`, connectSocket);
 
     // Add a binding so that people can get to this instance,
     // should they really need to. Which they shouldn't.
