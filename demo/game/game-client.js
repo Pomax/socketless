@@ -1,6 +1,7 @@
 module.exports = class GameClient {
   constructor() {
     this.id = -1;
+    this.chat = [];
     this.users = [];
     this.games = [];
   }
@@ -13,6 +14,10 @@ module.exports = class GameClient {
     this.id = id;
     this.users = await this.server.user.getUserList();
     this.games = await this.server.game.getGameList();
+  }
+
+  async "chat:message"({ id, message }) {
+    this.chat.push({ id, message });
   }
 
   async "user:joined"(id) {

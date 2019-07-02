@@ -1,3 +1,12 @@
+/**
+ * The web client is effectively a thin client around
+ * the real client - it receives state updates that ensure
+ * that the browser is always in the same state as the
+ * real client, and its main purpose is to make sure it
+ * presents that state to the user in whatever fashion
+ * makes the most sense (vue, react, vanilla JS with
+ * template string HTML, whatever works for you).
+ */
 export default class WebClientClass {
   /**
    *  ...
@@ -121,16 +130,13 @@ export default class WebClientClass {
   }
 
   /**
-   *  ...
+   *
    */
-  async "game:updated"(details) {
-    console.log(`game updated:`, details);
-  }
+  updateChat() {
+    this.elements.chat.innerHTML = ``;
 
-  /**
-   *  ...
-   */
-  async "chat:message"({ id, message }) {
-    this.elements.chat.innerHTML += `<li>${id}: ${message}</li>\n`;
+    this.chat.forEach(msg => {
+      this.elements.chat.innerHTML += `<li>${msg.id}: ${msg.message}</li>\n`;
+    });
   }
 }
