@@ -29,8 +29,10 @@ module.exports = function setupSyncFunctionality(sockets, socket) {
   const getStateUpdate = () => {
     const state = getCurrentState();
     const diff = getStateDiff(state, prevState);
-    prevState = JSON.parse(JSON.stringify(state));
-    diff.push({ op: "replace", path: "/__seq_num", value: getNextSeqNum() });
+    if (diff.length) {
+      prevState = JSON.parse(JSON.stringify(state));
+      diff.push({ op: "replace", path: "/__seq_num", value: getNextSeqNum() });
+    }
     return diff;
   };
 
@@ -55,6 +57,13 @@ module.exports = function setupSyncFunctionality(sockets, socket) {
   // full sync request handler for browser sync request
   socket.on(`sync:full`, (_data, respond) => respond(getFullState()));
 
-  // send an initial full sync instruction
-  socket.emit(`sync:full`, getFullState());
+  // bind sync functions so that we use them during call routing
+  socket.fullsync = () => socket.emit(`sync:full`, getFullState());
+  socket.sync = () => {
+    let update = getStateUpdate();
+    if (update.length) socket.emit(`sync`, update)
+  };
+
+  // and send an initial full sync instruction to the browser
+  socket.fullsync();
 };

@@ -27,8 +27,12 @@ module.exports = function createWebClient(factory, ClientClass, API) {
       WebClientClass.prototype[name] = async function(data) {
         let evt = name.replace("$", ":");
         let response = await ClientClass.prototype[name].bind(this)(data);
-        if (sockets.browser)
-          response = response || (await sockets.browser.emit(evt, data));
+        if (sockets.browser) {
+          // always send a state diff to ensure client and browser have the same state.
+          sockets.browser.sync();
+          // capture and use the browser's response, if it implements this call handler.
+          response = (await sockets.browser.emit(evt, data)) || response;
+        }
         return response;
       };
       // We need to bind the function's name so that we can resolve

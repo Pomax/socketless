@@ -42,6 +42,15 @@ module.exports = class Game {
     this.setupWall();
     this.assignSeats();
     this.dealInitial();
+
+    // the game loop on the players' side is "draw one, play one",
+    // which translates to a server loop of "deal one, receive one".
+    this.currentWind = 0;
+    this.windOfTheRound = 0;
+    this.currentPlayer = 0;
+
+    let tilenumber = this.wall.get();
+    this.players[this.currentPlayer].client.game.draw(tilenumber);
   }
 
   setupWall() {

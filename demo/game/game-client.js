@@ -54,6 +54,10 @@ module.exports = class GameClient {
     this.tiles = tiles.sort((a, b) => a - b);
   }
 
+  async "game:draw"(tilenumber) {
+    this.tiles.push(tilenumber);
+  }
+
   async "game:playerDiscarded"({ gameName, id, tilenumber }) {
     if (id === this.id) {
       let pos = this.tiles.indexOf(tilenumber);

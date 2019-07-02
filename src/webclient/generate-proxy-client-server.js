@@ -30,7 +30,6 @@ function generateClientServer(WebClientClass) {
 
   // bind all new state values
   function updateState(newstate) {
-    console.log(`updating state:`, newstate);
     if (handler.setState) handler.setState(newstate);
     else Object.keys(newstate).forEach(key => (handler[key] = newstate[key]));
     if (handler.update) handler.update();
@@ -38,18 +37,21 @@ function generateClientServer(WebClientClass) {
 
   // turn a state diff into a state update
   async function handleStateDiff(patch) {
-    const seqnum = patch.slice(-1)[0].value;
+    if (patch.length === 0) return;
 
+    // verify we're still in sync by comparing messaging sequence numbers
+    const seqnum = patch.slice(-1)[0].value;
     if (seqnum === handler.__seq_num + 1) {
       const state = jsonpatch.apply_patch(handler, patch);
       return updateState(state);
     }
 
-    // if we get here, wee're no longer in sync and need to
-    // request a full state instead of a differential state.
+    // if we get here, wee're not in sync and need to request a full
+    // state object instead of trying to apply differential states.
     const state = await socket.emit(`sync:full`, {
       last_seq_num: handler.__seq_num
     });
+
     updateState(state);
   }
 
@@ -81,14 +83,8 @@ function generateClientServer(WebClientClass) {
 
       // If they don't, signal an undefined response, mostly to
       // make sure that the response listener gets cleaned up
-      // immediately on the true client's side, and request a
-      // sync() to ensure the browser reflects the client.
-      else {
-        socket.on(evt, async (_data, respond) => {
-          respond();
-          handler.sync();
-        });
-      }
+      // immediately on the true client's side.
+      else socket.on(evt, async (_data, respond) => respond());
     });
   });
 

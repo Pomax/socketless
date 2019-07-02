@@ -1,4 +1,7 @@
 export default class WebClientClass {
+  /**
+   *  ...
+   */
   constructor() {
     this.elements = {};
     [
@@ -13,27 +16,38 @@ export default class WebClientClass {
     ].forEach(id => (this.elements[id] = document.getElementById(id)));
   }
 
+  /**
+   *  ...
+   */
   async update() {
-    this.elements.users.innerHTML = ``;
+    this.updateGames();
+    this.updateCurrentGame();
+    this.updateDiscard();
+    this.updateUserInfo();
+    this.updateUsers();
+  }
 
+  /**
+   *  ...
+   */
+  updateGames() {
     this.elements.games.innerHTML = ``;
+
     this.games.forEach(g => {
       let li = document.createElement(`li`);
       let label = g.id === this.id ? "start" : "join";
       li.innerHTML = `<a>${JSON.stringify(g)} <button>${label}</button></a>`;
       this.elements.games.appendChild(li);
       let join = li.querySelector("button");
-      if (g.inProgress) {
-        join.disabled = true;
-      } else {
+
+      if (g.inProgress) join.disabled = true;
+      else {
         let joinOrStart = async () => {
           // if we're not joined, join.
-          let join = await this.server.game.join(g.name);
-          console.log(join);
+          this.server.game.join(g.name);
 
           // if we are, start the game.
-          let start = await this.server.game.start(g.name);
-          console.log(start);
+          this.server.game.start(g.name);
 
           // these two operations are mutually exclusive,
           // because owner can't join, and non-owners
@@ -46,9 +60,15 @@ export default class WebClientClass {
         join.addEventListener(`click`, joinOrStart);
       }
     });
+  }
+
+  /**
+   *  ...
+   */
+  updateCurrentGame() {
+    this.elements.tiles.innerHTML = ``;
 
     if (this.currentGame && this.tiles) {
-      this.elements.tiles.innerHTML = ``;
       this.tiles.forEach(tilenumber => {
         let li = document.createElement(`li`);
         li.className = `tile`;
@@ -63,14 +83,35 @@ export default class WebClientClass {
         this.elements.tiles.appendChild(li);
       });
     }
+  }
+
+  /**
+   *  ...
+   */
+  updateDiscard() {
+    this.elements.discard.innerHTML = ``;
 
     if (this.currentDiscard) {
       this.elements.discard.innerHTML = `Current discard: <span class="tile" data-tile="${this.currentDiscard.tilenumber}"></span>`;
     }
+  }
+
+  /**
+   *  ...
+   */
+  updateUserInfo() {
+    this.elements.playerinfo.innerHTML = ``;
 
     if (this.seat || this.wind) {
       this.elements.playerinfo.textContent = `seat: ${this.seat}, wind: ${this.wind}`;
     }
+  }
+
+  /**
+   *  ...
+   */
+  updateUsers() {
+    this.elements.users.innerHTML = ``;
 
     this.users.forEach(u => {
       let li = document.createElement("li");
@@ -79,10 +120,16 @@ export default class WebClientClass {
     });
   }
 
+  /**
+   *  ...
+   */
   async "game:updated"(details) {
     console.log(`game updated:`, details);
   }
 
+  /**
+   *  ...
+   */
   async "chat:message"({ id, message }) {
     this.elements.chat.innerHTML += `<li>${id}: ${message}</li>\n`;
   }
