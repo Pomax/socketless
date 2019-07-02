@@ -30,14 +30,16 @@ function generateClientServer(WebClientClass) {
 
   // bind all new state values
   function updateState(newstate) {
+    console.log(`updating state:`, newstate);
     if (handler.setState) handler.setState(newstate);
     else Object.keys(newstate).forEach(key => (handler[key] = newstate[key]));
     if (handler.update) handler.update();
   }
 
   // turn a state diff into a state update
-  function handleStateDiff(patch) {
+  async function handleStateDiff(patch) {
     const seqnum = patch.slice(-1)[0].value;
+
     if (seqnum === handler.__seq_num + 1) {
       const state = jsonpatch.apply_patch(handler, patch);
       return updateState(state);
@@ -45,7 +47,10 @@ function generateClientServer(WebClientClass) {
 
     // if we get here, wee're no longer in sync and need to
     // request a full state instead of a differential state.
-    socket.emit(`sync:full`, { last_seq_num: handler.__seq_num });
+    const state = await socket.emit(`sync:full`, {
+      last_seq_num: handler.__seq_num
+    });
+    updateState(state);
   }
 
   // ensure that bootstrap instructions are processed
@@ -53,7 +58,10 @@ function generateClientServer(WebClientClass) {
   socket.on(`sync:full`, state => updateState(state));
 
   // and offer a sync() function to manually trigger a bootstrap
-  handler.sync = async () => handleStateDiff(await socket.emit(`sync`));
+  handler.sync = async () => {
+    let diff = await socket.emit(`sync`);
+    handleStateDiff(diff);
+  };
 
   // Then: add the server => client => browser forwarding
   namespaces.forEach(namespace => {

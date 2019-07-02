@@ -14,6 +14,7 @@ module.exports = function setupSyncFunctionality(sockets, socket) {
 
   let prevState = {};
   let prevSeqNum = 0;
+  const getNextSeqNum = () => prevSeqNum++;
 
   // get the current client state
   const getCurrentState = () => {
@@ -29,7 +30,7 @@ module.exports = function setupSyncFunctionality(sockets, socket) {
     const state = getCurrentState();
     const diff = getStateDiff(state, prevState);
     prevState = JSON.parse(JSON.stringify(state));
-    diff.push({ op: "replace", path: "/__seq_num", value: prevSeqNum++ });
+    diff.push({ op: "replace", path: "/__seq_num", value: getNextSeqNum() });
     return diff;
   };
 
@@ -47,7 +48,7 @@ module.exports = function setupSyncFunctionality(sockets, socket) {
   const getFullState = () => {
     let state = getCurrentState();
     prevState = JSON.parse(JSON.stringify(state));
-    state.__seq_num = prevSeqNum++;
+    state.__seq_num = getNextSeqNum();
     return state;
   };
 

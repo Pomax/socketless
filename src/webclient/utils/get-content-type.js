@@ -2,6 +2,7 @@
 
 const CONTENT_TYPES = {
   ".html": `text/html`,
+  ".css": `text/css`,
   ".js": `application/javascript`,
   ".jpg": `image/jpeg`,
   ".png": `image/png`

@@ -28,21 +28,8 @@ module.exports = class GameClient {
     // useful to human players, not very relevant to bots
   }
 
-  async createGame() {
-    this.server.game.create();
-  }
-
   async "game:created"({ id, name }) {
     this.games.push({ id, name });
-  }
-
-  async joinGame(name) {
-    let { joined, reason } = await this.server.game.join(name);
-    if (joined) {
-      this.inGame = name;
-    } else {
-      console.error(`could not join: ${reason}`);
-    }
   }
 
   async "game:updated"(details) {
@@ -50,8 +37,32 @@ module.exports = class GameClient {
   }
 
   async "game:start"({ name, players }) {
-    console.log(`game ${name} started with players ${players}`);
-    // get ready!
+    this.currentGame = name;
+    this.players = players;
+    this.tiles = [];
+    this.bonus = [];
+    this.games.find(g => g.name === name).inProgress = true;
     return { ready: true };
+  }
+
+  async "game:setWind"({ seat, wind }) {
+    this.seat = seat;
+    this.wind = wind;
+  }
+
+  async "game:initialDeal"(tiles) {
+    this.tiles = tiles.sort((a, b) => a - b);
+  }
+
+  async "game:playerDiscarded"({ gameName, id, tilenumber }) {
+    if (id === this.id) {
+      let pos = this.tiles.indexOf(tilenumber);
+      if (pos !== -1) {
+        this.tiles.splice(pos, 1);
+      } else {
+        console.log(`${this.tiles} does not contain ${tilenumber}?`);
+      }
+    }
+    this.currentDiscard = { id, tilenumber };
   }
 };
