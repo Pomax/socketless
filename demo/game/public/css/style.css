@@ -6,3 +6,12 @@
     --p3: 0deg;
     --p4: 90deg;
 }
+
+#discard .tile {
+    vertical-align: middle;
+}
+
+.pass-button {
+    display: inline-block;
+    margin-left: 10px;
+}

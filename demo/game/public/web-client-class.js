@@ -55,6 +55,23 @@ export default class WebClientClass {
     });
   }
 
+  startDiscardTimer(timeout) {
+    const claimtTimeStart = Date.now();
+    const tick = () => {
+      const passed = Date.now() - claimtTimeStart;
+      if (passed > timeout) return this.updateDiscardTimer(1);
+      const timeoutProgress = passed / timeout;
+      this.claimTimeout = setTimeout(() => tick(), 500);
+      this.updateDiscardTimer(timeoutProgress);
+    };
+    tick();
+  }
+
+  cancelDiscardTimer() {
+    this.updateDiscardTimer(-1);
+    clearTimeout(this.claimTimeout);
+  }
+
   /**
    *  ...
    */
@@ -65,6 +82,19 @@ export default class WebClientClass {
     this.updateDiscard();
     this.updateUserInfo();
     this.updateUsers();
+
+    // A silly win notice
+    if (this.winner) {
+      console.log(this.winner);
+      if (this.winner.id === this.id) {
+        alert(`we won!`);
+      } else {
+        alert(
+          `player ${this.winner.id} (seat ${this.winner.seat}) won the game!`
+        );
+      }
+      this.winner = false;
+    }
   }
 
   /**
@@ -116,6 +146,7 @@ export default class WebClientClass {
         li.dataset.tile = tilenumber;
         li.textContent = tilenumber;
         li.addEventListener("click", async () => {
+          console.log("discarding");
           this.server.game.discardTile({ tilenumber });
         });
         this.elements.tiles.appendChild(li);
@@ -129,6 +160,8 @@ export default class WebClientClass {
 
       // TODO: add in a "declare win" button if we have self-drawn a win
     }
+
+    // TODO: add in rendering of other players concealed tiles + declared tiles
   }
 
   /**
@@ -141,7 +174,10 @@ export default class WebClientClass {
       this.elements.discard.innerHTML = `Current discard: <span class="tile" data-tile="${this.currentDiscard.tilenumber}"></span>`;
       let tile = this.elements.discard.querySelector(`.tile`);
 
+      // if this is not our tile, we can claim it.
       if (this.currentDiscard.id !== this.id) {
+        console.log("adding tile event handler");
+
         tile.addEventListener(`click`, async () => {
           // TODO: add in a claim options filtering based on tiles in hand
           let claimtype = await this.prompt(`Claim type`, CLAIM_TYPES),
@@ -155,7 +191,19 @@ export default class WebClientClass {
 
           this.server.game.claim({ claimtype, wintype });
         });
-      } else {
+
+        let btn = document.createElement("button");
+        btn.className = "pass-button";
+        btn.textContent = "pass";
+        btn.addEventListener("click", () => {
+          btn.disabled = true;
+          this.server.game.pass();
+        });
+        this.elements.discard.appendChild(btn);
+      }
+
+      // if this IS our tile, we can take it back (as long as no one's laid a claim yet).
+      else {
         tile.addEventListener(`click`, async () => {
           let result = await this.server.game.undoDiscard();
           if (!result.allowed) {
@@ -210,27 +258,24 @@ export default class WebClientClass {
     });
   }
 
+  async "game:setCurrentPlayer"(seat) {
+    this.cancelDiscardTimer();
+  }
+
   async "game:playerDiscarded"({ timeout }) {
     // set a timer for claiming the discard
     console.log(`starting a ${timeout}ms discard timer`);
-    const claimtTimeStart = Date.now();
-    const tick = () => {
-      const passed = Date.now() - claimtTimeStart;
-      if (passed > timeout) {
-        return this.updateDiscardTimer(1);
-      }
-      const timeoutProgress = passed / timeout;
-      this.claimTimeout = setTimeout(() => tick(), 500);
-      this.updateDiscardTimer(timeoutProgress);
-    };
-    tick();
+    this.startDiscardTimer(timeout);
+  }
+
+  async "game:claimAwarded"() {
+    this.cancelDiscardTimer();
   }
 
   async "game:playerTookBack"({ id, seat, tilenumber }) {
     // TODO: make this a visual signal
     console.log(`player ${id} (seat ${seat}) took back discard ${tilenumber}.`);
-    this.updateDiscardTimer(-1);
-    clearTimeout(this.claimTimeout);
+    this.cancelDiscardTimer();
   }
 
   async "game:playerPassed"({ id, seat }) {

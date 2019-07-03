@@ -9,5 +9,5 @@ const webclient = ClientServer.createWebClient(url, public);
 
 webclient.listen(0, () => {
   const clientURL = `http://localhost:${webclient.address().port}`;
-  console.log(`\nweb client listening on ${clientURL}\n`);
+  console.log(`web client listening on ${clientURL}`);
 });

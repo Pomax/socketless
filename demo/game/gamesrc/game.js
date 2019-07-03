@@ -32,13 +32,17 @@ module.exports = class Game {
     return {
       id: this.owner.id,
       name: this.name,
-      players: this.players.map(player => player.id)
+      players: this.players.map(player => {
+        return {
+          id: player.id,
+          seat: player.seat
+        };
+      })
     };
   }
 
   async start() {
     let details = this.getDetails();
-    this.players.forEach(player => player.client.game.start(details));
     this.inProgress = true;
 
     // the game loop on the players' side is "draw one, play one",
@@ -46,12 +50,12 @@ module.exports = class Game {
 
     this.setupWall();
     this.assignSeats();
-    this.dealInitial();
+    this.players.forEach(player => player.client.game.start(details));
 
     this.currentWind = 0;
     this.windOfTheRound = 0;
     this.currentPlayer = 0;
-
+    this.dealInitialTiles();
     this.dealTile();
   }
 
@@ -70,7 +74,7 @@ module.exports = class Game {
     });
   }
 
-  dealInitial() {
+  dealInitialTiles() {
     this.players.forEach(player => {
       let tiles = this.wall.get(13);
       player.client.game.initialDeal(tiles);
@@ -91,7 +95,7 @@ module.exports = class Game {
   }
 
   playerDiscarded(player, tilenumber) {
-    if (player.id !== this.currentPlayer) return;
+    if (player.seat !== this.currentPlayer) return;
 
     this.currentDiscard = tilenumber;
     this.claims = [];
@@ -133,8 +137,7 @@ module.exports = class Game {
       this.players.forEach(p =>
         p.client.game.playerPassed({ id: player.id, seat: player.seat })
       );
-      if (this.claims.length + this.passes.length === 3) {
-        clearInterval(this.claimTimer);
+      if (this.claims.length + this.passes.length === this.players.length - 1) {
         this.handleClaims();
       }
     }
@@ -142,13 +145,14 @@ module.exports = class Game {
 
   playerClaim(player, claimtype, wintype) {
     this.claims.push({ player, claimtype, wintype });
-    if (this.claims.length === 3) {
-      clearTimeout(this.claimTimer);
+    if (this.claims.length + this.passes.length === this.players.length - 1) {
       this.handleClaims();
     }
   }
 
   handleClaims() {
+    clearInterval(this.claimTimer);
+
     if (!this.claims.length) {
       return this.nextPlayer();
     }
@@ -163,5 +167,20 @@ module.exports = class Game {
     };
     this.players.forEach(player => player.client.game.claimAwarded(award));
     this.currentPlayer = claim.player.seat;
+
+    if (claim.claimtype === `win`) {
+      this.players.forEach(player => {
+        // declare winner
+        player.client.game.playerWon({
+          id: award.id,
+          seat: award.seat
+        });
+
+        // unbind the game
+        player.game = undefined;
+      });
+
+      this.finished = true;
+    }
   }
 };

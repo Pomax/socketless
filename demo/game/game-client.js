@@ -110,13 +110,13 @@ module.exports = class GameClient {
 
   lock({ tilenumber, claimtype, wintype }) {
     if (claimtype === "win") {
-      this.winner = true;
       claimtype = wintype;
     }
 
     let set,
       t = tilenumber;
 
+    if (claimtype === "pair") set = [t];
     if (claimtype === "chow1") set = [t + 1, t + 2];
     if (claimtype === "chow2") set = [t - 1, t + 1];
     if (claimtype === "chow3") set = [t - 2, t - 1];
@@ -131,5 +131,10 @@ module.exports = class GameClient {
     set.push(t);
 
     this.locked.push(set.sort(sortTiles));
+  }
+
+  async "game:playerWon"(winner) {
+    console.log(this.id, winner);
+    this.winner = winner;
   }
 };
