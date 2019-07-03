@@ -106,7 +106,7 @@ module.exports = class GameServer {
     let game = this.games.find(g => g.name === gameName);
     if (game) {
       let user = this.getUser(from);
-      game.discardTile(user, tilenumber);
+      game.playerDiscarded(user, tilenumber);
       return { accepted: true };
     }
     return { accepted: false, reason: `no such game` };

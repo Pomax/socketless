@@ -53,11 +53,6 @@ module.exports = class Game {
     this.dealTile();
   }
 
-  dealTile() {
-    let tilenumber = this.wall.get();
-    this.players[this.currentPlayer].client.game.draw(tilenumber);
-  }
-
   setupWall() {
     this.wall = new Wall();
   }
@@ -78,7 +73,12 @@ module.exports = class Game {
     });
   }
 
-  discardTile(player, tilenumber) {
+  dealTile() {
+    let tilenumber = this.wall.get();
+    this.players[this.currentPlayer].client.game.draw(tilenumber);
+  }
+
+  playerDiscarded(player, tilenumber) {
     if (player.id !== this.currentPlayer) return;
 
     // inform all clients of this discard
