@@ -75,7 +75,10 @@ module.exports = class Game {
 
   dealTile() {
     let tilenumber = this.wall.get();
-    this.players[this.currentPlayer].client.game.draw(tilenumber);
+    this.players.forEach((player,seat) => {
+      player.client.game.setCurrentPlayer(this.currentPlayer);
+      if (seat === this.currentPlayer) player.client.game.draw(tilenumber);
+    });
   }
 
   playerDiscarded(player, tilenumber) {
@@ -86,12 +89,29 @@ module.exports = class Game {
       p.client.game.playerDiscarded({
         gameName: this.name,
         id: player.id,
-        tilenumber
+        tilenumber,
+        timeout: 5000
       })
     );
 
-    // move to next player
-    this.currentPlayer = (this.currentPlayer + 1) % this.players.length;
-    this.dealTile();
+    // start a claim timer. When it expires,
+    // move to the next player if no claims
+    // have been made. Otherwise, honour the
+    // highest ranking claim.
+    this.claims = [];
+    this.claimTimer = setTimeout(() => {
+      if (this.claims.length) {
+        // award claim
+        let claim = this.claims[0];
+        claim.player.client.game.awardClaim({
+          claimtype: claim.type,
+          tilenumber
+        });
+      } else {
+        // move to next player
+        this.currentPlayer = (this.currentPlayer + 1) % this.players.length;
+        this.dealTile();
+      }
+    }, 5000);
   }
 };

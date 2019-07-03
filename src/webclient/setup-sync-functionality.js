@@ -61,7 +61,7 @@ module.exports = function setupSyncFunctionality(sockets, socket) {
   socket.fullsync = () => socket.emit(`sync:full`, getFullState());
   socket.sync = () => {
     let update = getStateUpdate();
-    if (update.length) socket.emit(`sync`, update)
+    if (update.length) socket.emit(`sync`, update);
   };
 
   // and send an initial full sync instruction to the browser

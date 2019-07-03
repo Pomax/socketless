@@ -1,3 +1,5 @@
+const sortTiles = (a,b) => a-b;
+
 module.exports = class GameClient {
   constructor() {
     this.id = -1;
@@ -56,14 +58,20 @@ module.exports = class GameClient {
   }
 
   async "game:initialDeal"(tiles) {
-    this.tiles = tiles.sort((a, b) => a - b);
+    this.tiles = tiles.sort(sortTiles);
   }
 
   async "game:draw"(tilenumber) {
-    this.tiles.push(tilenumber);
+    this.tiles.push(tilenumber)
+    this.tiles.sort(sortTiles);
   }
 
-  async "game:playerDiscarded"({ gameName, id, tilenumber }) {
+  async "game:setCurrentPlayer"(seat) {
+    this.currentDiscard = false;
+    this.currentPlayer = seat;
+  }
+
+  async "game:playerDiscarded"({ gameName, id, tilenumber, timeout }) {
     if (id === this.id) {
       let pos = this.tiles.indexOf(tilenumber);
       if (pos !== -1) {

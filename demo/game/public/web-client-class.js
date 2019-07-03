@@ -29,6 +29,7 @@ export default class WebClientClass {
    *  ...
    */
   async update() {
+    console.log('updating...');
     this.updateGames();
     this.updateCurrentGame();
     this.updateDiscard();
@@ -138,5 +139,13 @@ export default class WebClientClass {
     this.chat.forEach(msg => {
       this.elements.chat.innerHTML += `<li>${msg.id}: ${msg.message}</li>\n`;
     });
+  }
+
+  async "game:playerDiscarded"({ gameName, id, tilenumber, timeout }) {
+    // set a timer for claiming the discard
+    console.log(`starting a ${timeout}ms discard timer`);
+    setTimeout(() => {
+      console.log(`discard timer expired`);
+    }, timeout);
   }
 }
