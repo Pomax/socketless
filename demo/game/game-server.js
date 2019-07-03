@@ -86,10 +86,10 @@ module.exports = class GameServer {
     return { joined: false, reason: `no such game` };
   }
 
-  async "game:start"(from, gameName) {
-    let game = this.games.find(g => g.name === gameName);
+  async "game:start"(from) {
+    let user = this.getUser(from);
+    let game = user.game;
     if (game) {
-      let user = this.getUser(from);
       if (game.owner === user) {
         if (!game.inProgress) {
           game.start();
@@ -99,16 +99,45 @@ module.exports = class GameServer {
       }
       return { started: false, reason: `not permitted` };
     }
-    return { started: false, reason: `no such game` };
+    return { started: false, reason: `not in a game` };
   }
 
-  async "game:discardTile"(from, { gameName, tilenumber }) {
-    let game = this.games.find(g => g.name === gameName);
+  async "game:discardTile"(from, { tilenumber }) {
+    let user = this.getUser(from);
+    let game = user.game;
     if (game) {
-      let user = this.getUser(from);
       game.playerDiscarded(user, tilenumber);
       return { accepted: true };
     }
-    return { accepted: false, reason: `no such game` };
+    return { accepted: false, reason: `not in a game` };
+  }
+
+  async "game:undoDiscard"(from) {
+    let user = this.getUser(from);
+    let game = user.game;
+    if (game) {
+      let reason = game.undoDiscard(user);
+      if (!reason) return { allowed: true };
+      return { allowed: false, reason };
+    }
+    return { allowed: false, reason: `not in a game` };
+  }
+
+  async "game:pass"(from) {
+    let user = this.getUser(from);
+    let game = user.game;
+    if (game) {
+      game.playerPasses(user);
+    }
+  }
+
+  async "game:claim"(from, { claimtype, wintype }) {
+    let user = this.getUser(from);
+    let game = user.game;
+    if (game) {
+      game.playerClaim(user, claimtype, wintype);
+      return { allowed: true };
+    }
+    return { allowed: false, reason: `not in a game` };
   }
 };

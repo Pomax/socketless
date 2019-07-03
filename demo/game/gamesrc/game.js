@@ -12,11 +12,13 @@ module.exports = class Game {
     this.owner = owner;
     this.players = [owner];
     this.inProgress = false;
+    owner.game = this;
   }
 
   addPlayer(player) {
     if (this.players.indexOf(player) > -1) return true;
     this.players.push(player);
+    player.game = this;
   }
 
   left(player) {
@@ -58,12 +60,14 @@ module.exports = class Game {
   }
 
   assignSeats() {
-    this.players.forEach((player, position) =>
+    this.players.forEach((player, position) => {
+      player.seat = position;
+      player.wind = [`東`, `北`, `西`, `北`][position];
       player.client.game.setWind({
-        seat: position,
-        wind: [`東`, `北`, `西`, `北`][position]
-      })
-    );
+        seat: player.seat,
+        wind: player.wind
+      });
+    });
   }
 
   dealInitial() {
@@ -75,20 +79,30 @@ module.exports = class Game {
 
   dealTile() {
     let tilenumber = this.wall.get();
-    this.players.forEach((player,seat) => {
+    this.players.forEach((player, seat) => {
       player.client.game.setCurrentPlayer(this.currentPlayer);
       if (seat === this.currentPlayer) player.client.game.draw(tilenumber);
     });
   }
 
+  nextPlayer() {
+    this.currentPlayer = (this.currentPlayer + 1) % this.players.length;
+    this.dealTile();
+  }
+
   playerDiscarded(player, tilenumber) {
     if (player.id !== this.currentPlayer) return;
+
+    this.currentDiscard = tilenumber;
+    this.claims = [];
+    this.passes = [];
 
     // inform all clients of this discard
     this.players.forEach(p =>
       p.client.game.playerDiscarded({
         gameName: this.name,
         id: player.id,
+        seat: player.seat,
         tilenumber,
         timeout: 5000
       })
@@ -98,20 +112,56 @@ module.exports = class Game {
     // move to the next player if no claims
     // have been made. Otherwise, honour the
     // highest ranking claim.
-    this.claims = [];
-    this.claimTimer = setTimeout(() => {
-      if (this.claims.length) {
-        // award claim
-        let claim = this.claims[0];
-        claim.player.client.game.awardClaim({
-          claimtype: claim.type,
-          tilenumber
-        });
-      } else {
-        // move to next player
-        this.currentPlayer = (this.currentPlayer + 1) % this.players.length;
-        this.dealTile();
+    this.claimTimer = setTimeout(() => this.handleClaims(), 5000);
+  }
+
+  undoDiscard(player) {
+    if (player.seat !== this.currentPlayer) return `not discarding player`;
+    if (this.claims.length) return `discard is already claimed`;
+    clearTimeout(this.claimTimer);
+    let undo = {
+      id: player.id,
+      seat: player.seat,
+      tilenumber: this.currentDiscard
+    };
+    this.players.forEach(p => p.client.game.playerTookBack(undo));
+  }
+
+  playerPasses(player) {
+    if (this.passes.indexOf(player) === -1) {
+      this.passes.push(player);
+      this.players.forEach(p =>
+        p.client.game.playerPassed({ id: player.id, seat: player.seat })
+      );
+      if (this.claims.length + this.passes.length === 3) {
+        clearInterval(this.claimTimer);
+        this.handleClaims();
       }
-    }, 5000);
+    }
+  }
+
+  playerClaim(player, claimtype, wintype) {
+    this.claims.push({ player, claimtype, wintype });
+    if (this.claims.length === 3) {
+      clearTimeout(this.claimTimer);
+      this.handleClaims();
+    }
+  }
+
+  handleClaims() {
+    if (!this.claims.length) {
+      return this.nextPlayer();
+    }
+
+    let claim = this.claims[0];
+    let award = {
+      tilenumber: this.currentDiscard,
+      id: claim.player.id,
+      seat: claim.player.seat,
+      claimtype: claim.claimtype,
+      wintype: claim.wintype
+    };
+    this.players.forEach(player => player.client.game.claimAwarded(award));
+    this.currentPlayer = claim.player.seat;
   }
 };

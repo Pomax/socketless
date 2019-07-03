@@ -1,4 +1,4 @@
-const sortTiles = (a,b) => a-b;
+const sortTiles = (a, b) => a - b;
 
 module.exports = class GameClient {
   constructor() {
@@ -48,6 +48,7 @@ module.exports = class GameClient {
     this.players = players;
     this.tiles = [];
     this.bonus = [];
+    this.locked = [];
     this.games.find(g => g.name === name).inProgress = true;
     return { ready: true };
   }
@@ -62,16 +63,20 @@ module.exports = class GameClient {
   }
 
   async "game:draw"(tilenumber) {
-    this.tiles.push(tilenumber)
+    this.tiles.push(tilenumber);
     this.tiles.sort(sortTiles);
   }
 
-  async "game:setCurrentPlayer"(seat) {
+  setSeat(seat) {
     this.currentDiscard = false;
     this.currentPlayer = seat;
   }
 
-  async "game:playerDiscarded"({ gameName, id, tilenumber, timeout }) {
+  async "game:setCurrentPlayer"(seat) {
+    this.setSeat(seat);
+  }
+
+  async "game:playerDiscarded"({ id, seat, tilenumber }) {
     if (id === this.id) {
       let pos = this.tiles.indexOf(tilenumber);
       if (pos !== -1) {
@@ -80,6 +85,51 @@ module.exports = class GameClient {
         console.log(`${this.tiles} does not contain ${tilenumber}?`);
       }
     }
-    this.currentDiscard = { id, tilenumber };
+    this.currentDiscard = { id, seat, tilenumber };
+  }
+
+  async "game:playerTookBack"({ id, seat, tilenumber }) {
+    this.currentDiscard = false;
+    if (this.id === id) {
+      this.tiles.push(tilenumber);
+      this.tiles.sort(sortTiles);
+    }
+  }
+
+  async "game:playerPassed"({ id, seat }) {
+    // useful to human players, not very relevant to bots
+  }
+
+  async "game:claimAwarded"(claim) {
+    this.setSeat(claim.seat);
+    if (claim.id === this.id) this.lock(claim);
+    else {
+      // seeing claim honoring for other plays is not very relevant for bots
+    }
+  }
+
+  lock({ tilenumber, claimtype, wintype }) {
+    if (claimtype === "win") {
+      this.winner = true;
+      claimtype = wintype;
+    }
+
+    let set,
+      t = tilenumber;
+
+    if (claimtype === "chow1") set = [t + 1, t + 2];
+    if (claimtype === "chow2") set = [t - 1, t + 1];
+    if (claimtype === "chow3") set = [t - 2, t - 1];
+    if (claimtype === "pung") set = [t, t];
+    if (claimtype === "kong") set = [t, t, t];
+
+    set.forEach(t => {
+      let pos = this.tiles.indexOf(t);
+      this.tiles.splice(pos, 1);
+    });
+
+    set.push(t);
+
+    this.locked.push(set.sort(sortTiles));
   }
 };
