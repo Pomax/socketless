@@ -59,11 +59,8 @@ function generateClientServer(WebClientClass) {
   socket.on(`sync`, diff => handleStateDiff(diff));
   socket.on(`sync:full`, state => updateState(state));
 
-  // and offer a sync() function to manually trigger a bootstrap
-  handler.sync = async () => {
-    let diff = await socket.emit(`sync`);
-    handleStateDiff(diff);
-  };
+  // and offer a sync() function to manually trigger a full bootstrap
+  handler.sync = async () => handleStateDiff(await socket.emit(`sync:full`));
 
   // Then: add the server => client => browser forwarding
   namespaces.forEach(namespace => {

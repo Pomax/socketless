@@ -39,16 +39,21 @@ module.exports = class Game {
     this.players.forEach(player => player.client.game.start(details));
     this.inProgress = true;
 
+    // the game loop on the players' side is "draw one, play one",
+    // which translates to a server loop of "deal one, receive one".
+
     this.setupWall();
     this.assignSeats();
     this.dealInitial();
 
-    // the game loop on the players' side is "draw one, play one",
-    // which translates to a server loop of "deal one, receive one".
     this.currentWind = 0;
     this.windOfTheRound = 0;
     this.currentPlayer = 0;
 
+    this.dealTile();
+  }
+
+  dealTile() {
     let tilenumber = this.wall.get();
     this.players[this.currentPlayer].client.game.draw(tilenumber);
   }
@@ -74,6 +79,9 @@ module.exports = class Game {
   }
 
   discardTile(player, tilenumber) {
+    if (player.id !== this.currentPlayer) return;
+
+    // inform all clients of this discard
     this.players.forEach(p =>
       p.client.game.playerDiscarded({
         gameName: this.name,
@@ -81,5 +89,9 @@ module.exports = class Game {
         tilenumber
       })
     );
+
+    // move to next player
+    this.currentPlayer = (this.currentPlayer + 1) % this.players.length;
+    this.dealTile();
   }
 };
