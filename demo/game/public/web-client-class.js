@@ -30,10 +30,10 @@ export default class WebClientClass {
       `gamelist`,
       `games`,
       `lobby`,
+      `lobbydata`,
       `users`,
+      `players`,
       `chat`,
-      `tiles`,
-      `locked`,
       `playerinfo`,
       `discard`
     ].forEach(id => (this.elements[id] = document.getElementById(id)));
@@ -42,7 +42,7 @@ export default class WebClientClass {
   prompt(label, options) {
     return new Promise(resolve => {
       let prompt = this.elements.prompt;
-      prompt.innerHTML = `<h1>${label}</h1>`;
+      //prompt.innerHTML = `<h1>${label}</h1>`;
       options.forEach(option => {
         let btn = document.createElement("button");
         btn.textContent = option;
@@ -72,16 +72,42 @@ export default class WebClientClass {
     clearTimeout(this.claimTimeout);
   }
 
+  resetUI() {
+    this.elements.games.innerHTML = ``;
+    this.elements.users.innerHTML = ``;
+    this.elements.discard.innerHTML = ``;
+
+
+    this.elements.players.innerHTML = ``;
+    this.playerElements = [];
+    this.players.forEach( (p,seat) => {
+      let div = document.createElement('div');
+      div.id = `seat-${seat}`;
+      div.className = `player`;
+      div.innerHTML = `
+        <ul class="tiles"></ul>
+        <ul class="locked"></ul>
+      `;
+      this.elements.players.appendChild(div);
+      this.playerElements[seat] = div;
+    });
+
+    if (this.currentGame !== undefined) {
+      this.elements.lobbydata.style.display = "none";
+    }
+  }
+
   /**
    *  ...
    */
   async update() {
-    console.log(`updating...`);
+    this.resetUI();
+
     this.updateGames();
-    this.updateCurrentGame();
-    this.updateDiscard();
     this.updateUserInfo();
     this.updateUsers();
+    this.updateCurrentGame();
+    this.updateDiscard();
 
     // A silly win notice
     if (this.winner) {
@@ -101,8 +127,6 @@ export default class WebClientClass {
    *  ...
    */
   updateGames() {
-    this.elements.games.innerHTML = ``;
-
     this.games.forEach(g => {
       let li = document.createElement(`li`);
       let label = g.id === this.id ? "start" : "join";
@@ -136,31 +160,57 @@ export default class WebClientClass {
    *  ...
    */
   updateCurrentGame() {
-    this.elements.tiles.innerHTML = ``;
-    this.elements.locked.innerHTML = ``;
+    if (this.players) {
+      this.playerElements.forEach( (element, seat) => {
+        if (seat === this.seat) {
 
-    if (this.currentGame && this.tiles) {
-      this.tiles.forEach(tilenumber => {
-        let li = document.createElement(`li`);
-        li.className = `tile`;
-        li.dataset.tile = tilenumber;
-        li.textContent = tilenumber;
-        li.addEventListener("click", async () => {
-          console.log("discarding");
-          this.server.game.discardTile({ tilenumber });
-        });
-        this.elements.tiles.appendChild(li);
+          this.tiles.forEach(tilenumber => {
+            let li = document.createElement(`li`);
+            li.className = `tile`;
+            li.dataset.tile = tilenumber;
+            li.textContent = tilenumber;
+            li.addEventListener("click", async () => {
+              console.log("discarding");
+              this.server.game.discardTile({ tilenumber });
+            });
+            element.querySelector('.tiles').appendChild(li);
+          });
+
+          this.locked.forEach((set, setnum) => {
+            set.forEach(tilenumber => {
+              element.querySelector('.locked').innerHTML += `<li class="tile" data-setnum="${setnum}" data-tile="${tilenumber}">${tilenumber}</li>`;
+            });
+          });
+        }
+
+        else {
+          let player = this.players[seat];
+          let tilecount = 13;
+
+          if (player.locked) {
+            player.locked.forEach( (claim, setnum) => {
+              let { tilenumber, claimtype, wintype } = claim;
+              if (claimtype === 'win') claimtype = wintype;
+              let count = (claimtype === 'kong') ? 4 : 3;
+              for (let i=0; i<count; i++) {
+                let html = `<li class="tile" data-setnum="${setnum}" data-tile="${ tilenumber + (claimtype.startsWith('chow') ? i : 0) }"></li>`;
+                element.querySelector('.locked').innerHTML += html;
+              }
+              tilecount -= count;
+            })
+          }
+
+          if (seat === this.currentPlayer && !this.currentDiscard) {
+            tilecount++;
+          }
+
+          while(tilecount--) {
+            element.querySelector('.tiles').innerHTML += `<li class="tile" data-tile="-1"></li>`;
+          }
+        }
       });
-
-      this.locked.forEach((set, setnum) => {
-        set.forEach(tilenumber => {
-          this.elements.locked.innerHTML += `<li class="tile" data-setnum="${setnum}" data-tile="${tilenumber}">${tilenumber}</li>`;
-        });
-      });
-
-      // TODO: add in a "declare win" button if we have self-drawn a win
     }
-
+    // TODO: add in a "declare win" button if we have self-drawn a win
     // TODO: add in rendering of other players concealed tiles + declared tiles
   }
 
@@ -168,8 +218,6 @@ export default class WebClientClass {
    *  ...
    */
   updateDiscard() {
-    this.elements.discard.innerHTML = ``;
-
     if (this.currentDiscard) {
       this.elements.discard.innerHTML = `Current discard: <span class="tile" data-tile="${this.currentDiscard.tilenumber}"></span>`;
       let tile = this.elements.discard.querySelector(`.tile`);
@@ -178,7 +226,19 @@ export default class WebClientClass {
       if (this.currentDiscard.id !== this.id) {
         console.log("adding tile event handler");
 
-        tile.addEventListener(`click`, async () => {
+        let passbtn = document.createElement("button");
+        passbtn.className = "pass-button";
+        passbtn.textContent = "pass";
+        passbtn.addEventListener("click", () => {
+          passbtn.disabled = true;
+          this.server.game.pass();
+        });
+        this.elements.discard.appendChild(passbtn);
+
+        let claimbtn = document.createElement("button");
+        claimbtn.className = "claim-button";
+        claimbtn.textContent = "claim";
+        claimbtn.addEventListener("click", async () => {
           // TODO: add in a claim options filtering based on tiles in hand
           let claimtype = await this.prompt(`Claim type`, CLAIM_TYPES),
             wintype = false;
@@ -192,14 +252,7 @@ export default class WebClientClass {
           this.server.game.claim({ claimtype, wintype });
         });
 
-        let btn = document.createElement("button");
-        btn.className = "pass-button";
-        btn.textContent = "pass";
-        btn.addEventListener("click", () => {
-          btn.disabled = true;
-          this.server.game.pass();
-        });
-        this.elements.discard.appendChild(btn);
+        this.elements.discard.appendChild(claimbtn);
       }
 
       // if this IS our tile, we can take it back (as long as no one's laid a claim yet).
@@ -227,8 +280,6 @@ export default class WebClientClass {
    *  ...
    */
   updateUserInfo() {
-    this.elements.playerinfo.innerHTML = ``;
-
     if (this.seat || this.wind) {
       this.elements.playerinfo.textContent = `seat: ${this.seat}, wind: ${this.wind}`;
     }
@@ -238,8 +289,6 @@ export default class WebClientClass {
    *  ...
    */
   updateUsers() {
-    this.elements.users.innerHTML = ``;
-
     this.users.forEach(u => {
       let li = document.createElement("li");
       li.textContent = u;
@@ -251,14 +300,13 @@ export default class WebClientClass {
    *
    */
   updateChat() {
-    this.elements.chat.innerHTML = ``;
-
     this.chat.forEach(msg => {
       this.elements.chat.innerHTML += `<li>${msg.id}: ${msg.message}</li>\n`;
     });
   }
 
   async "game:setCurrentPlayer"(seat) {
+    // TODO: make this a visual signal
     this.cancelDiscardTimer();
   }
 

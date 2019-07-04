@@ -104,7 +104,9 @@ module.exports = class GameClient {
     this.setSeat(claim.seat);
     if (claim.id === this.id) this.lock(claim);
     else {
-      // seeing claim honoring for other plays is not very relevant for bots
+      let player = this.players[claim.seat];
+      if (!player.locked) player.locked = [];
+      player.locked.push(claim);
     }
   }
 
@@ -134,7 +136,6 @@ module.exports = class GameClient {
   }
 
   async "game:playerWon"(winner) {
-    console.log(this.id, winner);
     this.winner = winner;
   }
 };
