@@ -35,27 +35,25 @@ module.exports = class Game {
       players: this.players.map(player => {
         return {
           id: player.id,
-          seat: player.seat
+          seat: player.seat,
+          wind: player.wind
         };
       })
     };
   }
 
   async start() {
-    let details = this.getDetails();
     this.inProgress = true;
-
-    // the game loop on the players' side is "draw one, play one",
-    // which translates to a server loop of "deal one, receive one".
-
     this.setupWall();
     this.assignSeats();
+    let details = this.getDetails();
     this.players.forEach(player => player.client.game.start(details));
-
     this.currentWind = 0;
     this.windOfTheRound = 0;
     this.currentPlayer = 0;
     this.dealInitialTiles();
+    // the game loop on the players' side is "draw one, play one",
+    // which translates to a server loop of "deal one, receive one".
     this.dealTile();
   }
 

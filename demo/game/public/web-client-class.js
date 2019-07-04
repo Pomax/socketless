@@ -37,6 +37,8 @@ export default class WebClientClass {
       `playerinfo`,
       `discard`
     ].forEach(id => (this.elements[id] = document.getElementById(id)));
+
+    window.WebClientInstance = this;
   }
 
   prompt(label, options) {

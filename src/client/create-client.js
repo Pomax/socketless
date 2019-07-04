@@ -1,3 +1,5 @@
+const addStateManagement = require("./add-state-management.js")
+
 module.exports = function(clientServer, DefaultClientClass) {
   /**
    * This function creates a socket.io client with all the bells and
@@ -7,7 +9,9 @@ module.exports = function(clientServer, DefaultClientClass) {
   return function(serverURL, ClientClass = DefaultClientClass) {
     // Set up a connection to the socket server and build a client instance.
     const socketToServer = require(`socket.io-client`)(serverURL);
-    const instance = new ClientClass();
+
+    // Build a client and add state management
+    const instance = addStateManagement(new ClientClass());
 
     // Ensure that clients receive a trigger when they connect to the server.
     socketToServer.on("connect", (...data) => {

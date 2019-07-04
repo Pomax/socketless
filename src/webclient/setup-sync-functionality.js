@@ -1,4 +1,3 @@
-const getState = require("./utils/get-state.js");
 const getStateDiff = require("./utils/get-state-diff.js");
 
 /**
@@ -6,20 +5,9 @@ const getStateDiff = require("./utils/get-state-diff.js");
  * was actually handled, and so it is possible for `prev` to get updated
  */
 module.exports = function setupSyncFunctionality(sockets, socket) {
-  const bypassTheseProperties = [
-    "is_web_client",
-    "browser_connected",
-    "server"
-  ];
-
   let prevState = {};
   let prevSeqNum = 0;
   const getNextSeqNum = () => prevSeqNum++;
-
-  // get the current client state
-  const getCurrentState = () => {
-    return getState(sockets.client, bypassTheseProperties);
-  };
 
   /**
    * The state update function returns a diff between the current
@@ -27,7 +15,7 @@ module.exports = function setupSyncFunctionality(sockets, socket) {
    * be called in response to sync() calls.
    */
   const getStateUpdate = () => {
-    const state = getCurrentState();
+    const state = sockets.client.state;
     const diff = getStateDiff(state, prevState);
     if (diff.length) {
       prevState = JSON.parse(JSON.stringify(state));
@@ -48,7 +36,7 @@ module.exports = function setupSyncFunctionality(sockets, socket) {
    * knows the next sequence number should be).
    */
   const getFullState = () => {
-    let state = getCurrentState();
+    const state = sockets.client.state;
     prevState = JSON.parse(JSON.stringify(state));
     state.__seq_num = getNextSeqNum();
     return state;
