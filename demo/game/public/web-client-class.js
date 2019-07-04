@@ -1,3 +1,6 @@
+// TODO: add in a "declare win" button if we have self-drawn a win
+// TODO: add in rendering of other players concealed tiles + declared tiles
+
 const CLAIM_TYPES = [
   `cancel`,
   `chow1`,
@@ -169,61 +172,88 @@ export default class WebClientClass {
    */
   updateCurrentGame() {
     if (this.players) {
-      this.playerElements.forEach( (element, seat) => {
-        if (seat === this.seat) {
+      const gameHTML = `
+        <span id="playerinfo">${
+          this.renderPlayerInfo()
+        }</span>
+        <div id="players">${
+          this.renderPlayers()
+        }</div>
+        <div id="discard">${
+          this.renderDiscard()
+        }</div>
+        <div id="prompt"></div>
+      `;
 
-          this.tiles.forEach(tilenumber => {
-            let li = document.createElement(`li`);
-            li.className = `tile`;
-            li.dataset.tile = tilenumber;
-            li.textContent = tilenumber;
-            li.addEventListener("click", async () => {
-              console.log("discarding");
-              this.server.game.discardTile({ tilenumber });
-            });
-            element.querySelector('.tiles').appendChild(li);
-          });
-
-          if (this.latestTile) {
-            element.querySelector(`.tiles .tile[data-tile="${this.latestTile}"]`).classList.add('latest');
-          }
-
-          this.locked.forEach((set, setnum) => {
-            set.forEach(tilenumber => {
-              element.querySelector('.locked').innerHTML += `<li class="tile" data-setnum="${setnum}" data-tile="${tilenumber}">${tilenumber}</li>`;
-            });
-          });
-        }
-
-        else {
-          let player = this.players[seat];
-          let tilecount = 13;
-
-          if (player.locked) {
-            player.locked.forEach( (claim, setnum) => {
-              let { tilenumber, claimtype, wintype } = claim;
-              if (claimtype === 'win') claimtype = wintype;
-              let count = (claimtype === 'kong') ? 4 : 3;
-              for (let i=0; i<count; i++) {
-                let html = `<li class="tile" data-setnum="${setnum}" data-tile="${ tilenumber + (claimtype.startsWith('chow') ? i : 0) }"></li>`;
-                element.querySelector('.locked').innerHTML += html;
-              }
-              tilecount -= count;
-            })
-          }
-
-          if (seat === this.currentPlayer && !this.currentDiscard) {
-            tilecount++;
-          }
-
-          while(tilecount--) {
-            element.querySelector('.tiles').innerHTML += `<li class="tile" data-tile="-1"></li>`;
-          }
-        }
-      });
+      document.querySelector('#active-game').innerHTML = gameHTML;
     }
-    // TODO: add in a "declare win" button if we have self-drawn a win
-    // TODO: add in rendering of other players concealed tiles + declared tiles
+  }
+
+  renderPlayerInfo() {
+    return `Seat ${this.seat}, wind ${this.wind}`;
+  }
+
+  renderPlayers() {
+    return this.players.map(player => this.renderPlayerInfo(player)).join('\n');
+  }
+
+  renderPlayer(player) {
+    if (player.id !== this.id) return renderOtherPlayer(player);
+    return `
+      <div class="player">
+        <ul class="tiles">${ this.renderTiles() }</ul>
+        <ul class="locked">${ this.renderLockedTiles() }</ul>
+      </div>
+    `;
+  }
+
+  renderTiles() {
+    return this.tiles.map(tilenumber => `
+      <li class="tile" data-tile="${ tilenumber }">${ tilenumber}</li>
+    `).join('');
+
+    li.addEventListener("click", async () => {
+      console.log("discarding");
+      this.server.game.discardTile({ tilenumber });
+    });
+
+    if (this.latestTile) {
+      element.querySelector(`.tiles .tile[data-tile="${this.latestTile}"]`).classList.add('latest');
+    }
+  }
+
+  renderLockedTiles() {
+    return this.locked.map((set, setnum) => {
+      return set.map(tilenumber => {
+        return `<li class="tile" data-setnum="${setnum}" data-tile="${tilenumber}">${tilenumber}</li>`;
+      }).join('\n');
+    }).join('\n');
+  }
+
+  renderOtherPlayer() {
+    let player = this.players[seat];
+    let tilecount = 13;
+
+    if (player.locked) {
+      player.locked.forEach( (claim, setnum) => {
+        let { tilenumber, claimtype, wintype } = claim;
+        if (claimtype === 'win') claimtype = wintype;
+        let count = (claimtype === 'kong') ? 4 : 3;
+        for (let i=0; i<count; i++) {
+          let html = `<li class="tile" data-setnum="${setnum}" data-tile="${ tilenumber + (claimtype.startsWith('chow') ? i : 0) }"></li>`;
+          element.querySelector('.locked').innerHTML += html;
+        }
+        tilecount -= count;
+      })
+    }
+
+    if (seat === this.currentPlayer && !this.currentDiscard) {
+      tilecount++;
+    }
+
+    while(tilecount--) {
+      element.querySelector('.tiles').innerHTML += `<li class="tile" data-tile="-1"></li>`;
+    }
   }
 
   /**

@@ -30,10 +30,12 @@
       four sets and a pair, that tile may be claimed <em>as a winning tile</em>
       (the claim can be made because it's a win, not because it's a pair).
     </p>
-
   </header>
 
-  <main>
+  <main id="client">
+    <!--
+      this gets reactively populated by the client, based on state updates
+    -->
     <section id="active-game">
       <span id="playerinfo"></span>
       <div id="players"></div>

@@ -1,0 +1,56 @@
+:root {
+    --ph: 4em;
+    --sep: 3px;
+    --p1: 180deg;
+    --p2: 270deg;
+    --p3: 0deg;
+    --p4: 90deg;
+}
+
+#discard .tile {
+    vertical-align: middle;
+}
+
+.pass-button, .claim-button {
+    display: inline-block;
+    margin-left: 10px;
+}
+
+footer {
+    position: fixed;
+    height: 100px;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 10px;
+    background: #CCC;
+}
+
+.tiles, .locked {
+    margin: 0.5em;
+    padding: 0;
+    text-indent: 0;
+    display: inline-block;
+}
+
+.player {
+    position: relative;
+    background: #ffeac1;
+    margin: 2px;
+    padding-left: 2em;
+}
+
+.player:before {
+    content: attr(data-wind);
+    vertical-align: -1em;
+    display: inline-block;
+    position: absolute;
+    top: 1em;
+    left: 0.25em;
+    background: rgb(70, 150, 16);
+    color: white;
+    text-shadow: 0 0 1px black;
+    padding: 2px 5px;
+    border-radius: 3px;
+    border: 1px solid black;
+}
