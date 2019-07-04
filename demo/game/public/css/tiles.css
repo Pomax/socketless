@@ -25,6 +25,10 @@
   color: transparent;
 }
 
+.tile.latest {
+  border-bottom: 4px solid #099155;
+}
+
 .tile + .tile {
   margin-left: 1px;
 }

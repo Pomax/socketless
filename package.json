@@ -11,8 +11,7 @@
     "game:client": "node demo/game/start-web-client.js",
     "test:distributed": "node demo/test-distributed/index.js",
     "test:client": "node demo/test-distributed/test-client.js",
-    "test:server": "node demo/test-distributed/test-server.js",
-    "postinstall": "shx cp node_modules/preact/dist/preact.min.js demo/game/public"
+    "test:server": "node demo/test-distributed/test-server.js"
   },
   "repository": {
     "type": "git",
@@ -34,7 +33,6 @@
   "homepage": "https://github.com/Pomax/async-socket.io#readme",
   "dependencies": {
     "jsonpatch": "^3.0.1",
-    "preact": "^8.4.2",
     "rfc6902": "^3.0.2",
     "shx": "^0.3.2",
     "socket.io": "^2.2.0"

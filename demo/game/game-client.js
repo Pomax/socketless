@@ -81,10 +81,12 @@ module.exports = class GameClient {
     let tiles = this.state.tiles;
     tiles.push(tilenumber);
     tiles.sort(sortTiles);
+    this.state.latestTile = tilenumber;
   }
 
   setSeat(seat) {
     this.setState({
+      latestTile: false,
       currentDiscard: false,
       currentPlayer: seat
     });

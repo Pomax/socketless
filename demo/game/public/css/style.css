@@ -34,6 +34,23 @@ footer {
 }
 
 .player {
+    position: relative;
     background: #ffeac1;
     margin: 2px;
+    padding-left: 2em;
+}
+
+.player:before {
+    content: attr(data-wind);
+    vertical-align: -1em;
+    display: inline-block;
+    position: absolute;
+    top: 1em;
+    left: 0.25em;
+    background: rgb(70, 150, 16);
+    color: white;
+    text-shadow: 0 0 1px black;
+    padding: 2px 5px;
+    border-radius: 3px;
+    border: 1px solid black;
 }

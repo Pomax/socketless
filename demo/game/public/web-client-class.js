@@ -82,14 +82,20 @@ export default class WebClientClass {
 
     this.elements.players.innerHTML = ``;
     this.playerElements = [];
-    this.players.forEach( (p,seat) => {
+    this.players.forEach( p => {
+      let seat = p.seat;
       let div = document.createElement('div');
       div.id = `seat-${seat}`;
       div.className = `player`;
+
+      div.dataset.seat = seat;
+      div.dataset.wind = p.wind;
+
       div.innerHTML = `
         <ul class="tiles"></ul>
         <ul class="locked"></ul>
       `;
+
       this.elements.players.appendChild(div);
       this.playerElements[seat] = div;
     });
@@ -177,6 +183,10 @@ export default class WebClientClass {
             });
             element.querySelector('.tiles').appendChild(li);
           });
+
+          if (this.latestTile) {
+            element.querySelector(`.tiles .tile[data-tile="${this.latestTile}"]`).classList.add('latest');
+          }
 
           this.locked.forEach((set, setnum) => {
             set.forEach(tilenumber => {
