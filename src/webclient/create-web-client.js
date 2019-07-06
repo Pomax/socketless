@@ -8,7 +8,9 @@ module.exports = function createWebClient(factory, ClientClass, API) {
    * whistles taken care of so the user doesn't ever need to write
    * any socket.io code explicitly.
    */
-  return function(serverURL, publicDir, https = false) {
+  return function(serverURL, publicDir, options={}) {
+    const { useHttps, directSync } = options;
+
     const rootDir = `${__dirname}/../`;
 
     // socket from this client to the server
@@ -53,9 +55,9 @@ module.exports = function createWebClient(factory, ClientClass, API) {
 
     // Set up the web+socket server for browser connections
     const routes = makeRoutes(rootDir, publicDir, generateSocketless(API));
-    const webserver = require(https ? "https" : "http").createServer(routes);
+    const webserver = require(useHttps ? "https" : "http").createServer(routes);
     const io = require("socket.io")(webserver);
-    const connectBrowser = setupConnectionHandler(sockets, API);
+    const connectBrowser = setupConnectionHandler(sockets, API, directSync);
 
     io.on(`connection`, connectBrowser);
     io.on(`disconnect`, () => {

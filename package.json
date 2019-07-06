@@ -4,7 +4,7 @@
   "description": "A framework and methodology for using socket.io without writing any socket code yourself.",
   "main": "src/generate-client-server.js",
   "scripts": {
-    "prettier": "prettier --write **/*.js",
+    "prettier": "prettier --write ./**/*.js",
     "test": "node demo/simple/index.js",
     "game": "node demo/game/index.js",
     "game:server": "node demo/game/start-server.js",

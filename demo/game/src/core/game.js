@@ -80,6 +80,7 @@ module.exports = class Game {
   }
 
   dealTile() {
+    this.currentDiscard = false;
     let tilenumber = this.wall.get();
     this.players.forEach((player, seat) => {
       player.client.game.setCurrentPlayer(this.currentPlayer);
@@ -93,7 +94,9 @@ module.exports = class Game {
   }
 
   playerDiscarded(player, tilenumber) {
-    if (player.seat !== this.currentPlayer) return;
+    if (player.seat !== this.currentPlayer)
+      return `out-of-turn discard attempt`;
+    if (this.currentDiscard) return `another discard is already active`;
 
     this.currentDiscard = tilenumber;
     this.claims = [];
@@ -120,12 +123,15 @@ module.exports = class Game {
   undoDiscard(player) {
     if (player.seat !== this.currentPlayer) return `not discarding player`;
     if (this.claims.length) return `discard is already claimed`;
+
     clearTimeout(this.claimTimer);
+
     let undo = {
       id: player.id,
       seat: player.seat,
       tilenumber: this.currentDiscard
     };
+    this.currentDiscard = false;
     this.players.forEach(p => p.client.game.playerTookBack(undo));
   }
 
@@ -149,7 +155,7 @@ module.exports = class Game {
   }
 
   handleClaims() {
-    clearInterval(this.claimTimer);
+    clearTimeout(this.claimTimer);
 
     if (!this.claims.length) {
       return this.nextPlayer();
@@ -163,6 +169,7 @@ module.exports = class Game {
       claimtype: claim.claimtype,
       wintype: claim.wintype
     };
+    this.currentDiscard = false;
     this.players.forEach(player => player.client.game.claimAwarded(award));
     this.currentPlayer = claim.player.seat;
 

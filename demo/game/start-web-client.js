@@ -1,6 +1,6 @@
 const { generateClientServer } = require("../../src/generate-client-server.js");
-const ClientClass = require("./game-client.js");
-const ServerClass = require("./game-server.js");
+const ClientClass = require("./src/client/game-client.js");
+const ServerClass = require("./src/server/game-server.js");
 const ClientServer = generateClientServer(ClientClass, ServerClass);
 
 const url = `http://localhost:8080`;

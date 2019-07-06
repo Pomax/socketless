@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Demo mahjong</title>
 
+  <script src="template-tags.js" async></script>
   <script src="socketless.js" defer></script>
   <script src="web-client-class.js" type="module" defer></script>
   <script src="script.js" type="module" defer></script>
@@ -18,9 +19,9 @@
   <header>
     <h1>Super simple "socketless" mahjong</h1>
     <p>
-      Mahjong is a four player "draw one, play one" game in which players attempt
+      Mahjong is a four player "draw one, discard one" game in which players attempt
       to turn a randomly assigned collection of tiles into a winning collection of
-      tiles. Any player may claim another player's tile (even when it would not be
+      tiles. Any player may claim another player's discard (even when it would not be
       the claiming player's turn; claiming makes them the active player) if that tile
       can be used to form a set of three of a kind, or four of a kind. In addition,
       suited number tiles may be claimed to form a set of three consecutive same
@@ -36,23 +37,6 @@
     <!--
       this gets reactively populated by the client, based on state updates
     -->
-    <section id="active-game">
-      <span id="playerinfo"></span>
-      <div id="players"></div>
-      <div id="discard"></div>
-      <div id="prompt"></div>
-    </section>
-
-    <div id="lobbydata">
-      <section id="gamelist">
-        <ul id="games"></ul>
-      </section>
-
-      <section id="lobby">
-        <ul id="users"></ul>
-        <ul id="chat"></ul>
-      </section>
-    </div>
   </main>
 
   <footer>

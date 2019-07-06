@@ -60,7 +60,7 @@ function generateClientServer(WebClientClass) {
   socket.on(`sync:full`, state => updateState(state));
 
   // and offer a sync() function to manually trigger a full bootstrap
-  handler.sync = async () => handleStateDiff(await socket.emit(`sync:full`));
+  handler.sync = async () => updateState(await socket.emit(`sync:full`));
 
   // Then: add the server => client => browser forwarding
   namespaces.forEach(namespace => {

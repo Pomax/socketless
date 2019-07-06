@@ -1,6 +1,3 @@
-// TODO: add in a "declare win" button if we have self-drawn a win
-// TODO: add in rendering of other players concealed tiles + declared tiles
-
 const CLAIM_TYPES = [
   `cancel`,
   `chow1`,
@@ -27,23 +24,232 @@ export default class WebClientClass {
    *  ...
    */
   constructor() {
-    this.elements = {};
-    [
-      `prompt`,
-      `gamelist`,
-      `games`,
-      `lobby`,
-      `lobbydata`,
-      `users`,
-      `players`,
-      `chat`,
-      `playerinfo`,
-      `discard`
-    ].forEach(id => (this.elements[id] = document.getElementById(id)));
-
     window.WebClientInstance = this;
   }
 
+  update() {
+    const ui = main(
+      { id: `client` },
+      this.renderActiveGame(),
+      div(
+        { id: `lobbydata` },
+        section({ id: `gamelist` }, ul({ id: `games` }, ...this.renderGames())),
+        section(
+          { id: `lobby` },
+          ul({ id: `users` }, ...this.renderUsers()),
+          ul({ id: `chat` })
+        )
+      )
+    );
+    const pageelement = document.getElementById(`client`);
+    pageelement.parentNode.replaceChild(ui, pageelement);
+  }
+
+  /**
+   * ...
+   */
+  renderActiveGame() {
+    return section(
+      { id: `active-game` },
+      span({ id: `playerinfo` }, this.renderPlayerInfo()),
+      div({ id: `players` }, ...this.renderPlayers()),
+      div({ id: `discard` }, this.renderDiscard()),
+      div({ id: `prompt` })
+    );
+  }
+
+  /**
+   * ...
+   */
+  renderPlayerInfo() {
+    if (this.seat || this.wind) {
+      return `seat: ${this.seat}, wind: ${this.wind}`;
+    }
+  }
+
+  /**
+   * ...
+   */
+  renderPlayers() {
+    return this.players.map(player => {
+      return div(
+        {
+          id: `seat-${player.seat}`,
+          className: `player`,
+          "data-seat": player.seat,
+          "data-wind": player.wind
+        },
+        ul({ className: `tiles` }, ...this.renderTiles(player)),
+        ul({ className: `locked` }, ...this.renderLocked(player))
+      );
+    });
+  }
+
+  /**
+   * ...
+   */
+  renderTiles(player) {
+    if (player.id === this.id) {
+      const tiles = this.tiles.map(tilenumber => {
+        return li(
+          {
+            className: `tile`,
+            "data-tile": tilenumber,
+            "on-click": async () => {
+              console.log("discarding");
+              if (!this.currentDiscard) {
+                this.server.game.discardTile({ tilenumber });
+              }
+            }
+          },
+          tilenumber
+        );
+      });
+
+      if (this.latestTile) {
+        let latest = tiles.find(item => item.dataset.tile == this.latestTile);
+        if (latest) latest.classList.add("latest");
+      }
+
+      return tiles;
+    } else {
+      let tilecount = 13;
+
+      if (player.locked)
+        player.locked.forEach(claim => {
+          let { claimtype, wintype } = claim;
+          if (claimtype === "win") claimtype = wintype;
+          let count = claimtype === "kong" ? 4 : 3;
+          tilecount -= count;
+        });
+
+      if (player.seat === this.currentPlayer && !this.currentDiscard) {
+        tilecount++;
+      }
+
+      return new Array(tilecount)
+        .fill(0)
+        .map(_ => li({ className: `tile`, "data-tile": -1 }));
+    }
+  }
+
+  /**
+   * ...
+   */
+  renderLocked(player) {
+    if (player.id === this.id) {
+      const locked = [];
+
+      this.locked.map((set, setnum) => {
+        set.forEach(tilenumber => {
+          locked.push(
+            li(
+              {
+                className: "tile",
+                "data-setnum": setnum,
+                "data-tile": tilenumber
+              },
+              tilenumber
+            )
+          );
+        });
+      });
+
+      return locked;
+    } else {
+      const locked = [];
+
+      if (player.locked) {
+        player.locked.forEach((claim, setnum) => {
+          let { tilenumber, claimtype, wintype } = claim;
+          if (claimtype === "win") claimtype = wintype;
+          let count = claimtype === "kong" ? 4 : 3;
+          for (let i = 0; i < count; i++) {
+            locked.push(
+              li({
+                className: "tile",
+                "data-setnum": setnum,
+                "data-tile": tilenumber + (claimtype.startsWith("chow") ? i : 0)
+              })
+            );
+          }
+        });
+      }
+
+      return locked;
+    }
+  }
+
+  /**
+   * ...
+   */
+  renderDiscard() {
+    if (!this.currentDiscard) return;
+
+    const discard = span(
+      `Current discard: `,
+      span({
+        className: `tile`,
+        "data-tile": this.currentDiscard.tilenumber
+      })
+    );
+
+    let tile = discard.querySelector(`.tile`);
+    this.addDiscardClickHandling(discard, tile);
+    return discard;
+  }
+
+  /**
+   * ...
+   */
+  addDiscardClickHandling(discard, tile) {
+    // if this is not our tile, we can claim it.
+    if (this.currentDiscard.id !== this.id) {
+      console.log("adding tile event handler");
+
+      let passbtn = button({ className: `pass-button` }, `pass`);
+
+      passbtn.addEventListener("click", () => {
+        passbtn.disabled = true;
+        this.server.game.pass();
+      });
+
+      discard.appendChild(passbtn);
+
+      let claimbtn = button({ className: "claim-button" }, "claim");
+
+      claimbtn.addEventListener("click", async () => {
+        // TODO: add in a claim options filtering based on tiles in hand
+        let claimtype = await this.prompt(`Claim type`, CLAIM_TYPES),
+          wintype = false;
+        if (claimtype === `cancel`) return;
+
+        // TODO: add in a winning claim options filtering based on tiles in hand
+        if (claimtype === `win`)
+          wintype = await this.prompt(`Wining claim type`, WIN_TYPES);
+        if (wintype === `cancel`) return;
+
+        this.server.game.claim({ claimtype, wintype });
+      });
+
+      discard.appendChild(claimbtn);
+    }
+
+    // if this IS our tile, we can take it back (as long as no one's laid a claim yet).
+    else {
+      tile.addEventListener(`click`, async () => {
+        let result = await this.server.game.undoDiscard();
+        if (!result.allowed) {
+          // TODO: make this a visual signal
+          console.log(`could not undo discard: ${result.reason}`);
+        }
+      });
+    }
+  }
+
+  /**
+   * ...
+   */
   prompt(label, options) {
     return new Promise(resolve => {
       let prompt = this.elements.prompt;
@@ -60,6 +266,9 @@ export default class WebClientClass {
     });
   }
 
+  /**
+   * ...
+   */
   startDiscardTimer(timeout) {
     const claimtTimeStart = Date.now();
     const tick = () => {
@@ -72,79 +281,23 @@ export default class WebClientClass {
     tick();
   }
 
+  /**
+   * ...
+   */
   cancelDiscardTimer() {
     this.updateDiscardTimer(-1);
     clearTimeout(this.claimTimeout);
   }
 
-  resetUI() {
-    this.elements.games.innerHTML = ``;
-    this.elements.users.innerHTML = ``;
-    this.elements.discard.innerHTML = ``;
-
-
-    this.elements.players.innerHTML = ``;
-    this.playerElements = [];
-    this.players.forEach( p => {
-      let seat = p.seat;
-      let div = document.createElement('div');
-      div.id = `seat-${seat}`;
-      div.className = `player`;
-
-      div.dataset.seat = seat;
-      div.dataset.wind = p.wind;
-
-      div.innerHTML = `
-        <ul class="tiles"></ul>
-        <ul class="locked"></ul>
-      `;
-
-      this.elements.players.appendChild(div);
-      this.playerElements[seat] = div;
-    });
-
-    if (this.currentGame !== undefined) {
-      this.elements.lobbydata.style.display = "none";
-    }
-  }
-
   /**
    *  ...
    */
-  async update() {
-    this.resetUI();
-
-    this.updateGames();
-    this.updateUserInfo();
-    this.updateUsers();
-    this.updateCurrentGame();
-    this.updateDiscard();
-
-    // A silly win notice
-    if (this.winner) {
-      console.log(this.winner);
-      if (this.winner.id === this.id) {
-        alert(`we won!`);
-      } else {
-        alert(
-          `player ${this.winner.id} (seat ${this.winner.seat}) won the game!`
-        );
-      }
-      this.winner = false;
-    }
-  }
-
-  /**
-   *  ...
-   */
-  updateGames() {
-    this.games.forEach(g => {
-      let li = document.createElement(`li`);
+  renderGames() {
+    return this.games.map(g => {
       let label = g.id === this.id ? "start" : "join";
-      li.innerHTML = `<a>${JSON.stringify(g)} <button>${label}</button></a>`;
-      this.elements.games.appendChild(li);
-      let join = li.querySelector("button");
+      let item = li(a(JSON.stringify(g), button(label)));
 
+      let join = item.querySelector("button");
       if (g.inProgress) join.disabled = true;
       else {
         let joinOrStart = async () => {
@@ -164,150 +317,9 @@ export default class WebClientClass {
 
         join.addEventListener(`click`, joinOrStart);
       }
+
+      return item;
     });
-  }
-
-  /**
-   *  ...
-   */
-  updateCurrentGame() {
-    if (this.players) {
-      const gameHTML = `
-        <span id="playerinfo">${
-          this.renderPlayerInfo()
-        }</span>
-        <div id="players">${
-          this.renderPlayers()
-        }</div>
-        <div id="discard">${
-          this.renderDiscard()
-        }</div>
-        <div id="prompt"></div>
-      `;
-
-      document.querySelector('#active-game').innerHTML = gameHTML;
-    }
-  }
-
-  renderPlayerInfo() {
-    return `Seat ${this.seat}, wind ${this.wind}`;
-  }
-
-  renderPlayers() {
-    return this.players.map(player => this.renderPlayerInfo(player)).join('\n');
-  }
-
-  renderPlayer(player) {
-    if (player.id !== this.id) return renderOtherPlayer(player);
-    return `
-      <div class="player">
-        <ul class="tiles">${ this.renderTiles() }</ul>
-        <ul class="locked">${ this.renderLockedTiles() }</ul>
-      </div>
-    `;
-  }
-
-  renderTiles() {
-    return this.tiles.map(tilenumber => `
-      <li class="tile" data-tile="${ tilenumber }">${ tilenumber}</li>
-    `).join('');
-
-    li.addEventListener("click", async () => {
-      console.log("discarding");
-      this.server.game.discardTile({ tilenumber });
-    });
-
-    if (this.latestTile) {
-      element.querySelector(`.tiles .tile[data-tile="${this.latestTile}"]`).classList.add('latest');
-    }
-  }
-
-  renderLockedTiles() {
-    return this.locked.map((set, setnum) => {
-      return set.map(tilenumber => {
-        return `<li class="tile" data-setnum="${setnum}" data-tile="${tilenumber}">${tilenumber}</li>`;
-      }).join('\n');
-    }).join('\n');
-  }
-
-  renderOtherPlayer() {
-    let player = this.players[seat];
-    let tilecount = 13;
-
-    if (player.locked) {
-      player.locked.forEach( (claim, setnum) => {
-        let { tilenumber, claimtype, wintype } = claim;
-        if (claimtype === 'win') claimtype = wintype;
-        let count = (claimtype === 'kong') ? 4 : 3;
-        for (let i=0; i<count; i++) {
-          let html = `<li class="tile" data-setnum="${setnum}" data-tile="${ tilenumber + (claimtype.startsWith('chow') ? i : 0) }"></li>`;
-          element.querySelector('.locked').innerHTML += html;
-        }
-        tilecount -= count;
-      })
-    }
-
-    if (seat === this.currentPlayer && !this.currentDiscard) {
-      tilecount++;
-    }
-
-    while(tilecount--) {
-      element.querySelector('.tiles').innerHTML += `<li class="tile" data-tile="-1"></li>`;
-    }
-  }
-
-  /**
-   *  ...
-   */
-  updateDiscard() {
-    if (this.currentDiscard) {
-      this.elements.discard.innerHTML = `Current discard: <span class="tile" data-tile="${this.currentDiscard.tilenumber}"></span>`;
-      let tile = this.elements.discard.querySelector(`.tile`);
-
-      // if this is not our tile, we can claim it.
-      if (this.currentDiscard.id !== this.id) {
-        console.log("adding tile event handler");
-
-        let passbtn = document.createElement("button");
-        passbtn.className = "pass-button";
-        passbtn.textContent = "pass";
-        passbtn.addEventListener("click", () => {
-          passbtn.disabled = true;
-          this.server.game.pass();
-        });
-        this.elements.discard.appendChild(passbtn);
-
-        let claimbtn = document.createElement("button");
-        claimbtn.className = "claim-button";
-        claimbtn.textContent = "claim";
-        claimbtn.addEventListener("click", async () => {
-          // TODO: add in a claim options filtering based on tiles in hand
-          let claimtype = await this.prompt(`Claim type`, CLAIM_TYPES),
-            wintype = false;
-          if (claimtype === `cancel`) return;
-
-          // TODO: add in a winning claim options filtering based on tiles in hand
-          if (claimtype === `win`)
-            wintype = await this.prompt(`Wining claim type`, WIN_TYPES);
-          if (wintype === `cancel`) return;
-
-          this.server.game.claim({ claimtype, wintype });
-        });
-
-        this.elements.discard.appendChild(claimbtn);
-      }
-
-      // if this IS our tile, we can take it back (as long as no one's laid a claim yet).
-      else {
-        tile.addEventListener(`click`, async () => {
-          let result = await this.server.game.undoDiscard();
-          if (!result.allowed) {
-            // TODO: make this a visual signal
-            console.log(`could not undo discard: ${result.reason}`);
-          }
-        });
-      }
-    }
   }
 
   /**
@@ -321,21 +333,8 @@ export default class WebClientClass {
   /**
    *  ...
    */
-  updateUserInfo() {
-    if (this.seat || this.wind) {
-      this.elements.playerinfo.textContent = `seat: ${this.seat}, wind: ${this.wind}`;
-    }
-  }
-
-  /**
-   *  ...
-   */
-  updateUsers() {
-    this.users.forEach(u => {
-      let li = document.createElement("li");
-      li.textContent = u;
-      this.elements.users.appendChild(li);
-    });
+  renderUsers() {
+    return this.users.map(u => li(u));
   }
 
   /**

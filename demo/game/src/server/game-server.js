@@ -1,4 +1,4 @@
-const Game = require("./gamesrc/game.js");
+const Game = require("../core/game.js");
 
 module.exports = class GameServer {
   constructor() {
@@ -106,8 +106,11 @@ module.exports = class GameServer {
     let user = this.getUser(from);
     let game = user.game;
     if (game) {
-      game.playerDiscarded(user, tilenumber);
-      return { accepted: true };
+      let reason = game.playerDiscarded(user, tilenumber);
+      if (!reason) {
+        return { accepted: true };
+      }
+      return { accepted: false, reason };
     }
     return { accepted: false, reason: `not in a game` };
   }

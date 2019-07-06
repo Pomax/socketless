@@ -1,7 +1,11 @@
 const upgradeSocket = require("../upgrade-socket.js");
 const setupSyncFunctionality = require("./setup-sync-functionality.js");
 
-module.exports = function setupConnectionHandler(sockets, API) {
+module.exports = function setupConnectionHandler(
+  sockets,
+  API,
+  directSync = false
+) {
   const namespaces = Object.keys(API);
 
   // Allow for socket binding and setting up call handling
@@ -14,7 +18,7 @@ module.exports = function setupConnectionHandler(sockets, API) {
     client.browser_connected = true;
 
     // set up the sync functionality
-    setupSyncFunctionality(sockets, socket);
+    setupSyncFunctionality(sockets, socket, directSync);
 
     // Set up proxy functions for routing browser => server
     namespaces.forEach(namespace => {
