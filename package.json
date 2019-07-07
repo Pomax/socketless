@@ -33,6 +33,7 @@
   "homepage": "https://github.com/Pomax/async-socket.io#readme",
   "dependencies": {
     "jsonpatch": "^3.0.1",
+    "morphdom": "^2.5.4",
     "rfc6902": "^3.0.2",
     "shx": "^0.3.2",
     "socket.io": "^2.2.0"

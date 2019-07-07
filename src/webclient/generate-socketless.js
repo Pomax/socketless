@@ -23,6 +23,12 @@ module.exports = function generateSocketless(API) {
   return [
     fs
       .readFileSync(
+        path.join(__dirname, `../../node_modules/morphdom/dist/morphdom-umd.min.js`)
+      )
+      .toString("utf-8"),
+
+    fs
+      .readFileSync(
         path.join(__dirname, `../../node_modules/jsonpatch/jsonpatch.min.js`)
       )
       .toString("utf-8"),

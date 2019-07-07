@@ -11,7 +11,7 @@
     vertical-align: middle;
 }
 
-.pass-button, .claim-button {
+.btn {
     display: inline-block;
     margin-left: 10px;
 }

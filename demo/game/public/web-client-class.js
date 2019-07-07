@@ -21,28 +21,23 @@ const WIN_TYPES = [`cancel`, `pair`, `chow1`, `chow2`, `chow3`, `pung`];
  */
 export default class WebClientClass {
   /**
-   *  ...
+   * ...
    */
-  constructor() {
-    window.WebClientInstance = this;
-  }
-
   update() {
     const ui = main(
       { id: `client` },
       this.renderActiveGame(),
       div(
         { id: `lobbydata` },
-        section({ id: `gamelist` }, ul({ id: `games` }, ...this.renderGames())),
+        section({ id: `gamelist` }, ul({ id: `games` }, this.renderGames())),
         section(
           { id: `lobby` },
-          ul({ id: `users` }, ...this.renderUsers()),
+          ul({ id: `users` }, this.renderUsers()),
           ul({ id: `chat` })
         )
       )
     );
-    const pageelement = document.getElementById(`client`);
-    pageelement.parentNode.replaceChild(ui, pageelement);
+    morphdom(document.getElementById(`client`), ui);
   }
 
   /**
@@ -52,7 +47,7 @@ export default class WebClientClass {
     return section(
       { id: `active-game` },
       span({ id: `playerinfo` }, this.renderPlayerInfo()),
-      div({ id: `players` }, ...this.renderPlayers()),
+      div({ id: `players` }, this.renderPlayers()),
       div({ id: `discard` }, this.renderDiscard()),
       div({ id: `prompt` })
     );
@@ -71,18 +66,18 @@ export default class WebClientClass {
    * ...
    */
   renderPlayers() {
-    return this.players.map(player => {
-      return div(
+    return this.players.map(player =>
+      div(
         {
           id: `seat-${player.seat}`,
           className: `player`,
           "data-seat": player.seat,
           "data-wind": player.wind
         },
-        ul({ className: `tiles` }, ...this.renderTiles(player)),
-        ul({ className: `locked` }, ...this.renderLocked(player))
-      );
-    });
+        ul({ className: `tiles` }, this.renderTiles(player)),
+        ul({ className: `locked` }, this.renderLocked(player))
+      )
+    );
   }
 
   /**
@@ -90,21 +85,20 @@ export default class WebClientClass {
    */
   renderTiles(player) {
     if (player.id === this.id) {
-      const tiles = this.tiles.map(tilenumber => {
-        return li(
+      const tiles = this.tiles.map(tilenumber =>
+        li(
           {
             className: `tile`,
             "data-tile": tilenumber,
             "on-click": async () => {
-              console.log("discarding");
               if (!this.currentDiscard) {
                 this.server.game.discardTile({ tilenumber });
               }
             }
           },
           tilenumber
-        );
-      });
+        )
+      );
 
       if (this.latestTile) {
         let latest = tiles.find(item => item.dataset.tile == this.latestTile);
@@ -115,21 +109,18 @@ export default class WebClientClass {
     } else {
       let tilecount = 13;
 
-      if (player.locked)
-        player.locked.forEach(claim => {
-          let { claimtype, wintype } = claim;
-          if (claimtype === "win") claimtype = wintype;
-          let count = claimtype === "kong" ? 4 : 3;
-          tilecount -= count;
-        });
+      (player.locked || []).forEach(claim => {
+        let { claimtype, wintype } = claim;
+        if (claimtype === "win") claimtype = wintype;
+        let count = claimtype === "kong" ? 4 : 3;
+        tilecount -= count;
+      });
 
       if (player.seat === this.currentPlayer && !this.currentDiscard) {
         tilecount++;
       }
 
-      return new Array(tilecount)
-        .fill(0)
-        .map(_ => li({ className: `tile`, "data-tile": -1 }));
+      return makearray(tilecount).map(_ => li({ className: `tile`, "data-tile": -1 }));
     }
   }
 
@@ -138,45 +129,33 @@ export default class WebClientClass {
    */
   renderLocked(player) {
     if (player.id === this.id) {
-      const locked = [];
-
-      this.locked.map((set, setnum) => {
-        set.forEach(tilenumber => {
-          locked.push(
-            li(
-              {
-                className: "tile",
-                "data-setnum": setnum,
-                "data-tile": tilenumber
-              },
-              tilenumber
-            )
-          );
-        });
-      });
-
-      return locked;
+      return this.locked.map((set, setnum) =>
+        set.map(tilenumber =>
+          li(
+            {
+              className: "tile",
+              "data-setnum": setnum,
+              "data-tile": tilenumber
+            },
+            tilenumber
+          )
+        )
+      );
     } else {
-      const locked = [];
-
       if (player.locked) {
-        player.locked.forEach((claim, setnum) => {
+        return player.locked.map((claim, setnum) => {
           let { tilenumber, claimtype, wintype } = claim;
           if (claimtype === "win") claimtype = wintype;
           let count = claimtype === "kong" ? 4 : 3;
-          for (let i = 0; i < count; i++) {
-            locked.push(
-              li({
-                className: "tile",
-                "data-setnum": setnum,
-                "data-tile": tilenumber + (claimtype.startsWith("chow") ? i : 0)
-              })
-            );
-          }
+          return makearray(count).map((_, i) =>
+            li({
+              className: "tile",
+              "data-setnum": setnum,
+              "data-tile": tilenumber + (claimtype.startsWith("chow") ? i : 0)
+            })
+          );
         });
       }
-
-      return locked;
     }
   }
 
@@ -186,64 +165,64 @@ export default class WebClientClass {
   renderDiscard() {
     if (!this.currentDiscard) return;
 
-    const discard = span(
+    return span(
       `Current discard: `,
-      span({
-        className: `tile`,
-        "data-tile": this.currentDiscard.tilenumber
-      })
+      span(
+        {
+          className: `tile`,
+          "data-tile": this.currentDiscard.tilenumber,
+          "on-click": async () => {
+            if (this.currentDiscard.id === this.id) {
+              let result = await this.server.game.undoDiscard();
+              if (!result.allowed) {
+                // TODO: make this a visual signal
+                console.log(`could not undo discard: ${result.reason}`);
+              }
+            }
+          }
+        }
+      ),
+      this.discardButtons()
     );
-
-    let tile = discard.querySelector(`.tile`);
-    this.addDiscardClickHandling(discard, tile);
-    return discard;
   }
 
   /**
    * ...
    */
-  addDiscardClickHandling(discard, tile) {
-    // if this is not our tile, we can claim it.
+  discardButtons() {
     if (this.currentDiscard.id !== this.id) {
-      console.log("adding tile event handler");
+      return [
+        button({
+          className: `btn pass-button`,
+          "on-click": (evt) => {
+            evt.target.disabled = true;
+            this.server.game.pass();
+          }
+        }, 'pass'),
 
-      let passbtn = button({ className: `pass-button` }, `pass`);
+        button(
+          {
+            className: "btn claim-button",
+            "on-click": async () => {
+              // TODO: add in a claim options filtering based on tiles in hand
+              // TODO: add in a winning claim options filtering based on tiles in hand
 
-      passbtn.addEventListener("click", () => {
-        passbtn.disabled = true;
-        this.server.game.pass();
-      });
+              let claimtype = await this.prompt(`Claim type`, CLAIM_TYPES);
+              if (claimtype === `cancel`) return;
 
-      discard.appendChild(passbtn);
+              let wintype = false;
+              if (claimtype === `win`) {
+                wintype = await this.prompt(`Wining claim type`, WIN_TYPES);
+              }
 
-      let claimbtn = button({ className: "claim-button" }, "claim");
+              if (wintype === `cancel`) return;
 
-      claimbtn.addEventListener("click", async () => {
-        // TODO: add in a claim options filtering based on tiles in hand
-        let claimtype = await this.prompt(`Claim type`, CLAIM_TYPES),
-          wintype = false;
-        if (claimtype === `cancel`) return;
-
-        // TODO: add in a winning claim options filtering based on tiles in hand
-        if (claimtype === `win`)
-          wintype = await this.prompt(`Wining claim type`, WIN_TYPES);
-        if (wintype === `cancel`) return;
-
-        this.server.game.claim({ claimtype, wintype });
-      });
-
-      discard.appendChild(claimbtn);
-    }
-
-    // if this IS our tile, we can take it back (as long as no one's laid a claim yet).
-    else {
-      tile.addEventListener(`click`, async () => {
-        let result = await this.server.game.undoDiscard();
-        if (!result.allowed) {
-          // TODO: make this a visual signal
-          console.log(`could not undo discard: ${result.reason}`);
-        }
-      });
+              this.server.game.claim({ claimtype, wintype });
+            }
+          },
+          "claim"
+        )
+      ];
     }
   }
 
@@ -252,15 +231,18 @@ export default class WebClientClass {
    */
   prompt(label, options) {
     return new Promise(resolve => {
-      let prompt = this.elements.prompt;
+      let prompt = document.querySelector("#prompt");
       //prompt.innerHTML = `<h1>${label}</h1>`;
       options.forEach(option => {
-        let btn = document.createElement("button");
-        btn.textContent = option;
-        btn.addEventListener(`click`, () => {
-          prompt.innerHTML = ``;
-          resolve(btn.textContent);
-        });
+        let btn = button(
+          {
+            "on-click": () => {
+              prompt.innerHTML = ``;
+              resolve(btn.textContent);
+            }
+          },
+          option
+        );
         prompt.appendChild(btn);
       });
     });
@@ -327,7 +309,7 @@ export default class WebClientClass {
    */
   updateDiscardTimer(value) {
     // TODO: make this a visual signal
-    console.log(`discard timer ${value}`);
+    // console.log(`discard timer ${value}`);
   }
 
   /**

@@ -1,4 +1,5 @@
 const Wall = require("./wall.js");
+const CLAIM_TIMEOUT = 5000;
 
 function generateRandomName() {
   let empty = new Array(10).fill(0);
@@ -109,7 +110,7 @@ module.exports = class Game {
         id: player.id,
         seat: player.seat,
         tilenumber,
-        timeout: 5000
+        timeout: CLAIM_TIMEOUT
       })
     );
 
@@ -117,7 +118,7 @@ module.exports = class Game {
     // move to the next player if no claims
     // have been made. Otherwise, honour the
     // highest ranking claim.
-    this.claimTimer = setTimeout(() => this.handleClaims(), 5000);
+    this.claimTimer = setTimeout(() => this.handleClaims(), CLAIM_TIMEOUT);
   }
 
   undoDiscard(player) {
