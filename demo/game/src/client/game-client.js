@@ -29,7 +29,7 @@ module.exports = class GameClient {
 
   async "user:joined"(id) {
     let user = this.state.users.find(u => u.id === id);
-    if (!user) users.push({ id });
+    if (!user) this.state.users.push({ id });
   }
 
   async "user:left"(id) {

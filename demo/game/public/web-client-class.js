@@ -24,12 +24,17 @@ export default class WebClientClass {
    * ...
    */
   update() {
+    if (!this.name) {
+      let name = ['angelo', 'bartholomew', 'chantalle', 'dmietri', 'evert', 'francesca', 'gregory'][this.id];
+      this.server.user.setName(name);
+    }
+
     const ui = main(
       { id: `client` },
       this.renderActiveGame(),
       div(
         { id: `lobbydata` },
-        section({ id: `gamelist` }, ul({ id: `games` }, this.renderGames())),
+        this.currentGame ? undefined : section({ id: `gamelist` }, ul({ id: `games` }, this.renderGames())),
         section(
           { id: `lobby` },
           ul({ id: `users` }, this.renderUsers()),
@@ -202,7 +207,11 @@ export default class WebClientClass {
           }
         }
       }),
-      this.discardButtons()
+      this.discardButtons(),
+      span(
+        { id: `claim-timer` },
+        span({ id: `claim-timer-bar` })
+      ),
     );
   }
 
@@ -229,7 +238,6 @@ export default class WebClientClass {
             "on-click": async () => {
               // TODO: add in a claim options filtering based on tiles in hand
               // TODO: add in a winning claim options filtering based on tiles in hand
-
               let claimtype = await this.prompt(`Claim type`, CLAIM_TYPES);
               if (claimtype === `cancel`) return;
 
@@ -280,7 +288,7 @@ export default class WebClientClass {
       const passed = Date.now() - claimtTimeStart;
       if (passed > timeout) return this.updateDiscardTimer(1);
       const timeoutProgress = passed / timeout;
-      this.claimTimeout = setTimeout(() => tick(), 500);
+      this.claimTimeout = setTimeout(() => tick(), 100);
       this.updateDiscardTimer(timeoutProgress);
     };
     tick();
@@ -294,13 +302,21 @@ export default class WebClientClass {
     clearTimeout(this.claimTimeout);
   }
 
+  inGame() {
+    if (this.currentGame) return true;
+    return this.games.some(g => 
+      g.players.some(p => 
+        p.id === this.id && g.id !== this.id
+      )
+    );
+  }
+
   /**
    *  ...
    */
   renderGames() {
     return this.games.map(g => {
       let label = g.id === this.id ? "start" : "join";
-
       let item = li(
         { className: `game` },
         `game: `,
@@ -309,7 +325,7 @@ export default class WebClientClass {
         g.players
           .map(p => this.users.find(u => u.id === p.id).name || p.id)
           .join(", "),
-        button(label)
+        button({ disabled: this.inGame() }, label)
       );
 
       let join = item.querySelector("button");
@@ -341,8 +357,8 @@ export default class WebClientClass {
    * ...
    */
   updateDiscardTimer(value) {
-    // TODO: make this a visual signal
-    // console.log(`discard timer ${value}`);
+    const bar = document.getElementById('claim-timer-bar');
+    if (bar) bar.style.width = `${100 * value}%`;
   }
 
   /**

@@ -1,17 +1,13 @@
 const Wall = require("./wall.js");
-const CLAIM_TIMEOUT = 5000;
-
-function generateRandomName() {
-  let empty = new Array(10).fill(0);
-  let chars = empty.map(v => String.fromCharCode(97 + 26 * Math.random()));
-  return chars.join("");
-}
+const CLAIM_TIMEOUT = 50000;
+const generateRandomName = require("../utils/name-generator.js");
 
 module.exports = class Game {
   constructor(owner) {
     this.name = generateRandomName();
     this.owner = owner;
     this.players = [owner];
+    // TODO: track who has which tile in hand, because claims should be verifiable
     this.inProgress = false;
     owner.game = this;
   }
@@ -66,7 +62,7 @@ module.exports = class Game {
   assignSeats() {
     this.players.forEach((player, position) => {
       player.seat = position;
-      player.wind = [`東`, `北`, `西`, `北`][position];
+      player.wind = [`東`, `南`, `西`, `北`][position];
       player.client.game.setWind({
         seat: player.seat,
         wind: player.wind
