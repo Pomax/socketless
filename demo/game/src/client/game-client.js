@@ -28,26 +28,27 @@ module.exports = class GameClient {
   }
 
   async "user:joined"(id) {
-    let users = this.state.users;
-    if (users.indexOf(id) === -1) users.push(id);
+    let user = this.state.users.find(u => u.id === id);
+    if (!user) users.push({ id });
   }
 
   async "user:left"(id) {
-    let users = this.state.users;
-    let pos = users.findIndex(u => u === id);
-    if (pos > -1) users.splice(pos, 1);
+    let pos = this.state.users.findIndex(u => u.id === id);
+    if (pos > -1) this.state.users.splice(pos, 1);
   }
 
   async "user:changedName"({ id, name }) {
-    // useful to human players, not very relevant to bots
+    let user = this.state.users.find(u => u.id === id);
+    if (user) user.name = name;
   }
 
   async "game:created"({ id, name }) {
-    this.state.games.push({ id, name });
+    this.state.games.push({ id, name, players: [{id}] });
   }
 
-  async "game:updated"(details) {
-    // useful to human players, not very relevant to bots
+  async "game:updated"({ id, name, players}) {
+    let game = this.state.games.find(g => g.name === name);
+    game.players = players;
   }
 
   async "game:start"({ name, players }) {
@@ -64,6 +65,11 @@ module.exports = class GameClient {
     this.state.games.find(g => g.name === name).inProgress = true;
 
     return { ready: true };
+  }
+
+  async "game:ended"({ name }) {
+    let pos = this.state.games.findIndex(g => g.name === name);
+    this.state.games.splice(pos, 1);
   }
 
   async "game:setWind"({ seat, wind }) {
@@ -160,5 +166,23 @@ module.exports = class GameClient {
 
   async "game:playerWon"(winner) {
     this.state.winner = winner;
+    this.server.broadcast(this["game:reveal"], {
+      seat: this.state.seat,
+      tiles: this.state.tiles
+    });
+  }
+
+  async "game:reveal"({ seat, tiles }) {
+    let player = this.state.players.find(p => p.seat===seat);
+    player.tiles = tiles;
+  }
+
+  async "game:left"({ seat }) {
+    if (seat === this.state.seat) {
+      this.state.currentGame = false;
+    } else {
+      let player = this.state.players.find(p => p.seat===seat);
+      player.left = true;
+    }
   }
 };

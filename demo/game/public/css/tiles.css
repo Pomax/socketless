@@ -11,7 +11,7 @@
   max-height: var(--lh);
 
   position: relative;
-  z-index: 1; /* ends up over the score box if we have lots of tiles */
+  z-index: 1;
   margin-bottom: 2px;
 
   border: 1px solid black;

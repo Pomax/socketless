@@ -22,11 +22,12 @@ module.exports = class Game {
     player.game = this;
   }
 
-  left(player) {
-    // This gets call for any player that has quit the server,
-    // and so may not result in any changes whatsoever.
+  leave(player) {
     let pos = this.players.indexOf(player);
-    if (pos > -1) this.players.splice(pos, 1);
+    if (pos > -1) {
+      this.players.forEach(p => p.client.game.left({ seat: player.seat }));
+      this.players.splice(pos, 1);
+    }
   }
 
   getDetails() {
@@ -181,9 +182,6 @@ module.exports = class Game {
           id: award.id,
           seat: award.seat
         });
-
-        // unbind the game
-        player.game = undefined;
       });
 
       this.finished = true;

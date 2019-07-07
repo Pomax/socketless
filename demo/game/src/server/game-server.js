@@ -40,15 +40,16 @@ module.exports = class GameServer {
   async "user:setName"(from, name) {
     const user = this.getUser(from);
     user.name = name;
-    this.users.forEach(other => {
-      if (other !== user) {
-        other.client.user.changedName({ id: user.id, name: user.name });
-      }
+    this.users.forEach(u => {
+      u.client.user.changedName({
+        id: user.id,
+        name: user.name
+      });
     });
   }
 
   async "user:getUserList"() {
-    return this.users.map(c => c.id);
+    return this.users.map(c => ({id: c.id }));
   }
 
   async "game:getGameList"() {
@@ -85,6 +86,23 @@ module.exports = class GameServer {
     }
     return { joined: false, reason: `no such game` };
   }
+
+
+  async "game:leave"(from) {
+    let user = this.getUser(from);
+    let game = user.game;
+    game.leave(user);
+    
+    // clean up empty games
+    if (game.players.length === 0) {
+      let pos = this.games.findIndex(g => g === game);
+      this.games.splice(pos, 1);
+      this.users.forEach(user =>
+        user.client.game.ended({ name: game.name })
+      );
+    }
+  }
+
 
   async "game:start"(from) {
     let user = this.getUser(from);

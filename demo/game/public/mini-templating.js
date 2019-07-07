@@ -11,6 +11,7 @@
     `p`,
     `section`,
     `span`,
+    `strong`,
     `ul`
   ];
 
@@ -59,5 +60,5 @@
     };
   });
 
-  global.makearray = n => new Array(n).fill(0);
+  global.makearray = n => new Array(n).fill(undefined);
 })(this);

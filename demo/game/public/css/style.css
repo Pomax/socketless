@@ -33,11 +33,21 @@ footer {
     display: inline-block;
 }
 
+#active-game {
+    padding: 1em;
+    padding-top: 1.5em;
+    background: #ffeac1;
+}
+
 .player {
     position: relative;
     background: #ffeac1;
     margin: 2px;
     padding-left: 2em;
+}
+
+.player + .player {
+    margin-top: 2em;
 }
 
 .player:before {
@@ -53,4 +63,35 @@ footer {
     padding: 2px 5px;
     border-radius: 3px;
     border: 1px solid black;
+}
+
+.player:after {
+    position: absolute;
+    content: attr(data-name);
+    left: -1em;
+    top: -1em;
+    font-family: Helvetica;
+    font-weight: bold;
+    color: #834828;
+    font-variant: small-caps;
+    text-transform: lowercase;
+}
+
+.player.active {
+    border: 1px solid #fbb479;
+}
+
+.player.winner {
+    border: 3px solid gold;
+    background: #fbb479;
+}
+
+.player.left {
+    opacity: 0.4;
+}
+
+button.rename {
+    margin: 1em;
+    padding: 0;
+    display: inline-block;
 }
