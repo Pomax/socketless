@@ -1,3 +1,8 @@
+if (typeof process !== "undefined") {
+  // We do not want Node to artificially limit us to 10 sockets
+  process.setMaxListeners(0);
+}
+
 /**
  * This function takes a standard Socket.io socket,
  * and makes it better by rewriting the `on` and `emit`

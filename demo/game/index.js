@@ -4,7 +4,9 @@ const spawnConfig = { stdio: "inherit" };
 
 spawn(cmd, ["run", "game:server"], spawnConfig);
 
-spawn(cmd, ["run", "game:client"], spawnConfig);
-spawn(cmd, ["run", "game:client"], spawnConfig);
-spawn(cmd, ["run", "game:client"], spawnConfig);
-spawn(cmd, ["run", "game:client"], spawnConfig);
+setTimeout(() => {
+    spawn(cmd, ["run", "game:client"], spawnConfig);
+    spawn(cmd, ["run", "game:client"], spawnConfig);
+    spawn(cmd, ["run", "game:client"], spawnConfig);
+    spawn(cmd, ["run", "game:client"], spawnConfig);    
+}, 250);

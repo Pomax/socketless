@@ -1,5 +1,5 @@
 const Wall = require("./wall.js");
-const CLAIM_TIMEOUT = 50000;
+const CLAIM_TIMEOUT = 10000;
 const generateRandomName = require("../utils/name-generator.js");
 
 module.exports = class Game {
@@ -172,15 +172,14 @@ module.exports = class Game {
     this.currentPlayer = claim.player.seat;
 
     if (claim.claimtype === `win`) {
-      this.players.forEach(player => {
-        // declare winner
-        player.client.game.playerWon({
-          id: award.id,
-          seat: award.seat
-        });
-      });
-
-      this.finished = true;
+      this.declareWin(award);
     }
+  }
+
+  declareWin({id, seat}) {
+    this.players.forEach(player => 
+      player.client.game.playerWon({ id, seat })
+    );
+    this.finished = true;
   }
 };

@@ -161,4 +161,13 @@ module.exports = class GameServer {
     }
     return { allowed: false, reason: `not in a game` };
   }
+
+  async "game:declareWin"(from) {
+    let user = this.getUser(from);
+    let game = user.game;
+    if (game) game.declareWin({
+      id: user.id,
+      seat: user.seat
+    });
+  }
 };

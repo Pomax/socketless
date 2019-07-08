@@ -1,14 +1,5 @@
-const CLAIM_TYPES = [
-  `cancel`,
-  `chow1`,
-  `chow2`,
-  `chow3`,
-  `pung`,
-  `kong`,
-  `win`
-];
-
-const WIN_TYPES = [`cancel`, `pair`, `chow1`, `chow2`, `chow3`, `pung`];
+const CLAIM_TYPES = [`chow1`, `chow2`, `chow3`, `pung`, `kong`, `win`];
+const WIN_TYPES = [`pair`, `chow1`, `chow2`, `chow3`, `pung`];
 
 /**
  * The web client is effectively a thin client around
@@ -20,21 +11,36 @@ const WIN_TYPES = [`cancel`, `pair`, `chow1`, `chow2`, `chow3`, `pung`];
  * template string HTML, whatever works for you).
  */
 export default class WebClientClass {
+  constructor() {
+    setTimeout(() => {
+      let name = [
+        "angelo",
+        "bartholomew",
+        "chantal",
+        "dmietri",
+        "evert",
+        "francesca",
+        "gregory"
+      ][this.id];
+      this.server.user.setName(name);
+    }, 500);
+  }
+
   /**
    * ...
    */
   update() {
-    if (!this.name) {
-      let name = ['angelo', 'bartholomew', 'chantalle', 'dmietri', 'evert', 'francesca', 'gregory'][this.id];
-      this.server.user.setName(name);
-    }
-
     const ui = main(
       { id: `client` },
       this.renderActiveGame(),
       div(
         { id: `lobbydata` },
-        this.currentGame ? undefined : section({ id: `gamelist` }, ul({ id: `games` }, this.renderGames())),
+        this.currentGame
+          ? undefined
+          : section(
+              { id: `gamelist` },
+              ul({ id: `games` }, this.renderGames())
+            ),
         section(
           { id: `lobby` },
           ul({ id: `users` }, this.renderUsers()),
@@ -57,10 +63,15 @@ export default class WebClientClass {
       div({ id: `players` }, this.renderPlayers()),
       div({ id: `discard` }, this.renderDiscard()),
       div({ id: `prompt` }),
-      this.winner ? button({
-        className: `leave`,
-        'on-click': () => this.server.game.leave()
-      }, `leave game`) : undefined
+      this.winner
+        ? button(
+            {
+              className: `leave`,
+              "on-click": () => this.server.game.leave()
+            },
+            `leave game`
+          )
+        : undefined
     );
   }
 
@@ -101,20 +112,13 @@ export default class WebClientClass {
   }
 
   renderOwnTiles() {
-    return [
+    const tiles = [
       ul(
         { className: `tiles` },
         this.tiles.map(tilenumber =>
           li(
             {
-              className: [
-                `tile`,
-                this.latestTile && this.latestTile === tilenumber
-                  ? `latest`
-                  : ``
-              ]
-                .join(" ")
-                .trim(),
+              className: `tile`,
               "data-tile": tilenumber,
               "on-click": async evt => {
                 let tilenumber = parseInt(evt.target.dataset.tile);
@@ -141,8 +145,27 @@ export default class WebClientClass {
             )
           )
         )
-      )
+      ),
+      (this.seat === this.currentPlayer && !this.winner) ? button(
+        {
+          className: `declare-win-button`,
+          'on-click': () => {
+            if (confirm('Declare win?')) {
+              this.server.game.declareWin();
+            }
+          }
+        },
+        `declare win`
+      ) : undefined
     ];
+
+    // highlight the just-draw tile (or rather, any one
+    // tile that matches the just-dealt tile's tilenumber).
+    if (this.latestTile) {
+      tiles[0].querySelector(`.tile[data-tile="${this.latestTile}"]`).classList.add(`latest`);
+    }
+
+    return tiles;
   }
 
   renderOtherTiles(player) {
@@ -159,11 +182,14 @@ export default class WebClientClass {
       tilecount -= count;
       return makearray(count).map((_, i) => {
         let num = tilenumber + (chowtype === false ? 0 : i - chowtype);
-        return li({
-          className: `tile`,
-          "data-setnum": setnum,
-          "data-tile": num
-        }, num)
+        return li(
+          {
+            className: `tile`,
+            "data-setnum": setnum,
+            "data-tile": num
+          },
+          num
+        );
       });
     });
 
@@ -207,11 +233,8 @@ export default class WebClientClass {
           }
         }
       }),
-      this.discardButtons(),
-      span(
-        { id: `claim-timer` },
-        span({ id: `claim-timer-bar` })
-      ),
+      span({ id: `discard-buttons` }, this.discardButtons()),
+      span({ id: `claim-timer` }, span({ id: `claim-timer-bar` }))
     );
   }
 
@@ -225,33 +248,51 @@ export default class WebClientClass {
           {
             className: `btn pass-button`,
             "on-click": evt => {
-              evt.target.disabled = true;
+              document
+                .querySelectorAll(`.claim-button`)
+                .forEach(b => b.parentNode.removeChild(b));
+              document.querySelector(`.pass-button`).disabled = true;
               this.server.game.pass();
             }
           },
           "pass"
         ),
 
-        button(
-          {
-            className: "btn claim-button",
-            "on-click": async () => {
-              // TODO: add in a claim options filtering based on tiles in hand
-              // TODO: add in a winning claim options filtering based on tiles in hand
-              let claimtype = await this.prompt(`Claim type`, CLAIM_TYPES);
-              if (claimtype === `cancel`) return;
-
-              let wintype = false;
-              if (claimtype === `win`) {
-                wintype = await this.prompt(`Wining claim type`, WIN_TYPES);
+        // TODO: add in a claim options filtering based on tiles in hand
+        // TODO: add in a winning claim options filtering based on tiles in hand
+        CLAIM_TYPES.map(claimtype =>
+          button(
+            {
+              className: `btn claim-button`,
+              "on-click": async () => {
+                if (claimtype === `win`) {
+                  document
+                    .querySelectorAll(`.claim-button`)
+                    .forEach(b => b.parentNode.removeChild(b));
+                  const buttonRow = document.querySelector(`.pass-button`)
+                    .parentNode;
+                  WIN_TYPES.forEach(wintype => {
+                    console.log(`add ${wintype}`);
+                    buttonRow.appendChild(
+                      button(
+                        {
+                          className: `btn claim-button win-button`,
+                          "on-click": () => {
+                            document
+                              .querySelectorAll(`.claim-button, .pass-button`)
+                              .forEach(b => b.disabled = true);
+                            this.server.game.claim({ claimtype, wintype });
+                          }
+                        },
+                        wintype
+                      )
+                    );
+                  });
+                } else this.server.game.claim({ claimtype });
               }
-
-              if (wintype === `cancel`) return;
-
-              this.server.game.claim({ claimtype, wintype });
-            }
-          },
-          "claim"
+            },
+            claimtype
+          )
         )
       ];
     }
@@ -304,10 +345,8 @@ export default class WebClientClass {
 
   inGame() {
     if (this.currentGame) return true;
-    return this.games.some(g => 
-      g.players.some(p => 
-        p.id === this.id && g.id !== this.id
-      )
+    return this.games.some(g =>
+      g.players.some(p => p.id === this.id && g.id !== this.id)
     );
   }
 
@@ -357,7 +396,7 @@ export default class WebClientClass {
    * ...
    */
   updateDiscardTimer(value) {
-    const bar = document.getElementById('claim-timer-bar');
+    const bar = document.getElementById("claim-timer-bar");
     if (bar) bar.style.width = `${100 * value}%`;
   }
 

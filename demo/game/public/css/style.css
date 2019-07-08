@@ -37,9 +37,10 @@ button + button {
 }
 
 button[disabled] {
-  background: transparent;
+  background: transparent;  
   color: #999;
   border: 1px dashed;
+  margin: calc(1em + 2px);
 }
 
 #discard .tile {
@@ -135,6 +136,10 @@ footer p {
 button.rename {
   margin: 1em;
   display: inline-block;
+}
+
+button.claim-button.win-button {
+  background: #b7f0d0;
 }
 
 #claim-timer {
