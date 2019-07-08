@@ -146,23 +146,32 @@ export default class WebClientClass {
           )
         )
       ),
-      (this.seat === this.currentPlayer && !this.winner) ? button(
-        {
-          className: `declare-win-button`,
-          'on-click': () => {
-            if (confirm('Declare win?')) {
-              this.server.game.declareWin();
-            }
-          }
-        },
-        `declare win`
-      ) : undefined
+      this.seat === this.currentPlayer && !this.winner
+        ? button(
+            {
+              className: `declare-win-button`,
+              "on-click": () => {
+                if (confirm("Declare win?")) {
+                  this.server.game.declareWin();
+                }
+              }
+            },
+            `declare win`
+          )
+        : undefined
     ];
 
     // highlight the just-draw tile (or rather, any one
     // tile that matches the just-dealt tile's tilenumber).
     if (this.latestTile) {
-      tiles[0].querySelector(`.tile[data-tile="${this.latestTile}"]`).classList.add(`latest`);
+      let tile = tiles[0].querySelector(
+        `.tile[data-tile="${this.latestTile}"]`
+      );
+      if (tile) {
+        tile.classList.add(`latest`);
+      } else {
+        console.log(`Could not find ${this.latestTile} in hand?`, this.tiles);
+      }
     }
 
     return tiles;
@@ -280,7 +289,7 @@ export default class WebClientClass {
                           "on-click": () => {
                             document
                               .querySelectorAll(`.claim-button, .pass-button`)
-                              .forEach(b => b.disabled = true);
+                              .forEach(b => (b.disabled = true));
                             this.server.game.claim({ claimtype, wintype });
                           }
                         },
@@ -355,6 +364,7 @@ export default class WebClientClass {
    */
   renderGames() {
     return this.games.map(g => {
+      if (g.finished) return;
       let label = g.id === this.id ? "start" : "join";
       let item = li(
         { className: `game` },
@@ -404,26 +414,30 @@ export default class WebClientClass {
    *  ...
    */
   renderUsers() {
-    return this.users.map(u =>
-      li(
+    return this.users.map(u => {
+      console.log(u, u.name);
+      return li(
         { className: `user` },
         span({ className: `name` }, u.name || `unknown user ${u.id}`),
         u.id !== this.id
           ? ``
-          : button(
-              {
-                className: `rename`,
-                "on-click": () => {
-                  let name = prompt("your name?");
-                  if (name && name.trim()) {
-                    this.server.user.setName(name);
+          : [
+              ` ←`,
+              button(
+                {
+                  className: `rename`,
+                  "on-click": () => {
+                    let name = prompt("your name?");
+                    if (name && name.trim()) {
+                      this.server.user.setName(name);
+                    }
                   }
-                }
-              },
-              `change name`
-            )
-      )
-    );
+                },
+                `change name`
+              )
+            ]
+      );
+    });
   }
 
   /**

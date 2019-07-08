@@ -8,7 +8,7 @@ module.exports = class GameClient {
       users: [],
       games: [],
       players: []
-    }
+    };
   }
 
   onConnect() {}
@@ -43,12 +43,12 @@ module.exports = class GameClient {
   }
 
   async "game:created"({ id, name }) {
-    this.state.games.push({ id, name, players: [{id}] });
+    this.state.games.push({ id, name, players: [{ id }] });
   }
 
-  async "game:updated"({ id, name, players}) {
-    let game = this.state.games.find(g => g.name === name);
-    game.players = players;
+  async "game:updated"(details) {
+    let pos = this.state.games.findIndex(g => g.name === details.name);
+    if (pos > -1) this.state.games[pos] = details;
   }
 
   async "game:start"({ name, players }) {
@@ -173,7 +173,7 @@ module.exports = class GameClient {
   }
 
   async "game:reveal"({ seat, tiles }) {
-    let player = this.state.players.find(p => p.seat===seat);
+    let player = this.state.players.find(p => p.seat === seat);
     player.tiles = tiles;
   }
 
@@ -181,7 +181,7 @@ module.exports = class GameClient {
     if (seat === this.state.seat) {
       this.state.currentGame = false;
     } else {
-      let player = this.state.players.find(p => p.seat===seat);
+      let player = this.state.players.find(p => p.seat === seat);
       player.left = true;
     }
   }

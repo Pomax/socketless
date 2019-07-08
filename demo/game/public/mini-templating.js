@@ -43,14 +43,18 @@
       });
 
       const process = c => {
-        if (c === undefined) return;
+        if (c === false || c === null || c === undefined) return;
         let t = typeof c;
         if (t === `string` || t === `number`) {
           e.appendChild(document.createTextNode(c));
         } else if (c instanceof Array) {
           c.forEach(process);
         } else {
-          e.appendChild(c);
+          try {
+            e.appendChild(c);
+          } catch (e) {
+            console.error(`Could not appendChild in ${tag}:`, c);
+          }
         }
       };
 

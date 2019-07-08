@@ -36,7 +36,9 @@ module.exports = class Game {
           seat: player.seat,
           wind: player.wind
         };
-      })
+      }),
+      inProgress: this.inProgress,
+      finished: this.finished
     };
   }
 
@@ -176,10 +178,11 @@ module.exports = class Game {
     }
   }
 
-  declareWin({id, seat}) {
-    this.players.forEach(player => 
-      player.client.game.playerWon({ id, seat })
-    );
+  declareWin({ id, seat }) {
     this.finished = true;
+    this.players.forEach(player => {
+      player.client.game.playerWon({ id, seat });
+      player.client.game.updated(this.getDetails());
+    });
   }
 };

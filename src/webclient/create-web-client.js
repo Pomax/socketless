@@ -8,7 +8,7 @@ module.exports = function createWebClient(factory, ClientClass, API) {
    * whistles taken care of so the user doesn't ever need to write
    * any socket.io code explicitly.
    */
-  return function(serverURL, publicDir, options={}) {
+  return function(serverURL, publicDir, options = {}) {
     const { useHttps, directSync } = options;
 
     const rootDir = `${__dirname}/../`;

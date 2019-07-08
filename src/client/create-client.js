@@ -1,4 +1,4 @@
-const addStateManagement = require("./add-state-management.js")
+const addStateManagement = require("./add-state-management.js");
 
 module.exports = function(clientServer, DefaultClientClass) {
   /**

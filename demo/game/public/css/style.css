@@ -37,7 +37,7 @@ button + button {
 }
 
 button[disabled] {
-  background: transparent;  
+  background: transparent;
   color: #999;
   border: 1px dashed;
   margin: calc(1em + 2px);
@@ -89,7 +89,7 @@ footer p {
 }
 
 .player + .player {
-  margin-top: 2em;
+  margin-top: 1em;
 }
 
 .player:before {
@@ -134,7 +134,7 @@ footer p {
 }
 
 button.rename {
-  margin: 1em;
+  margin: 0;
   display: inline-block;
 }
 

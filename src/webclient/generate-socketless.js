@@ -9,7 +9,7 @@ const generateProxyClientServer = require("./generate-proxy-client-server.js");
  * - src/upgrade-socket.js
  * - custom code that sets up window.createServer() that yields an object that
  *   connects to this web server, with the same API as the "real" server.
- * 
+ *
  * This is done the crude way rather than using something like webpack or
  * rollup mainly because I hate dependencies for things that don't need them.
  * Would the bundle be smaller? No. Would it be cleaner? Irrelevant: the
@@ -23,7 +23,10 @@ module.exports = function generateSocketless(API) {
   return [
     fs
       .readFileSync(
-        path.join(__dirname, `../../node_modules/morphdom/dist/morphdom-umd.min.js`)
+        path.join(
+          __dirname,
+          `../../node_modules/morphdom/dist/morphdom-umd.min.js`
+        )
       )
       .toString("utf-8"),
 
