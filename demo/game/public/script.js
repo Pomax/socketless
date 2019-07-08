@@ -1,5 +1,5 @@
 import WebClientClass from "./web-client-class.js";
-const { client, server } = ClientServer.generateClientServer(WebClientClass);
+const { server } = ClientServer.generateClientServer(WebClientClass);
 
 // Set up a quit button
 let quit = document.querySelector("#quit");
