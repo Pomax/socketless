@@ -111,6 +111,9 @@ export default class WebClientClass {
     return this.renderOtherTiles(player);
   }
 
+  /**
+   * ...
+   */
   renderOwnTiles() {
     const tiles = [
       ul(
@@ -125,6 +128,8 @@ export default class WebClientClass {
                 if (!this.currentDiscard) {
                   this.server.game.discardTile({ tilenumber });
                 }
+                // TODO: add a way to declare a kong.
+                // TODO: add a way to merge a kong.
               }
             },
             tilenumber
@@ -144,6 +149,12 @@ export default class WebClientClass {
               tilenumber
             )
           )
+        )
+      ),
+      ul(
+        { className: `bonus` },
+        this.bonus.map(tilenumber =>
+          li({ className: `tile`, "data-tile": tilenumber }, tilenumber)
         )
       ),
       this.seat === this.currentPlayer && !this.winner
@@ -177,6 +188,9 @@ export default class WebClientClass {
     return tiles;
   }
 
+  /**
+   * ...
+   */
   renderOtherTiles(player) {
     let tilecount = 13;
 
@@ -217,7 +231,15 @@ export default class WebClientClass {
               li({ className: `tile`, "data-tile": -1 })
             )
       ),
-      ul({ className: `locked` }, locked)
+      ul({ className: `locked` }, locked),
+      player.bonus
+        ? ul(
+            { className: `bonus` },
+            player.bonus.map(tilenumber =>
+              li({ className: `tile`, "data-tile": tilenumber }, tilenumber)
+            )
+          )
+        : false
     ];
   }
 
@@ -248,6 +270,55 @@ export default class WebClientClass {
   }
 
   /**
+   *
+   */
+  generateClaimButtons() {
+    // TODO: add in a claim options filtering based on tiles in hand
+    // TODO: add in a winning claim options filtering based on tiles in hand
+    return CLAIM_TYPES.map(claimtype =>
+      button(
+        {
+          className: `btn claim-button`,
+          "on-click": async () => {
+            if (claimtype === `win`) {
+              document
+                .querySelectorAll(`.claim-button`)
+                .forEach(b => b.parentNode.removeChild(b));
+
+              const buttonRow = document.querySelector(`.pass-button`)
+                .parentNode;
+
+              WIN_TYPES.forEach(wintype => {
+                console.log(`add ${wintype}`);
+                buttonRow.appendChild(
+                  button(
+                    {
+                      className: `btn claim-button win-button`,
+                      "on-click": () => {
+                        document
+                          .querySelectorAll(`.claim-button, .pass-button`)
+                          .forEach(b => (b.disabled = true));
+                        this.server.game.claim({ claimtype, wintype });
+                      }
+                    },
+                    wintype
+                  )
+                );
+              });
+            } else {
+              document
+                .querySelectorAll(`.claim-button, .pass-button`)
+                .forEach(b => (b.disabled = true));
+              this.server.game.claim({ claimtype });
+            }
+          }
+        },
+        claimtype
+      )
+    );
+  }
+
+  /**
    * ...
    */
   discardButtons() {
@@ -267,42 +338,7 @@ export default class WebClientClass {
           "pass"
         ),
 
-        // TODO: add in a claim options filtering based on tiles in hand
-        // TODO: add in a winning claim options filtering based on tiles in hand
-        CLAIM_TYPES.map(claimtype =>
-          button(
-            {
-              className: `btn claim-button`,
-              "on-click": async () => {
-                if (claimtype === `win`) {
-                  document
-                    .querySelectorAll(`.claim-button`)
-                    .forEach(b => b.parentNode.removeChild(b));
-                  const buttonRow = document.querySelector(`.pass-button`)
-                    .parentNode;
-                  WIN_TYPES.forEach(wintype => {
-                    console.log(`add ${wintype}`);
-                    buttonRow.appendChild(
-                      button(
-                        {
-                          className: `btn claim-button win-button`,
-                          "on-click": () => {
-                            document
-                              .querySelectorAll(`.claim-button, .pass-button`)
-                              .forEach(b => (b.disabled = true));
-                            this.server.game.claim({ claimtype, wintype });
-                          }
-                        },
-                        wintype
-                      )
-                    );
-                  });
-                } else this.server.game.claim({ claimtype });
-              }
-            },
-            claimtype
-          )
-        )
+        this.generateClaimButtons()
       ];
     }
   }
@@ -352,6 +388,9 @@ export default class WebClientClass {
     clearTimeout(this.claimTimeout);
   }
 
+  /**
+   * ...
+   */
   inGame() {
     if (this.currentGame) return true;
     return this.games.some(g =>
@@ -415,7 +454,6 @@ export default class WebClientClass {
    */
   renderUsers() {
     return this.users.map(u => {
-      console.log(u, u.name);
       return li(
         { className: `user` },
         span({ className: `name` }, u.name || `unknown user ${u.id}`),
@@ -449,27 +487,44 @@ export default class WebClientClass {
     });
   }
 
+  // ======================
+
+  /**
+   * ...
+   */
   async "game:setCurrentPlayer"(seat) {
     // TODO: make this a visual signal
     this.cancelDiscardTimer();
   }
 
+  /**
+   * ...
+   */
   async "game:playerDiscarded"({ timeout }) {
     // set a timer for claiming the discard
     console.log(`starting a ${timeout}ms discard timer`);
     this.startDiscardTimer(timeout);
   }
 
+  /**
+   * ...
+   */
   async "game:claimAwarded"() {
     this.cancelDiscardTimer();
   }
 
+  /**
+   * ...
+   */
   async "game:playerTookBack"({ id, seat, tilenumber }) {
     // TODO: make this a visual signal
     console.log(`player ${id} (seat ${seat}) took back discard ${tilenumber}.`);
     this.cancelDiscardTimer();
   }
 
+  /**
+   * ...
+   */
   async "game:playerPassed"({ id, seat }) {
     // TODO: make this a visual signal
     console.log(`player ${id} (seat ${seat}) passed on this discard.`);

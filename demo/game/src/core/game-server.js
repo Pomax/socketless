@@ -7,14 +7,23 @@ module.exports = class GameServer {
     this.games = [];
   }
 
+  /**
+   * 
+   */
   getUser(client) {
     return this.users.find(v => v.client === client);
   }
 
+  /**
+   * 
+   */
   getOthers(client) {
     return this.users.filter(v => v.client !== client);
   }
 
+  /**
+   * 
+   */
   async onConnect(client) {
     const user = { id: this.clientIdCounter++, client };
     const otherUsers = this.users.slice();
@@ -23,6 +32,9 @@ module.exports = class GameServer {
     otherUsers.forEach(other => other.client.user.joined(user.id));
   }
 
+  /**
+   * 
+   */
   async onDisconnect(client) {
     const userPos = this.users.findIndex(v => v.client === client);
     const user = this.users.splice(userPos, 1)[0];
@@ -37,20 +49,32 @@ module.exports = class GameServer {
     }
   }
 
+  /**
+   * 
+   */
   async "user:setName"(from, name) {
     const user = this.getUser(from);
     user.name = name;
     this.users.forEach(u => u.client.user.changedName({ id: user.id, name }));
   }
 
+  /**
+   * 
+   */
   async "user:getUserList"() {
     return this.users.map(c => ({ id: c.id }));
   }
 
+  /**
+   * 
+   */
   async "game:getGameList"() {
     return this.games.map(g => g.name);
   }
 
+  /**
+   * 
+   */
   async "game:create"(from) {
     let user = this.getUser(from);
     let game = new Game(user);
@@ -63,6 +87,9 @@ module.exports = class GameServer {
     );
   }
 
+  /**
+   * 
+   */
   async "game:join"(from, gameName) {
     let game = this.games.find(g => g.name === gameName);
     if (game) {
@@ -82,6 +109,9 @@ module.exports = class GameServer {
     return { joined: false, reason: `no such game` };
   }
 
+  /**
+   * 
+   */
   async "game:leave"(from) {
     let user = this.getUser(from);
     let game = user.game;
@@ -95,6 +125,9 @@ module.exports = class GameServer {
     }
   }
 
+  /**
+   * 
+   */
   async "game:start"(from) {
     let user = this.getUser(from);
     let game = user.game;
@@ -111,6 +144,25 @@ module.exports = class GameServer {
     return { started: false, reason: `not in a game` };
   }
 
+  /**
+   * 
+   */
+  async "game:bonusTile"(from, { tilenumber }) {
+    let user = this.getUser(from);
+    let game = user.game;
+    if (game) {
+      let reason = game.playerDeclaredBonus(user, tilenumber);
+      if (!reason) {
+        return { accepted: true };
+      }
+      return { accepted: false, reason };
+    }
+    return { accepted: false, reason: `not in a game` };
+  }
+
+  /**
+   * 
+   */
   async "game:discardTile"(from, { tilenumber }) {
     let user = this.getUser(from);
     let game = user.game;
@@ -124,17 +176,25 @@ module.exports = class GameServer {
     return { accepted: false, reason: `not in a game` };
   }
 
+  /**
+   * 
+   */
   async "game:undoDiscard"(from) {
     let user = this.getUser(from);
     let game = user.game;
     if (game) {
       let reason = game.undoDiscard(user);
-      if (!reason) return { allowed: true };
+      if (!reason) {
+        return { allowed: true };
+      }
       return { allowed: false, reason };
     }
     return { allowed: false, reason: `not in a game` };
   }
 
+  /**
+   * 
+   */
   async "game:pass"(from) {
     let user = this.getUser(from);
     let game = user.game;
@@ -143,6 +203,9 @@ module.exports = class GameServer {
     }
   }
 
+  /**
+   * 
+   */
   async "game:claim"(from, { claimtype, wintype }) {
     let user = this.getUser(from);
     let game = user.game;
@@ -153,6 +216,9 @@ module.exports = class GameServer {
     return { allowed: false, reason: `not in a game` };
   }
 
+  /**
+   * 
+   */
   async "game:declareWin"(from) {
     let user = this.getUser(from);
     let game = user.game;

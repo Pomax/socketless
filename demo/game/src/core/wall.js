@@ -1,16 +1,16 @@
 let Random = require("../utils/prng.js");
 
+// Standard wall definition. 
 let base = [...new Array(34)].map((_, i) => i);
 const BASE = base
   .concat(base)
   .concat(base)
-  .concat(base);
-// no bonus files for the moment
-// .concat([34, 35, 36, 37, 38, 39, 40, 41]);
+  .concat(base)
+  .concat([34, 35, 36, 37, 38, 39, 40, 41]);
 
 /**
- * This basically represents a shuffled a pile of tiles
- * for dealing from during a hand of play.
+ * This basically represents a shuffled a pile of
+ * tiles for dealing from during a hand of play.
  */
 module.exports = class Wall {
   constructor() {
@@ -18,7 +18,9 @@ module.exports = class Wall {
     this.reset();
   }
 
-  // shuffle utility function, also used by WallHack
+  /**
+   *  shuffle utility function, also used by WallHack
+   */
   shuffle(list) {
     list = list.slice();
     let shuffled = [];

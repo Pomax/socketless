@@ -7,6 +7,9 @@ This is a framework and methodology for implementing a websocket client/server s
    - [Adding a browser-based client](#adding-a-browser-based-client)
 3. [Conventions](#conventions)
 4. [The `socketless` API](#the-socketless-api)
+  - [Server]()
+  - [Client]()
+  - [Web Client]()
 5. [Bugs, feature-requests, and discussions](#bugs-feature-requests-and-discussions)
 
 ## Introduction
