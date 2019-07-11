@@ -116,62 +116,92 @@ export default class WebClientClass {
    */
   renderOwnTiles() {
     const tiles = [
-      ul(
-        { className: `tiles` },
-        this.tiles.map(tilenumber =>
-          li(
-            {
-              className: `tile`,
-              "data-tile": tilenumber,
-              "on-click": async evt => {
-                let tilenumber = parseInt(evt.target.dataset.tile);
-                if (!this.currentDiscard) {
-                  this.server.game.discardTile({ tilenumber });
-                }
-                // TODO: add a way to declare a kong.
-                // TODO: add a way to merge a kong.
-              }
-            },
-            tilenumber
-          )
-        )
-      ),
-      ul(
-        { className: `locked` },
-        this.locked.map((set, setnum) =>
-          set.map(tilenumber =>
-            li(
-              {
-                className: "tile",
-                "data-setnum": setnum,
-                "data-tile": tilenumber
-              },
-              tilenumber
-            )
-          )
-        )
-      ),
+      this.renderHandTiles(),
+      this.renderLockedTiles(),
       ul(
         { className: `bonus` },
         this.bonus.map(tilenumber =>
           li({ className: `tile`, "data-tile": tilenumber }, tilenumber)
         )
       ),
-      this.seat === this.currentPlayer && !this.winner
-        ? button(
-            {
-              className: `declare-win-button`,
-              "on-click": () => {
-                if (confirm("Declare win?")) {
-                  this.server.game.declareWin();
-                }
-              }
-            },
-            `declare win`
-          )
-        : undefined
+      this.renderWinButton()
     ];
 
+    this.highlightLatest(tiles);
+
+    return tiles;
+  }
+
+  /**
+   * ...
+   */
+  renderHandTiles() {
+    return ul(
+      { className: `tiles` },
+      this.tiles.map(tilenumber =>
+        li(
+          {
+            className: `tile`,
+            "data-tile": tilenumber,
+            "on-click": async evt => {
+              let tilenumber = parseInt(evt.target.dataset.tile);
+              if (!this.currentDiscard) {
+                this.server.game.discardTile({ tilenumber });
+              }
+              // TODO: add a way to declare a kong.
+              // TODO: add a way to merge a kong.
+            }
+          },
+          tilenumber
+        )
+      )
+    );
+  }
+
+  /**
+   * ...
+   */
+  renderLockedTiles() {
+    return ul(
+      { className: `locked` },
+      this.locked.map((set, setnum) =>
+        set.map(tilenumber =>
+          li(
+            {
+              className: "tile",
+              "data-setnum": setnum,
+              "data-tile": tilenumber
+            },
+            tilenumber
+          )
+        )
+      )
+    );
+  }
+
+  /**
+   * ...
+   */
+  renderWinButton() {
+    return       this.seat === this.currentPlayer && !this.winner
+    ? button(
+        {
+          className: `declare-win-button`,
+          "on-click": () => {
+            if (confirm("Declare win?")) {
+              this.server.game.declareWin();
+            }
+          }
+        },
+        `declare win`
+      )
+    : undefined;
+  }
+
+  /**
+   * ...
+   */
+  highlightLatest(tiles) {
     // highlight the just-draw tile (or rather, any one
     // tile that matches the just-dealt tile's tilenumber).
     if (this.latestTile) {
@@ -184,8 +214,6 @@ export default class WebClientClass {
         console.log(`Could not find ${this.latestTile} in hand?`, this.tiles);
       }
     }
-
-    return tiles;
   }
 
   /**
