@@ -10,10 +10,11 @@ server.listen(8080, () => {
 
 const url = `http://localhost:8080`;
 const public = `${__dirname}/public`;
-const createWebClient = response => {
+const createWebClient = (request, response) => {
+  const host = request.headers.host.replace(/:\d+/g, '');
   const webclient = ClientServer.createWebClient(url, public);
   webclient.listen(0, () => {
-    const clientURL = `http://localhost:${webclient.address().port}`;
+    const clientURL = `http://${host}:${webclient.address().port}`;
     console.log(`web client listening on ${clientURL}`);
     response.writeHead(200, { "Content-Type": "text/html" });
     return response.end(
@@ -25,8 +26,7 @@ const createWebClient = response => {
 
 const http = require("http");
 const webserver = http.createServer((request, response) => {
-  console.log(request.headers.host);
-  if (request.url === `/create`) createWebClient(response);
+  if (request.url === `/create`) createWebClient(request, response);
   if (request.url === `/`) {
     response.writeHead(200, { "Content-Type": "text/html" });
     return response.end(
