@@ -28,7 +28,7 @@ module.exports = class GameServer {
     const user = { id: this.clientIdCounter++, client };
     const otherUsers = this.users.slice();
     this.users.push(user);
-    await client.admin.register(user.id);
+    client.admin.register(user.id);
     otherUsers.forEach(other => other.client.user.joined(user.id));
   }
 
@@ -42,11 +42,12 @@ module.exports = class GameServer {
     // update all running games
     this.games.forEach(game => game.leave(user));
     this.games = this.games.filter(game => game.players.count === 0);
-    // for convenience, quit if there are no users left
-    if (this.users.length === 0) {
-      console.log("no more users connected, shutting down server");
-      process.exit(0);
-    }
+
+    // // for convenience, quit if there are no users left
+    // if (this.users.length === 0) {
+    //   console.log("no more users connected, shutting down server");
+    //   process.exit(0);
+    // }
   }
 
   /**
@@ -55,14 +56,17 @@ module.exports = class GameServer {
   async "user:setName"(from, name) {
     const user = this.getUser(from);
     user.name = name;
-    this.users.forEach(u => u.client.user.changedName({ id: user.id, name }));
+    this.users.forEach(u => u.client.user.changedName({
+      id: user.id,
+      name: user.name
+    }));
   }
 
   /**
    * 
    */
   async "user:getUserList"() {
-    return this.users.map(c => ({ id: c.id }));
+    return this.users.map(u => ({ id: u.id, name: u.name }));
   }
 
   /**

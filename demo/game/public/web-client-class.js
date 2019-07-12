@@ -14,13 +14,22 @@ export default class WebClientClass {
   constructor() {
     setTimeout(() => {
       let name = [
-        "angelo",
-        "bartholomew",
-        "chantal",
-        "dmietri",
-        "evert",
-        "francesca",
-        "gregory"
+        "Angler Fish",
+        "B- b- bear!",
+        "Cat gonna cat",
+        "Dogglepants",
+        "Elemental(tm)",
+        "Fish-o-fillet",
+        "Gargantua",
+        "Hecking yeah",
+        "Ifreet",
+        "J-bot",
+        "Kilimanjarobber",
+        "Lemurs are cool",
+        "Mango smoothie",
+        "Not mango smoothie",
+        "Oranges are not the only fruit",
+        "Parmezan Marsipan"
       ][this.id];
       this.server.user.setName(name);
     }, 500);
