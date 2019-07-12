@@ -20,7 +20,7 @@ export default class WebClientClass {
         "Dogglepants",
         "Elemental(tm)",
         "Fish-o-fillet",
-        "Gargantua",
+        "Geranium",
         "Hecking yeah",
         "Ifreet",
         "J-bot",
@@ -29,9 +29,20 @@ export default class WebClientClass {
         "Mango smoothie",
         "Not mango smoothie",
         "Oranges are not the only fruit",
-        "Parmezan Marsipan"
+        "Parmezan Marsipan",
+        "Quezceyouknowthatname",
+        "Red panda",
+        "Spicy tamale",
+        "TrifleLover82773",
+        "Umamimon",
+        "Velociraptor",
+        "Westerlies",
+        "Xx.",
+        "Yipyipyipyip",
+        "Zloppy Zoe's"
       ][this.id];
-      this.server.user.setName(name);
+      
+      if (name) this.server.user.setName(name);
     }, 500);
   }
 
