@@ -126,9 +126,7 @@ export default class WebClientClass {
       ),
       this.renderWinButton()
     ];
-
     this.highlightLatest(tiles);
-
     return tiles;
   }
 
@@ -183,19 +181,19 @@ export default class WebClientClass {
    * ...
    */
   renderWinButton() {
-    return       this.seat === this.currentPlayer && !this.winner
-    ? button(
-        {
-          className: `declare-win-button`,
-          "on-click": () => {
-            if (confirm("Declare win?")) {
-              this.server.game.declareWin();
+    return this.seat === this.currentPlayer && !this.winner
+      ? button(
+          {
+            className: `declare-win-button`,
+            "on-click": () => {
+              if (confirm("Declare win?")) {
+                this.server.game.declareWin();
+              }
             }
-          }
-        },
-        `declare win`
-      )
-    : undefined;
+          },
+          `declare win`
+        )
+      : undefined;
   }
 
   /**
