@@ -4,6 +4,7 @@
     `a`,
     `button`,
     `div`,
+    `footer`,
     `h1`,
     `h2`,
     `li`,
@@ -33,12 +34,15 @@
       // Bind any attributes/properties based on the options object:
       Object.keys(options).forEach(opt => {
         value = options[opt];
-        if (opt.startsWith("data-")) {
-          opt = opt.replace("data-", "");
+        if (opt.startsWith(`data-`)) {
+          opt = opt.replace(`data-`, ``);
           e.dataset[opt] = value;
         }
-        if (opt.startsWith("on-")) {
-          opt = opt.replace("on-", "");
+        if (opt === `dataset`) {
+          Object.keys(value).forEach(k => e.dataset[k] = value[k]);
+        }
+        if (opt.startsWith(`on-`) && value) {
+          opt = opt.replace(`on-`, ``);
           e.addEventListener(opt, value);
         }
         e[opt] = value;
@@ -70,4 +74,25 @@
   // And this one exists mostly because sometimes you need
   // an array.map based on an empty, but sized, array.
   global.makearray = n => new Array(n).fill(undefined);
+
+  // Always useful to have a class builder available, too.
+  function classes(...args) {
+    return args
+      .map(toClassString)
+      .join(" ")
+      .trim();
+  }
+
+  function toClassString(thing) {
+    if (typeof thing === "string") return thing;
+    if (thing instanceof Array) return classes(thing);
+    if (typeof thing === "object")
+      return Object.keys(thing)
+        .map(k => (!!thing[k] ? k : false))
+        .filter(v => v)
+        .join(" ")
+        .trim();
+  }
+
+  global.classes = classes;
 })(this);

@@ -12,17 +12,9 @@ module.exports = class GameClient {
   }
 
   /**
-   * 
-   */
-  onConnect() {}
-
-  /**
-   * 
-   */
-  onDisconnect() {}
-
-  /**
-   * 
+   * When the web client quits, this function automatically
+   * gets called by the socketless framework. Since we're running
+   * clients as their own process: kill that process.
    */
   onQuit() {
     console.log("Shutting down client.");
@@ -30,7 +22,9 @@ module.exports = class GameClient {
   }
 
   /**
-   * 
+   * When the server registers us, set our state to
+   * include our assigned id, and the list of other
+   * known users, and extant games.
    */
   async "admin:register"(id) {
     this.setState({
@@ -41,14 +35,15 @@ module.exports = class GameClient {
   }
 
   /**
-   * 
+   * When we receive a chat message, queue it.
    */
   async "chat:message"({ id, message }) {
     this.state.chat.push({ id, message });
   }
 
   /**
-   * 
+   * When a user joined, create a user record in our
+   * list of known users.
    */
   async "user:joined"(id) {
     let user = this.state.users.find(u => u.id === id);
@@ -58,7 +53,7 @@ module.exports = class GameClient {
   }
 
   /**
-   * 
+   * When a user leaves, remove them from that list.
    */
   async "user:left"(id) {
     let pos = this.state.users.findIndex(u => u.id === id);
@@ -66,7 +61,7 @@ module.exports = class GameClient {
   }
 
   /**
-   * 
+   * When a user changes name, record that.
    */
   async "user:changedName"({ id, name }) {
     let user = this.state.users.find(u => u.id === id);
@@ -74,14 +69,16 @@ module.exports = class GameClient {
   }
 
   /**
-   * 
+   * When someone creates a game, add a new game entry
+   * to our list of known games.
    */
   async "game:created"({ id, name }) {
     this.state.games.push({ id, name, players: [{ id }] });
   }
 
   /**
-   * 
+   * When a game is updated for whatever reason, mirror
+   * that update locally.
    */
   async "game:updated"(details) {
     let pos = this.state.games.findIndex(g => g.name === details.name);
@@ -89,7 +86,10 @@ module.exports = class GameClient {
   }
 
   /**
-   * 
+   * When a game we are joined into starts, make sure to
+   * allocate all the relevant variables that we're going
+   * to make use of, so that the web client can start
+   * working with those.
    */
   async "game:start"({ name, players }) {
     this.setState({
@@ -108,7 +108,7 @@ module.exports = class GameClient {
   }
 
   /**
-   * 
+   * When a game is over, remove it from our list of known games.
    */
   async "game:ended"({ name }) {
     let pos = this.state.games.findIndex(g => g.name === name);
@@ -116,7 +116,7 @@ module.exports = class GameClient {
   }
 
   /**
-   * 
+   * Set our wind and seat for the game we're in.
    */
   async "game:setWind"({ seat, wind }) {
     this.setState({
@@ -126,7 +126,7 @@ module.exports = class GameClient {
   }
 
   /**
-   * 
+   * Set our initial tiles, so we can start playing.
    */
   async "game:initialDeal"(tiles) {
     tiles.sort(sortTiles);
@@ -136,7 +136,8 @@ module.exports = class GameClient {
   }
 
   /**
-   * 
+   * Take note of the fact that someone declared drawing
+   * a bonus tile, rather than a normal play tile.
    */
   async "game:playerDeclaredBonus"({ id, seat, tilenumber }) {
     let player = this.state.players[seat];
@@ -146,7 +147,9 @@ module.exports = class GameClient {
   }
 
   /**
-   * 
+   * This function is called by the server rather than use
+   * calling it: we have been dealt a tile, so add it to
+   * our hand, or our bonus pile, depending on what it was.
    */
   async "game:draw"(tilenumber) {
     if (tilenumber >= 34) {
@@ -163,7 +166,7 @@ module.exports = class GameClient {
   }
 
   /**
-   * 
+   * helper function to take note of the current seat/player.
    */
   setSeat(seat) {
     this.setState({
@@ -174,14 +177,14 @@ module.exports = class GameClient {
   }
 
   /**
-   * 
+   * Take note of which seat is the current player.
    */
   async "game:setCurrentPlayer"(seat) {
     this.setSeat(seat);
   }
 
   /**
-   * 
+   * Someone discarded a tile!
    */
   async "game:playerDiscarded"({ id, seat, tilenumber }) {
     if (id === this.state.id) {
@@ -197,7 +200,7 @@ module.exports = class GameClient {
   }
 
   /**
-   * 
+   * Someone took back their tile...
    */
   async "game:playerTookBack"({ id, seat, tilenumber }) {
     this.state.currentDiscard = false;
@@ -209,14 +212,14 @@ module.exports = class GameClient {
   }
 
   /**
-   * 
+   * Someone passed on claiming the current discard.
    */
   async "game:playerPassed"({ id, seat }) {
     // useful to human players, not very relevant to bots
   }
 
   /**
-   * 
+   * Someone's claim on the current discard went through.
    */
   async "game:claimAwarded"(claim) {
     this.setSeat(claim.seat);
@@ -229,7 +232,8 @@ module.exports = class GameClient {
   }
 
   /**
-   * 
+   * Lock away a collection of tiles based on the game
+   * server permitting our claim.
    */
   lock({ tilenumber, claimtype, wintype }) {
     if (claimtype === "win") {
@@ -258,7 +262,7 @@ module.exports = class GameClient {
   }
 
   /**
-   * 
+   * Someone won!
    */
   async "game:playerWon"(winner) {
     this.state.winner = winner;
@@ -269,15 +273,17 @@ module.exports = class GameClient {
   }
 
   /**
-   * 
+   * A player revealed all their tiles. This usually only
+   * happens at the end of the game, to see how close everyone
+   * was (or not!) to winning.
    */
   async "game:reveal"({ seat, tiles }) {
     let player = this.state.players.find(p => p.seat === seat);
-    player.tiles = tiles;
+    if (player) player.tiles = tiles;
   }
 
   /**
-   * 
+   * Someone left the current game.
    */
   async "game:left"({ seat }) {
     if (seat === this.state.seat) {

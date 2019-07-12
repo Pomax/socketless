@@ -7,22 +7,20 @@ module.exports = class GameServer {
     this.games = [];
   }
 
-  /**
-   * 
-   */
+  // A helper function for getting a user object given a client socket
   getUser(client) {
     return this.users.find(v => v.client === client);
   }
 
-  /**
-   * 
-   */
+  // A helper funciton to get every user object except
+  // the one associated with this client socket.
   getOthers(client) {
     return this.users.filter(v => v.client !== client);
   }
 
   /**
-   * 
+   * When a client connects, build a user object around it,
+   * and assign the client a unique id.
    */
   async onConnect(client) {
     const user = { id: this.clientIdCounter++, client };
@@ -33,7 +31,9 @@ module.exports = class GameServer {
   }
 
   /**
-   * 
+   * When a client disconnects, remove the associated user
+   * object, and remove it from any games it might be in,
+   * cleaning up any games that drop to 0 players as a result.
    */
   async onDisconnect(client) {
     const userPos = this.users.findIndex(v => v.client === client);
@@ -46,33 +46,36 @@ module.exports = class GameServer {
   }
 
   /**
-   * 
+   * Have a user indicate a new name.
    */
   async "user:setName"(from, name) {
     const user = this.getUser(from);
     user.name = name;
-    this.users.forEach(u => u.client.user.changedName({
-      id: user.id,
-      name: user.name
-    }));
+    this.users.forEach(u =>
+      u.client.user.changedName({
+        id: user.id,
+        name: user.name
+      })
+    );
   }
 
   /**
-   * 
+   * Send clients the known user list on request.
    */
   async "user:getUserList"() {
     return this.users.map(u => ({ id: u.id, name: u.name }));
   }
 
   /**
-   * 
+   * Send clients the known games list on request.
    */
   async "game:getGameList"() {
-    return this.games.map(g => g.name);
+    return this.games.map(g => g.getDetails());
   }
 
   /**
-   * 
+   * Create a game, automatically binding the creating
+   * user as the game's "owner".
    */
   async "game:create"(from) {
     let user = this.getUser(from);
@@ -87,7 +90,8 @@ module.exports = class GameServer {
   }
 
   /**
-   * 
+   * Try to join a user to a game, explaining why this
+   * could not be done in any of the many possible cases.
    */
   async "game:join"(from, gameName) {
     let game = this.games.find(g => g.name === gameName);
@@ -109,7 +113,8 @@ module.exports = class GameServer {
   }
 
   /**
-   * 
+   * Try to remove a user from a game, cleaning up any games
+   * that drop to 0 players as a result.
    */
   async "game:leave"(from) {
     let user = this.getUser(from);
@@ -125,7 +130,8 @@ module.exports = class GameServer {
   }
 
   /**
-   * 
+   * Start a game on request, explaining why this
+   * could not be done in any of the many possible cases.
    */
   async "game:start"(from) {
     let user = this.getUser(from);
@@ -144,7 +150,9 @@ module.exports = class GameServer {
   }
 
   /**
-   * 
+   * Forward the fact that a player has a bonus tile to the
+   * game that player is playing in, explaining why this
+   * could not be done in any of the many possible cases.
    */
   async "game:bonusTile"(from, { tilenumber }) {
     let user = this.getUser(from);
@@ -160,7 +168,9 @@ module.exports = class GameServer {
   }
 
   /**
-   * 
+   * Forward the fact that a player discarded a tile in the
+   * game that player is playing in, explaining why this
+   * could not be done in any of the many possible cases.
    */
   async "game:discardTile"(from, { tilenumber }) {
     let user = this.getUser(from);
@@ -176,7 +186,7 @@ module.exports = class GameServer {
   }
 
   /**
-   * 
+   * Forward an "undo discard" request from a player.
    */
   async "game:undoDiscard"(from) {
     let user = this.getUser(from);
@@ -192,7 +202,7 @@ module.exports = class GameServer {
   }
 
   /**
-   * 
+   * Forward a "pass on discard" by a player.
    */
   async "game:pass"(from) {
     let user = this.getUser(from);
@@ -203,7 +213,7 @@ module.exports = class GameServer {
   }
 
   /**
-   * 
+   * Forward a discard claim by a player.
    */
   async "game:claim"(from, { claimtype, wintype }) {
     let user = this.getUser(from);
@@ -216,7 +226,7 @@ module.exports = class GameServer {
   }
 
   /**
-   * 
+   * Forward a win declaration by a player.
    */
   async "game:declareWin"(from) {
     let user = this.getUser(from);

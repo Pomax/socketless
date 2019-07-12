@@ -1,5 +1,10 @@
+// used by renderDiscard()
 const CLAIM_TYPES = [`chow1`, `chow2`, `chow3`, `pung`, `kong`, `win`];
 const WIN_TYPES = [`pair`, `chow1`, `chow2`, `chow3`, `pung`];
+import RANDOM_NAMES from "./random-names.js";
+
+// used by morphdom in update()
+const onBeforeElUpdated = (fromEl, toEl) => !fromEl.isEqualNode(toEl);
 
 /**
  * The web client is effectively a thin client around
@@ -12,44 +17,27 @@ const WIN_TYPES = [`pair`, `chow1`, `chow2`, `chow3`, `pung`];
  */
 export default class WebClientClass {
   constructor() {
-    setTimeout(() => {
-      let name = [
-        "Angler Fish",
-        "B- b- bear!",
-        "Cat gonna cat",
-        "Dogglepants",
-        "Elemental(tm)",
-        "Fish-o-fillet",
-        "Geranium",
-        "Hecking yeah",
-        "Ifreet",
-        "J-bot",
-        "Kilimanjarobber",
-        "Lemurs are cool",
-        "Mango smoothie",
-        "Not mango smoothie",
-        "Oranges are not the only fruit",
-        "Parmezan Marsipan",
-        "Quezceyouknowthatname",
-        "Red panda",
-        "Spicy tamale",
-        "TrifleLover82773",
-        "Umamimon",
-        "Velociraptor",
-        "Westerlies",
-        "Xx.",
-        "Yipyipyipyip",
-        "Zloppy Zoe's"
-      ][this.id];
-      
-      if (name) this.server.user.setName(name);
-    }, 500);
+    setTimeout(() => this.setRandomName(), 500);
+    window.webclient = this;
+  }
+
+  setRandomName() {
+    let name = RANDOM_NAMES[this.id];
+    if (name) this.server.user.setName(name);
   }
 
   /**
-   * ...
+   * This a socketless API function that gets called automatically
+   * any time the remote client updates its state. The socketless
+   * framework coordinates synchronization, and any time the
+   * client state is updated, this function will run.
    */
   update() {
+    // We "rebuild" the entire UI every time an update comes in,
+    // which browsers can do REALLY REALLY FAST as long as you
+    // don't update the live DOM until you're done, because it's
+    // not the DOM that kills you, it's reflows. However, we're
+    // actually going to be a little bit smarter even.
     const ui = main(
       { id: `client` },
       this.renderActiveGame(),
@@ -66,73 +54,99 @@ export default class WebClientClass {
           ul({ id: `users` }, this.renderUsers()),
           ul({ id: `chat` })
         )
-      )
+      ),
+      this.renderFooter()
     );
-    morphdom(document.getElementById(`client`), ui);
 
-    window.webclient = this;
+    // This is the smarter part: we regenerate the entire UI,
+    // but we then use morphdom to only update those parts of
+    // the dome that require updating, eeking out the maximum
+    // speed by applying the trick mentioned over in the docs.
+
+    morphdom(document.getElementById(`client`), ui, { onBeforeElUpdated });
+
+    // See https://github.com/patrick-steele-idem/morphdom
+    // for more information on why onBeforeElUpdated helps.
+
+    // TODO: add in a persistent chat "window"
   }
 
   /**
-   * ...
+   * This function renders the game that we're currently playing,
+   * provided, of course, that we're involved in an active game.
    */
   renderActiveGame() {
     if (!this.currentGame) return;
+
+    // If the game is over, we want a button that lets us
+    // "leave" the active game and "return" to the lobby.
+    const leaveGameButton = this.winner
+      ? button(
+          {
+            className: `leave`,
+            "on-click": () => this.server.game.leave()
+          },
+          `leave game`
+        )
+      : undefined;
+
+    // An active game is a fairly straightforward affair:
     return section(
       { id: `active-game` },
       div({ id: `players` }, this.renderPlayers()),
       div({ id: `discard` }, this.renderDiscard()),
       div({ id: `prompt` }),
-      this.winner
-        ? button(
-            {
-              className: `leave`,
-              "on-click": () => this.server.game.leave()
-            },
-            `leave game`
-          )
-        : undefined
+      leaveGameButton
     );
   }
 
   /**
-   * ...
+   * There are two types of players that we need to render:
+   * ourselves, and not-ourselves. As such, this function
+   * is primarily a routing function that draws all the bits
+   * that are shared between us and others, and delegates
+   * the bits that are different to secondary functions.
    */
   renderPlayers() {
     return this.players.map(player => {
-      let user = this.users.find(u => u.id === player.id);
-      return div(
-        {
-          id: `seat-${player.seat}`,
-          className: [
-            `player`,
-            player.seat === this.currentPlayer ? `active` : ``,
-            this.winner && this.winner.id === player.id ? `winner` : ``,
-            player.left ? `left` : ``
-          ]
-            .join(" ")
-            .trim(),
-          "data-seat": player.seat,
-          "data-wind": player.wind,
-          "data-name": user.name || user.id
-        },
-        this.renderTiles(player)
-      );
+      const user = this.users.find(u => u.id === player.id);
+      const props = {
+        id: `seat-${player.seat}`,
+        className: classes(`player`, {
+          active: player.seat === this.currentPlayer,
+          winner: this.winner && this.winner.id === player.id,
+          left: player.left
+        }),
+        dataset: {
+          seat: player.seat,
+          wind: player.wind,
+          name: user.name || user.id
+        }
+      };
+
+      // As the only thing that differes is in showing
+      // tiles, that's the only thing we delegate.
+      return div(props, this.renderTiles(player));
     });
   }
 
   /**
-   * ...
+   * This is purely a routing function for either our
+   * own tiles (which we should see), or other player's
+   * tiles (about which we know almost nothing).
    */
   renderTiles(player) {
-    if (player.id === this.id) {
-      return this.renderOwnTiles();
-    }
+    if (player.id === this.id) return this.renderOwnTiles();
     return this.renderOtherTiles(player);
   }
 
   /**
-   * ...
+   * Rendering our own tiles is mostly a matter of just
+   * doing that: render our tiles, then render our "locked"
+   * sets of tiles, and any bonus tiles we may have picked up.
+   * Finally, we also want to highlight the tile we just drew,
+   * if it's our turn, because that makes play much easier
+   * for human players.
    */
   renderOwnTiles() {
     const tiles = [
@@ -151,97 +165,98 @@ export default class WebClientClass {
   }
 
   /**
-   * ...
+   * Render our own tiles: build `<li>` for each tile in this.tiles.
    */
   renderHandTiles() {
-    return ul(
-      { className: `tiles` },
-      this.tiles.map(tilenumber =>
-        li(
-          {
-            className: `tile`,
-            "data-tile": tilenumber,
-            "on-click": async evt => {
-              let tilenumber = parseInt(evt.target.dataset.tile);
-              if (!this.currentDiscard) {
-                this.server.game.discardTile({ tilenumber });
-              }
-              // TODO: add a way to declare a kong.
-              // TODO: add a way to merge a kong.
-            }
-          },
-          tilenumber
-        )
-      )
-    );
+    const buildTile = tilenumber => {
+      const props = {
+        className: `tile`,
+        "data-tile": tilenumber,
+        "on-click": async evt => {
+          let tilenumber = parseInt(evt.target.dataset.tile);
+          if (!this.currentDiscard)
+            this.server.game.discardTile({ tilenumber });
+        }
+      };
+      return li(props, tilenumber);
+    };
+
+    return ul({ className: `tiles` }, this.tiles.map(buildTile));
+
+    // TODO: add a way to declare a kong.
+    // TODO: add a way to merge a kong.
   }
 
   /**
-   * ...
+   * Render our locked tiles: in order to make sure we
+   * show them in groups, we tag all tiles with their
+   * respective "set number".
    */
   renderLockedTiles() {
-    return ul(
-      { className: `locked` },
-      this.locked.map((set, setnum) =>
-        set.map(tilenumber =>
-          li(
-            {
-              className: "tile",
-              "data-setnum": setnum,
-              "data-tile": tilenumber
-            },
-            tilenumber
-          )
-        )
-      )
+    const buildTile = (tilenumber, setnum) =>
+      li(
+        {
+          className: "tile",
+          dataset: { setnum, tile: tilenumber }
+        },
+        tilenumber
+      );
+    const buildSet = (set, setnum) => set.map(t => buildTile(t, setnum));
+    return ul({ className: `locked` }, this.locked.map(buildSet));
+  }
+
+  /**
+   * When it's our turn, it's always possible that the tile
+   * we just drew was the tile we were waiting on to win,
+   * so make sure to add a button that lets us declare that
+   * we've won. People might mistakenly click it, just like
+   * how in a real game you might mistakenly declare a win.
+   * This is very much intentional, and many rules cost you
+   * a whole lot of points if you declare a win erroneously.
+   */
+  renderWinButton() {
+    if (this.seat !== this.currentPlayer) return;
+    if (this.winner) return;
+    return button(
+      {
+        className: `declare-win-button`,
+        "on-click": () => {
+          if (confirm("Declare win?")) {
+            this.server.game.declareWin();
+          }
+        }
+      },
+      `declare win`
     );
   }
 
   /**
-   * ...
-   */
-  renderWinButton() {
-    return this.seat === this.currentPlayer && !this.winner
-      ? button(
-          {
-            className: `declare-win-button`,
-            "on-click": () => {
-              if (confirm("Declare win?")) {
-                this.server.game.declareWin();
-              }
-            }
-          },
-          `declare win`
-        )
-      : undefined;
-  }
-
-  /**
-   * ...
+   * In order to allow human players to track what just happened
+   * during a deal, we want to highlight the latest received tile.
    */
   highlightLatest(tiles) {
-    // highlight the just-draw tile (or rather, any one
-    // tile that matches the just-dealt tile's tilenumber).
-    if (this.latestTile) {
-      let tile = tiles[0].querySelector(
-        `.tile[data-tile="${this.latestTile}"]`
-      );
-      if (tile) {
-        tile.classList.add(`latest`);
-      } else {
-        console.log(`Could not find ${this.latestTile} in hand?`, this.tiles);
-      }
-    }
+    if (!this.latestTile) return;
+    const qs = `.tile[data-tile="${this.latestTile}"]`;
+    const tile = tiles[0].querySelector(qs);
+    if (tile) tile.classList.add(`latest`);
   }
 
   /**
-   * ...
+   * Rendering other player's tiles requires knowing how many tiles
+   * they have in their hand, without actually knowing how many
+   * tiles they have in their hand: all we know is how many tiles
+   * they have "locked" so far. However, we know that at outset they
+   * should have 13 tiles, so we first figure out how many tiles they
+   * have locked, and then use that to determine how many tiles they
+   * must therefore have left in their hand. Maths!
    */
   renderOtherTiles(player) {
     let tilecount = 13;
 
-    let locked = (player.locked || []).map((claim, setnum) => {
-      let { tilenumber, claimtype, wintype } = claim;
+    // First, figure out how many tiles this player has locked
+    const buildLocked = (set, setnum) => {
+      // how many tiles are involved in this set?
+      let { tilenumber, claimtype, wintype } = set;
       if (claimtype === `win`) claimtype = wintype;
       let chowtype = false;
       if (claimtype.startsWith(`chow`)) {
@@ -249,170 +264,188 @@ export default class WebClientClass {
       }
       let count = claimtype === `kong` ? 4 : 3;
       tilecount -= count;
+
+      // Generate the "face up" tiles for this set, with some logic
+      // that ensures for chows we generate a sequence.
       return makearray(count).map((_, i) => {
         let num = tilenumber + (chowtype === false ? 0 : i - chowtype);
-        return li(
-          {
-            className: `tile`,
-            "data-setnum": setnum,
-            "data-tile": num
-          },
-          num
-        );
+        return li({ className: `tile`, dataset: { setnum, tile: num } }, num);
       });
-    });
+    };
 
+    const locked = (player.locked || []).map(buildLocked);
+
+    // If this is the active player, and they've not discarded yet,
+    // they will have one more tile because they just drew one, or
+    // they just claimed something and have an extra tile that way.
     if (player.seat === this.currentPlayer && !this.currentDiscard) {
       tilecount++;
     }
 
+    const buildTile = tilenumber =>
+      li({ className: `tile`, "data-tile": tilenumber }, tilenumber);
+
+    // Now we can generate the correct number of hidden tiles.
+    // With one exception: if this game is over, we KNOW what tiles
+    // that player is holding, and we can just directly generate them.
+    // Did we do a bit more work in that case? Yes, but that's fine,
+    // because it's rare, and imperceptibly fast.
+    const tiles = player.tiles
+      ? player.tiles.map(buildTile)
+      : makearray(tilecount).map(() =>
+          li({ className: `tile`, "data-tile": -1 })
+        );
+
+    // Finally, if this player is holding any bonus tiles, show those.
+    let bonus;
+    if (player.bonus) {
+      bonus = ul({ className: `bonus` }, player.bonus.map(buildTile));
+    }
+
     return [
-      ul(
-        { className: `tiles` },
-        player.tiles
-          ? player.tiles.map(tilenumber =>
-              li({ className: `tile`, "data-tile": tilenumber }, tilenumber)
-            )
-          : makearray(tilecount).map(() =>
-              li({ className: `tile`, "data-tile": -1 })
-            )
-      ),
+      ul({ className: `tiles` }, tiles),
       ul({ className: `locked` }, locked),
-      player.bonus
-        ? ul(
-            { className: `bonus` },
-            player.bonus.map(tilenumber =>
-              li({ className: `tile`, "data-tile": tilenumber }, tilenumber)
-            )
-          )
-        : false
+      bonus
     ];
   }
 
   /**
-   * ...
+   * The discard is a special tile that every player should be
+   * able to click, but for different reasons:
+   *
+   * - the player that just discarded it should be able to take it back, and
+   * - all other players should be able to place a claim on it.
    */
   renderDiscard() {
     if (!this.currentDiscard) return;
 
+    let undoDiscard = false;
+    if (this.currentDiscard.id === this.id) {
+      undoDiscard = async evt => {
+        let result = await this.server.game.undoDiscard();
+        if (!result.allowed) evt.target.classList.add("claimed");
+      };
+    }
+
+    const discardTile = span({
+      className: `tile`,
+      "data-tile": this.currentDiscard.tilenumber,
+      "on-click": undoDiscard
+    });
+
+    let claimOptions = false;
+    if (this.currentDiscard.id !== this.id) {
+      claimOptions = span({ id: `discard-buttons` }, this.renderClaimOptions());
+    }
+
     return span(
       `Current discard: `,
-      span({
-        className: `tile`,
-        "data-tile": this.currentDiscard.tilenumber,
-        "on-click": async () => {
-          if (this.currentDiscard.id === this.id) {
-            let result = await this.server.game.undoDiscard();
-            if (!result.allowed) {
-              // TODO: make this a visual signal
-              console.log(`could not undo discard: ${result.reason}`);
-            }
-          }
-        }
-      }),
-      span({ id: `discard-buttons` }, this.discardButtons()),
+      discardTile,
+      claimOptions,
       span({ id: `claim-timer` }, span({ id: `claim-timer-bar` }))
     );
   }
 
+  // A helper function to determine whether we may claim a chow
+  // from the discarding player.
+  mayChow() {
+    let l = this.players.length;
+    let cs = (this.currentPlayer + 1) % l;
+    return this.seat === cs;
+  }
+
   /**
-   *
+   * Claim options depend on the tile being playd, and the player's
+   * tiles in hand. However, one option is always to pass.
+   */
+  renderClaimOptions() {
+    const removeOptions = () => {
+      document
+        .querySelectorAll(`.claim-button`)
+        .forEach(b => b.parentNode.removeChild(b));
+    };
+
+    const pass = () => {
+      document.querySelector(`.pass-button`).disabled = true;
+      removeOptions();
+      this.server.game.pass();
+    };
+
+    return [
+      button({ className: `btn pass-button`, "on-click": pass }, "pass"),
+      this.generateClaimButtons()
+    ];
+  }
+
+  /**
+   * Generate all the possible claims that we might be able to
+   * make for this discard, including a "win" option - when clicked,
+   * this will present us with all the ways we can claim a win,
+   * rather than all the ways we can normally claim a tile.
    */
   generateClaimButtons() {
-    // TODO: add in a claim options filtering based on tiles in hand
-    // TODO: add in a winning claim options filtering based on tiles in hand
-    return CLAIM_TYPES.map(claimtype =>
+    const removeOptions = () => {
+      document
+        .querySelectorAll(`.claim-button`)
+        .forEach(b => b.parentNode.removeChild(b));
+    };
+
+    // Any claim that isn't a win leads to that claim getting
+    // sent to the server for the current discard. There are
+    // take-backies for claims!
+    const processClaim = claimtype => {
+      if (claimtype !== `win`) {
+        document
+          .querySelectorAll(`.claim-button, .pass-button`)
+          .forEach(b => (b.disabled = true));
+        return this.server.game.claim({ claimtype });
+      }
+    };
+
+    // If a user clicks the win button, remove the regular
+    // claim options and replace them with win options.
+    const generateWinButtons = (claimtype) => {
+      removeOptions();
+      const buttonRow = document.querySelector(`.pass-button`).parentNode;
+
+      // Generate the win options, which are subtly
+      // different from the general claim optons.
+      let claims = legalClaims(this.currentDiscard.tilenumber, this.tiles, this.mayChow(), true);
+      claims.forEach(c => {
+        const wintype = c.type;
+        const opt = {
+          className: `btn claim-button win-button`,
+          "on-click": () => {
+            document
+              .querySelectorAll(`.claim-button, .pass-button`)
+              .forEach(b => (b.disabled = true));
+            this.server.game.claim({ claimtype, wintype });
+          }
+        };
+        const option = button(opt, wintype);
+        buttonRow.appendChild(option);
+      });
+    };
+
+    const makeButton = claimtype =>
       button(
         {
           className: `btn claim-button`,
-          "on-click": async () => {
-            if (claimtype === `win`) {
-              document
-                .querySelectorAll(`.claim-button`)
-                .forEach(b => b.parentNode.removeChild(b));
-
-              const buttonRow = document.querySelector(`.pass-button`)
-                .parentNode;
-
-              WIN_TYPES.forEach(wintype => {
-                console.log(`add ${wintype}`);
-                buttonRow.appendChild(
-                  button(
-                    {
-                      className: `btn claim-button win-button`,
-                      "on-click": () => {
-                        document
-                          .querySelectorAll(`.claim-button, .pass-button`)
-                          .forEach(b => (b.disabled = true));
-                        this.server.game.claim({ claimtype, wintype });
-                      }
-                    },
-                    wintype
-                  )
-                );
-              });
-            } else {
-              document
-                .querySelectorAll(`.claim-button, .pass-button`)
-                .forEach(b => (b.disabled = true));
-              this.server.game.claim({ claimtype });
-            }
-          }
+          "on-click": () =>
+            claimtype === "win" ? generateWinButtons(claimtype) : processClaim(claimtype)
         },
         claimtype
-      )
-    );
+      );
+
+    let claims = legalClaims(this.currentDiscard.tilenumber, this.tiles, this.mayChow());
+    return claims.map(c => makeButton(c.type));
   }
 
   /**
-   * ...
-   */
-  discardButtons() {
-    if (this.currentDiscard.id !== this.id) {
-      return [
-        button(
-          {
-            className: `btn pass-button`,
-            "on-click": evt => {
-              document
-                .querySelectorAll(`.claim-button`)
-                .forEach(b => b.parentNode.removeChild(b));
-              document.querySelector(`.pass-button`).disabled = true;
-              this.server.game.pass();
-            }
-          },
-          "pass"
-        ),
-
-        this.generateClaimButtons()
-      ];
-    }
-  }
-
-  /**
-   * ...
-   */
-  prompt(label, options) {
-    return new Promise(resolve => {
-      let prompt = document.querySelector("#prompt");
-      //prompt.innerHTML = `<h1>${label}</h1>`;
-      options.forEach(option => {
-        let btn = button(
-          {
-            "on-click": () => {
-              prompt.innerHTML = ``;
-              resolve(btn.textContent);
-            }
-          },
-          option
-        );
-        prompt.appendChild(btn);
-      });
-    });
-  }
-
-  /**
-   * ...
+   * When a discard occurs, the server is already counting down to
+   * close the claim window, and so we want to make sure that the
+   * user gets some kind of visual feedback in terms of how close
+   * we are to claim resolution.
    */
   startDiscardTimer(timeout) {
     const claimtTimeStart = Date.now();
@@ -427,7 +460,15 @@ export default class WebClientClass {
   }
 
   /**
-   * ...
+   * Update the visual timer based on how far along we are.
+   */
+  updateDiscardTimer(value) {
+    const bar = document.getElementById("claim-timer-bar");
+    if (bar) bar.style.width = `${100 * value}%`;
+  }
+
+  /**
+   * If you start a timer, you need to be able to stop it, too.
    */
   cancelDiscardTimer() {
     this.updateDiscardTimer(-1);
@@ -435,9 +476,9 @@ export default class WebClientClass {
   }
 
   /**
-   * ...
+   * Figure out which game we're playing in, if we're playing one.
    */
-  inGame() {
+  getActiveGame() {
     if (this.currentGame) return true;
     return this.games.some(g =>
       g.players.some(p => p.id === this.id && g.id !== this.id)
@@ -445,11 +486,16 @@ export default class WebClientClass {
   }
 
   /**
-   *  ...
+   * This function renders "lobby" information relating to games:
+   * which games have been created, who's in them, etc.
+   * If a game hasn't started yet, offer players the option to
+   * join, and if the player was the one who created the game,
+   * offer them the option to start the game.
    */
   renderGames() {
     return this.games.map(g => {
       if (g.finished) return;
+
       let label = g.id === this.id ? "start" : "join";
       let item = li(
         { className: `game` },
@@ -459,7 +505,7 @@ export default class WebClientClass {
         g.players
           .map(p => this.users.find(u => u.id === p.id).name || p.id)
           .join(", "),
-        button({ disabled: this.inGame() }, label)
+        button({ disabled: this.getActiveGame() }, label)
       );
 
       let join = item.querySelector("button");
@@ -488,91 +534,128 @@ export default class WebClientClass {
   }
 
   /**
-   * ...
-   */
-  updateDiscardTimer(value) {
-    const bar = document.getElementById("claim-timer-bar");
-    if (bar) bar.style.width = `${100 * value}%`;
-  }
-
-  /**
-   *  ...
+   * This function renders "lobby" information relating to users:
+   * show an entry for each client that the server thinks is connected.
    */
   renderUsers() {
-    return this.users.map(u => {
-      return li(
+    // If the user we're rendering is ourselves, offer a button
+    // that lets us change our name. Because why not?
+    const nameChangeButton = user => {
+      if (user.id !== this.id) return;
+      return [
+        ` ←`,
+        button(
+          {
+            className: `rename`,
+            "on-click": () => {
+              let name = prompt("your name?");
+              if (name && name.trim()) {
+                this.server.user.setName(name);
+              }
+            }
+          },
+          `change name`
+        )
+      ];
+    };
+
+    // If we know a user's name, render them by name. Otherwise, by id.
+    const renderUser = user =>
+      li(
         { className: `user` },
-        span({ className: `name` }, u.name || `unknown user ${u.id}`),
-        u.id !== this.id
-          ? ``
-          : [
-              ` ←`,
-              button(
-                {
-                  className: `rename`,
-                  "on-click": () => {
-                    let name = prompt("your name?");
-                    if (name && name.trim()) {
-                      this.server.user.setName(name);
-                    }
-                  }
-                },
-                `change name`
-              )
-            ]
+        span({ className: `name` }, user.name || `unknown user ${user.id}`),
+        nameChangeButton(user)
       );
-    });
+
+    return this.users.map(renderUser);
   }
 
   /**
-   *
+   * The footer contains the "create a game" and "quit from the server" buttons.
    */
-  updateChat() {
-    this.chat.forEach(msg => {
-      this.elements.chat.innerHTML += `<li>${msg.id}: ${msg.message}</li>\n`;
-    });
+  renderFooter() {
+    // The create button and guide text.
+    const create = p(
+      `Create a game: `,
+      button(
+        { id: `create`, "on-click": () => this.server.game.create() },
+        `create`
+      )
+    );
+
+    // The quit button with guide text.
+    const quit = p(
+      `Disconnect from the server: `,
+      button(
+        {
+          id: `quit`,
+          "on-click": () => {
+            this.server.quit();
+            window.location.port = 8000;
+          }
+        },
+        `quit`
+      )
+    );
+
+    // And the footer, which just wraps those two.
+    return footer(create, quit);
   }
 
-  // ======================
+  // ===========================================
+  //
+  //  The  following  functions  are  handlers
+  //  that we  need to  explicitly  listen for
+  //  because they act as signals for updating
+  //  parts of  the UI,  but don't cause state
+  //  changes in the client, and so don't lead
+  //  to a call to update() by socketless.
+  //
+  // ===========================================
 
   /**
-   * ...
+   * When the current player changes, we need to
+   * cancel the discard timer. We could do this
+   * by tracking the "previous" current player
+   * and then in the update() function checking
+   * whether that update's currentPlayer is the
+   * same as, or different from, the previous
+   * value, but that's quite a bit of code,
+   * whereas we can also just listen for the
+   * change signal and run one line of code.
    */
   async "game:setCurrentPlayer"(seat) {
-    // TODO: make this a visual signal
     this.cancelDiscardTimer();
   }
 
   /**
-   * ...
+   * When a discard occurs, start the discard
+   * timer. Again, we could do this by adding
+   * code to update() that checks whether the
+   * currentDiscard value changed, but that's
+   * again far more code than just listening
+   * for the discard signal, instead.
    */
   async "game:playerDiscarded"({ timeout }) {
-    // set a timer for claiming the discard
-    console.log(`starting a ${timeout}ms discard timer`);
     this.startDiscardTimer(timeout);
   }
 
   /**
-   * ...
+   * When a claim is awarded by the game
+   * server, the discard is no longer relevant
+   * and we should kill the timer. Again,
+   * we could track this but you get the idea
+   * by now.
    */
   async "game:claimAwarded"() {
     this.cancelDiscardTimer();
   }
 
   /**
-   * ...
+   * When a player takes back their dicard,
+   * the discard timer no longer applies.
    */
   async "game:playerTookBack"({ id, seat, tilenumber }) {
-    // TODO: make this a visual signal
-    console.log(`player ${id} (seat ${seat}) took back discard ${tilenumber}.`);
     this.cancelDiscardTimer();
-  }
-
-  /**
-   * ...
-   */
-  async "game:playerPassed"({ id, seat }) {
-    // TODO: make this a visual signal
-    console.log(`player ${id} (seat ${seat}) passed on this discard.`);
   }
 }

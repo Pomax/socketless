@@ -4,20 +4,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Demo mahjong</title>
-
-  <script src="mini-templating.js" async></script>
-  <script src="socketless.js" defer></script>
-  <script src="web-client-class.js" type="module" defer></script>
-  <script src="script.js" type="module" defer></script>
-
+  <title>Super Simple Socketless Mahjong</title>
   <link rel="stylesheet" type="text/css" href="css/style.css">
   <link rel="stylesheet" type="text/css" href="css/tiles.css">
 </head>
 
 <body>
   <header>
-    <h1>Super simple "socketless" s<s>X</s>mahjong</h1>
+    <h1>Super Simple "Socketless" s<s>X</s>Mahjong</h1>
     <p>
       Mahjong is a four player "draw one, discard one" game in which players attempt
       to turn a randomly assigned collection of tiles into a winning collection of
@@ -34,15 +28,18 @@
   </header>
 
   <main id="client">
-    <!--
-      this gets reactively populated by the client, based on state updates
-    -->
+    <!-- this gets reactively populated by the client, based on state updates -->
   </main>
-
-  <footer>
-    <p>Create a game: <button id="create">create</button></p>
-    <p>Disconnect from the server: <button id="quit">quit</button></p>
-  </footer>
 </body>
+
+<!-- In order to use the socketless framework, we MUST add this: -->
+<script src="socketless.js"></script>
+
+<!-- then, our code: a simple html templating lib, and our client UI -->
+<script src="mini-templating.js"></script>
+<script src="utils/claims.js"></script>
+<script src="random-names.js" type="module"></script>
+<script src="web-client-class.js" type="module"></script>
+<script src="script.js" type="module" defer></script>
 
 </html>

@@ -98,7 +98,6 @@
   background-position: center calc(var(--lh) / 6);
 }
 
-.tile[data-setnum] { opacity: 0.5; }
 .tile[data-setnum="0"] + .tile[data-setnum="1"] { margin-left: 10px; }
 .tile[data-setnum="1"] + .tile[data-setnum="2"] { margin-left: 10px; }
 .tile[data-setnum="2"] + .tile[data-setnum="3"] { margin-left: 10px; }

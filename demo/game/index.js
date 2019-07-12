@@ -1,54 +1,62 @@
+// First, bootstrap the ClientServer object:
 const { generateClientServer } = require("../../src/generate-client-server.js");
-const ClientClass = require("./src/core/game-client.js");
-const ServerClass = require("./src/core/game-server.js");
-const ClientServer = generateClientServer(ClientClass, ServerClass);
+const ClientServer = generateClientServer(
+  require("./src/core/client.js"),
+  require("./src/core/server.js")
+);
 
-// Code for the socket server
+// Then create a server, and start it up.
 const server = ClientServer.createServer();
 server.listen(8080, () => {
-  console.log(`index> server listening on http://localhost:8080`);
+  console.log(`index> game server listening on http://localhost:8080`);
 });
 
-// Code for creating a web client
-const { spawn } = require('child_process');
-const npm = `npm${process.platform === "win32" ? `.cmd` : ``}`;
-const createWebClient = (request, response) => {
-  const host = request.headers.host.replace(/:\d+/g, '');
-  const clientProcess = spawn(npm, [`run`, `game:client`]);
-
-  let run = data => {
-    data = data.toString();
-    console.log(data);
-
-    if (data.indexOf(`web client listening on `) > -1) {
-      const port = data.replace(`web client listening on `,``).trim();
-      const clientURL = `http://${host}:${port}`;
-      console.log(`web client process reported ${clientURL} as live URL`);
-      response.writeHead(200, { "Content-Type": "text/html" });
-      response.end(
-        `<doctype html><meta http-equiv="refresh" content="0;URL='${clientURL}'">`,
-        `utf-8`
-      );
-      // once we've done this, just start proxying stdout.
-      run = console.log;
+// We want people to be able to connect to the server with their
+// browser, so they can click a "join" button and have that create
+// a client for them, and then redirect them to the client's url.
+const createWebClient = require("./create-web-client.js");
+const joinHTML = `<doctype html>
+  <html>
+    <meta charset="utf-8">
+    <style>
+    a {
+      display: block;
+      width: 5em;
+      height: 1.25em;
+      position: absolute;
+      top: calc(50vh - 1.25em);
+      left: calc(50vw - 2.5em);
+      background: #90d796;
+      border-radius: 0.25em;
+      box-shadow: 4px 4px 10px -1px gray;
+      font-family: verdana;
+      font-size: 200%;
+      text-decoration: none;
+      text-align: center;
+      color: white;
+      text-shadow: 0 0 1px black;
     }
-  }
+    </style>
+    <a href="/create">Join</a>
+  </html>
+`;
 
-  clientProcess.stdout.on('data', data => run(data));
-};
-
-// Code for the server's "web server", which is really just a convenient
-// place to point a browser to and then one-click create your client.
-const http = require("http");
-const webserver = http.createServer((request, response) => {
-  if (request.url === `/create`) createWebClient(request, response);
+// The route handler only knows how to service two routes: the base
+// route, which serves the above HTML code, and the /create route,
+// which creates a web client and moves users over to that.
+const routeHandler = (request, response) => {
+  if (request.url === `/create`) return createWebClient(request, response);
   if (request.url === `/`) {
     response.writeHead(200, { "Content-Type": "text/html" });
-    return response.end(
-      `<doctype html><a target="_blank" href="/create">Let's do this</a>`,
-      `utf-8`
-    );
+    return response.end(joinHTML);
   }
-});
+  response.writeHead(404);
+  response.end('not found');
+};
 
-webserver.listen(8000, () => console.log(`server running on http://localhost:8000`));
+// So: create a simple http server and run it on port 8000.
+const http = require("http");
+const webserver = http.createServer(routeHandler);
+webserver.listen(8000, () =>
+  console.log(`index> primary web server running on http://localhost:8000`)
+);

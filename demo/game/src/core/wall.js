@@ -14,7 +14,6 @@ const BASE = base
  */
 module.exports = class Wall {
   constructor() {
-    this.prng = new Random(1);
     this.reset();
   }
 
@@ -35,6 +34,7 @@ module.exports = class Wall {
    * Reset the wall to a full set of tiles, then shuffle them.
    */
   reset() {
+    this.prng = new Random();
     this.tiles = this.shuffle(BASE.slice());
     this.deadSize = 16;
     this.dead = false;

@@ -1,3 +1,5 @@
+// Used primarily to come up with funny names for new games.
+
 const adjectives = [
   `agreeable`,
   `ancient`,

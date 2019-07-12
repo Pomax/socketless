@@ -7,7 +7,6 @@
     "prettier": "prettier --write ./**/*.js",
     "test": "node demo/simple/index.js",
     "game": "node demo/game/index.js",
-    "game:server": "node demo/game/start-server.js",
     "game:client": "node demo/game/start-web-client.js",
     "test:distributed": "node demo/test-distributed/index.js",
     "test:client": "node demo/test-distributed/test-client.js",
