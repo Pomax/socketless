@@ -32,8 +32,7 @@ module.exports = function setupConnectionHandler(
     // Add a quit() handler so the browser can "kill" the client:
     socket.on("quit", async () => {
       await server.disconnect();
-      console.log("Shutting down client.");
-      process.exit(0);
+      if (client.onQuit) client.onQuit();
     });
   };
 };

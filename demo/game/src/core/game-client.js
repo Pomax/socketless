@@ -24,6 +24,14 @@ module.exports = class GameClient {
   /**
    * 
    */
+  onQuit() {
+    console.log("Shutting down client.");
+    process.exit(0);
+  }
+
+  /**
+   * 
+   */
   async "admin:register"(id) {
     this.setState({
       id: id,

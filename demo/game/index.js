@@ -10,20 +10,31 @@ server.listen(8080, () => {
 });
 
 // Code for creating a web client
-const url = `http://localhost:8080`;
-const public = `${__dirname}/public`;
+const { spawn } = require('child_process');
+const npm = `npm${process.platform === "win32" ? `.cmd` : ``}`;
 const createWebClient = (request, response) => {
   const host = request.headers.host.replace(/:\d+/g, '');
-  const webclient = ClientServer.createWebClient(url, public);
-  webclient.listen(0, () => {
-    const clientURL = `http://${host}:${webclient.address().port}`;
-    console.log(`web client listening on ${clientURL}`);
-    response.writeHead(200, { "Content-Type": "text/html" });
-    return response.end(
-      `<doctype html><meta http-equiv="refresh" content="0;URL='${clientURL}'">`,
-      `utf-8`
-    );
-  });
+  const clientProcess = spawn(npm, [`run`, `game:client`]);
+
+  let run = data => {
+    data = data.toString();
+    console.log(data);
+
+    if (data.indexOf(`web client listening on `) > -1) {
+      const port = data.replace(`web client listening on `,``).trim();
+      const clientURL = `http://${host}:${port}`;
+      console.log(`web client process reported ${clientURL} as live URL`);
+      response.writeHead(200, { "Content-Type": "text/html" });
+      response.end(
+        `<doctype html><meta http-equiv="refresh" content="0;URL='${clientURL}'">`,
+        `utf-8`
+      );
+      // once we've done this, just start proxying stdout.
+      run = console.log;
+    }
+  }
+
+  clientProcess.stdout.on('data', data => run(data));
 };
 
 // Code for the server's "web server", which is really just a convenient

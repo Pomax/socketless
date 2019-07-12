@@ -39,15 +39,10 @@ module.exports = class GameServer {
     const userPos = this.users.findIndex(v => v.client === client);
     const user = this.users.splice(userPos, 1)[0];
     this.users.forEach(other => other.client.user.left(user.id));
+
     // update all running games
     this.games.forEach(game => game.leave(user));
     this.games = this.games.filter(game => game.players.count === 0);
-
-    // // for convenience, quit if there are no users left
-    // if (this.users.length === 0) {
-    //   console.log("no more users connected, shutting down server");
-    //   process.exit(0);
-    // }
   }
 
   /**
