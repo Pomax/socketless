@@ -1,3 +1,7 @@
+# v0.8.1
+
+This version improves the sync mechanism for web clients, using a far more sensible sync locking mechanism: if a synchronization is already in progress, rather than just firing off a second one in parallel, queue up the _signal_ that another sync is required, but do nothing else. When a sync finishes, it checks whether that signal is active, and if so, deactivates it and performs one more sync operation. This means that if 10 sync operations are called in rapid succession, the first call starts a sync, the second call sets the signal, the third through tenth do _nothing_, and when the first sync finishes, it sees that one more sync is required. This saves socket listener allocation, processing, and time. Triple win!
+
 # v0.8.0
 
 This adds a web client, which is a regular client that a browser can connect in order to run a thin-client UI on top of the true client's state. It's pretty frickin sweet. It also comes with a full multiplayer mahjong game demo, because the only way I could thinkg of to properly test and debug the web client code was to sit down and write a serious piece of code with it. It's heavily code-commented, and is probably far more elaborate than you'd expect a tutorial/demonstrator to be.
@@ -8,7 +12,7 @@ Good. More projects need full-blown codebases as examples for how to use them.
 
 This adds explicit API objects back in, but as optional third argument to `generateClientServer`. It also adds in broadcasting by clients, based on clients knowing their own API and so knowing which function they want to have triggered by a broadcast.
 
-(Server broadcasting is simply calling `this.clients.forEach(c => c.namespace.fname(...)`)   
+(Server broadcasting is simply calling `this.clients.forEach(c => c.namespace.fname(...)`)
 
 # v0.6.0
 
