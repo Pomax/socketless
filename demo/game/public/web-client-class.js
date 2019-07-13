@@ -93,11 +93,30 @@ export default class WebClientClass {
     // An active game is a fairly straightforward affair:
     return section(
       { id: `active-game` },
+      this.wall ? div({ id: `wall` }, this.renderWall()) : false,
       div({ id: `players` }, this.renderPlayers()),
       div({ id: `discard` }, this.renderDiscard()),
       div({ id: `prompt` }),
       leaveGameButton
     );
+  }
+
+  /**
+   * This renders our local knowledge of what the wall
+   * might still look like, in absence of knowing what
+   * every other player is holding.
+   */
+  renderWall() {
+    return Object.keys(this.wall).map(tilenumber => {
+      let count = this.wall[tilenumber];
+      if (count < 0)
+        return console.error(`wall count for ${tilenumber} is ${count}`);
+      return div(
+        makearray(count).map(() =>
+          li({ className: `tile`, "data-tile": tilenumber }, tilenumber)
+        )
+      );
+    });
   }
 
   /**
@@ -367,13 +386,20 @@ export default class WebClientClass {
     };
 
     const pass = () => {
-      document.querySelector(`.pass-button`).disabled = true;
       removeOptions();
+      document.querySelector(`.pass-button`).disabled = true;
       this.server.game.pass();
     };
 
     return [
-      button({ className: `btn pass-button`, "on-click": pass }, "pass"),
+      button(
+        {
+          className: `btn pass-button`,
+          "on-click": pass,
+          disabled: this.passed
+        },
+        "pass"
+      ),
       this.generateClaimButtons()
     ];
   }
@@ -385,6 +411,8 @@ export default class WebClientClass {
    * rather than all the ways we can normally claim a tile.
    */
   generateClaimButtons() {
+    if (this.passed) return;
+
     const removeOptions = () => {
       document
         .querySelectorAll(`.claim-button`)

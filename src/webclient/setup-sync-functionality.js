@@ -9,6 +9,10 @@ module.exports = function setupSyncFunctionality(
   socket,
   direct = false // pull straight from the client instance, rather than client.state
 ) {
+  // sync lock mechanism
+  let syncing = false;
+  let lastsync = false;
+
   let prevState = {};
   let prevSeqNum = 0;
   const getNextSeqNum = () => prevSeqNum++;
@@ -57,9 +61,18 @@ module.exports = function setupSyncFunctionality(
 
   // bind sync functions so that we use them during call routing
   socket.fullsync = () => socket.emit(`sync:full`, getFullState());
-  socket.sync = () => {
+  socket.sync = async () => {
+    if (syncing) return (lastsync = true);
     let update = getStateUpdate();
-    if (update.length) socket.emit(`sync`, update);
+    if (update.length) {
+      syncing = true;
+      await socket.emit(`sync`, update);
+      syncing = false;
+      if (lastsync) {
+        lastsync = false;
+        socket.sync();
+      }
+    }
   };
 
   // and send an initial full sync instruction to the browser

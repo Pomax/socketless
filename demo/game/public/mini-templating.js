@@ -23,7 +23,11 @@
     global[tag] = function(options, ...content) {
       // The first argument may not be an options object, but just
       // child content for this particular element.
-      if (typeof options !== `object` || options instanceof HTMLElement) {
+      if (
+        typeof options !== `object` ||
+        options instanceof Array ||
+        options instanceof HTMLElement
+      ) {
         content.unshift(options);
         options = {};
       }
@@ -73,7 +77,9 @@
 
   // And this one exists mostly because sometimes you need
   // an array.map based on an empty, but sized, array.
-  global.makearray = n => new Array(n).fill(undefined);
+  global.makearray = function(n = 0) {
+    return new Array(n).fill(undefined);
+  };
 
   // Always useful to have a class builder available, too.
   function classes(...args) {

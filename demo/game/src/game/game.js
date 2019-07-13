@@ -229,7 +229,8 @@ module.exports = class Game {
     // TODO: verify each claim is legal.
     this.claims.sort((a, b) => {
       return CLAIM_VALUES[b.claimtype] - CLAIM_VALUES[a.claimtype];
-      // TODO: multiple win resolution
+      // TODO: verify claims are legal
+      // TODO: correctly resolve multiple win claims
     });
 
     const claim = this.claims[0];
@@ -246,7 +247,7 @@ module.exports = class Game {
     this.currentPlayer = claim.player.seat;
 
     if (claim.claimtype === `kong`) {
-      this.players[this.currentPlayer].compensate(this.wall.get());
+      this.players[this.currentPlayer].supplement(this.wall.get());
     }
 
     if (claim.claimtype === `win`) {

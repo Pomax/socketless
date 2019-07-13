@@ -57,8 +57,14 @@ function generateClientServer(WebClientClass) {
   }
 
   // ensure that bootstrap instructions are processed
-  socket.on(`sync`, diff => handleStateDiff(diff));
-  socket.on(`sync:full`, state => updateState(state));
+  socket.on(`sync`, (diff, respond) => {
+    handleStateDiff(diff);
+    respond();
+  });
+  socket.on(`sync:full`, (state, respond) => {
+    updateState(state);
+    respond();
+  });
 
   // and offer a sync() function to manually trigger a full bootstrap
   handler.sync = async () => updateState(await socket.emit(`sync:full`));

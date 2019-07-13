@@ -1,0 +1,19 @@
+#wall {
+    display: flex;
+    background: green;
+    border-radius: 4px;
+    padding: 6px;
+    margin-bottom: 1.5em;
+}
+
+#wall div {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+}
+
+#wall .tile {
+    --lw: calc(0.3 * var(--ph));
+    --lh: calc(0.4 * var(--ph));
+    margin-bottom: 0;
+}

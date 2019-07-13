@@ -53,17 +53,14 @@ button[disabled] {
 }
 
 footer {
-  position: fixed;
   height: 100px;
-  bottom: 0;
-  left: 0;
-  right: 0;
   padding: 10px;
   background: #ccc;
 }
 
 footer p {
-  margin: 0;
+  display: inline-block;
+  margin: 0 1em;
 }
 
 .tiles, .locked, .bonus {
@@ -75,6 +72,7 @@ footer p {
 }
 
 #active-game {
+  display: inline-block;
   padding: 1em;
   padding-top: 1.5em;
   background: #ffeac1;
@@ -156,6 +154,6 @@ button.claim-button.win-button {
   display: inline-block;
   position: absolute;
   height: 100%;
-  width: 40%;
+  width: 0%;
   background: #ffb166;
 }

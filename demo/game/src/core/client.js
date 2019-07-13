@@ -93,6 +93,10 @@ module.exports = class GameClient {
    * working with those.
    */
   async "game:start"({ name, players }) {
+    // This represents our knowledge of "which tiles
+    // might still exist in the game".
+    const allTiles = {};
+    for (let i = 0; i < 34; i++) allTiles[i] = 4;
     this.setState({
       currentGame: name,
       players: players,
@@ -100,7 +104,8 @@ module.exports = class GameClient {
       bonus: [],
       locked: [],
       winner: false,
-      currentDiscard: false
+      currentDiscard: false,
+      wall: allTiles
     });
 
     this.state.games.find(g => g.name === name).inProgress = true;
@@ -126,6 +131,23 @@ module.exports = class GameClient {
     });
   }
 
+  // helper functions to update what we know about the wall,
+  // as we see tiles come into our hand and getting played.
+  seeTile(tilenumber) {
+    this.state.wall[tilenumber]--;
+  }
+  seeTiles(tilenumbers) {
+    if (!tilenumbers.forEach) tilenumbers = [tilenumbers];
+    tilenumbers.forEach(tilenumber => this.state.wall[tilenumber]--);
+  }
+  unseeTile(tilenumber) {
+    this.state.wall[tilenumber]++;
+  }
+  unseeTiles(tilenumbers) {
+    if (!tilenumbers.forEach) tilenumbers = [tilenumbers];
+    tilenumbers.forEach(tilenumber => this.state.wall[tilenumber]++);
+  }
+
   /**
    * Set our initial tiles, so we can start playing.
    */
@@ -136,6 +158,7 @@ module.exports = class GameClient {
     this.state.bonus.forEach(tilenumber =>
       this.server.game.bonusTile({ tilenumber })
     );
+    this.seeTiles(this.state.tiles);
   }
 
   /**
@@ -167,6 +190,8 @@ module.exports = class GameClient {
     if (this.state.seat === this.state.currentPlayer) {
       this.state.latestTile = tilenumber;
     }
+
+    this.seeTile(tilenumber);
   }
 
   /**
@@ -187,9 +212,9 @@ module.exports = class GameClient {
    * have special scoring when winning uses a compensation
    * tile.
    */
-  async "game:compensate"(tilenumber) {
+  async "game:supplement"(tilenumber) {
     this.acceptTile(tilenumber);
-    this.state.compensationTile = true;
+    this.state.supplementTile = true;
   }
 
   /**
@@ -198,9 +223,10 @@ module.exports = class GameClient {
   setSeat(seat) {
     this.setState({
       latestTile: false,
-      compensationTile: false,
+      supplementTile: false,
       currentDiscard: false,
-      currentPlayer: seat
+      currentPlayer: seat,
+      passed: false
     });
   }
 
@@ -223,6 +249,8 @@ module.exports = class GameClient {
       } else {
         console.log(`${tiles} does not contain ${tilenumber}?`);
       }
+    } else {
+      this.seeTile(tilenumber);
     }
     this.state.currentDiscard = { id, seat, tilenumber };
   }
@@ -236,6 +264,8 @@ module.exports = class GameClient {
       let tiles = this.state.tiles;
       tiles.push(tilenumber);
       tiles.sort(sortTiles);
+    } else {
+      this.unseeTile(tilenumber);
     }
   }
 
@@ -243,7 +273,9 @@ module.exports = class GameClient {
    * Someone passed on claiming the current discard.
    */
   async "game:playerPassed"({ id, seat }) {
-    // useful to human players, not very relevant to bots
+    if (id === this.state.id) {
+      this.state.passed = true;
+    }
   }
 
   /**
@@ -257,6 +289,7 @@ module.exports = class GameClient {
       let player = this.state.players[claim.seat];
       if (!player.locked) player.locked = [];
       player.locked.push(claim);
+      // TODO: see all tiles in this claim
     }
   }
 
@@ -265,6 +298,7 @@ module.exports = class GameClient {
    */
   async "game:playerWon"(winner) {
     this.state.winner = winner;
+    this.state.wall = false;
     this.server.broadcast(this["game:reveal"], {
       seat: this.state.seat,
       tiles: this.state.tiles
