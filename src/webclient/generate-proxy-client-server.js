@@ -15,7 +15,8 @@ function generateClientServer(WebClientClass) {
   // Create a client instances
   const handler = new WebClientClass();
   handler.server = proxyServer;
-  handler.__seq_num = 0;
+
+  let __seq_num = 0;
 
   // Add the browser => client => server forwarding
   namespaces.forEach(namespace => {
@@ -41,7 +42,7 @@ function generateClientServer(WebClientClass) {
 
     // verify we're still in sync by comparing messaging sequence numbers
     const seqnum = patch.slice(-1)[0].value;
-    if (seqnum === handler.__seq_num + 1) {
+    if (seqnum === __seq_num + 1) {
       const state = jsonpatch.apply_patch(handler, patch);
       return updateState(state);
     }
@@ -49,7 +50,7 @@ function generateClientServer(WebClientClass) {
     // if we get here, wee're not in sync and need to request a full
     // state object instead of trying to apply differential states.
     const state = await socket.emit(`sync:full`, {
-      last_seq_num: handler.__seq_num
+      last_seq_num: __seq_num
     });
 
     updateState(state);

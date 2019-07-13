@@ -34,8 +34,13 @@ server.listen(0, () => {
 function startWebClient(serverURL) {
   const webclient = ClientServer.createWebClient(
     serverURL,
-    `${__dirname}/public`
+    `${__dirname}/public`,
+    { directSync: true }
   );
+
+  // note that we're using direct synchronisation, rather than
+  // using the dedicated `state` object. This is generally not
+  // a good idea, but if you really want to... you can.
 
   webclient.listen(0, () => {
     const clientURL = `http://localhost:${webclient.address().port}`;

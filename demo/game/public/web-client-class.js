@@ -110,6 +110,7 @@ export default class WebClientClass {
   renderPlayers() {
     return this.players.map(player => {
       const user = this.users.find(u => u.id === player.id);
+      if (!user) return false;
       const props = {
         id: `seat-${player.seat}`,
         className: classes(`player`, {

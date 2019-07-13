@@ -8,7 +8,7 @@ const spawnConfig = { stdio: "inherit", detached: true };
 spawn(cmd, ["run", "test:server"], spawnConfig);
 
 // And then we spawn three more processes that will each run a client:
-let clients = 3;
+let clients = 4;
 (function runClient() {
   if (clients--) {
     spawn(cmd, ["run", "test:client"], spawnConfig);

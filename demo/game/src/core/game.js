@@ -107,7 +107,7 @@ module.exports = class Game {
   assignSeats() {
     this.players.forEach((player, position) => {
       player.seat = position;
-      player.wind = getWinds()[position];
+      player.wind = this.getWinds()[position];
       player.client.game.setWind({
         seat: player.seat,
         wind: player.wind
