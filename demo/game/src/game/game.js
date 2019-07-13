@@ -146,7 +146,7 @@ module.exports = class Game {
   playerDeclaredBonus(player, tilenumber) {
     if (!player.hasTile(tilenumber)) return;
     this.players.forEach(p => p.seeBonus(player, tilenumber));
-    player.compensate(this.wall.get());
+    player.supplement(this.wall.get());
   }
 
   /**
