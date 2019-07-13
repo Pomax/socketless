@@ -67,12 +67,20 @@ function generateClientServer(ClientClass, ServerClass, API = false) {
 
     factory.client[namespace] = {
       server: build.serverProxyAtClient(namespace, serverAPI),
-      handler: build.serverCallHandler(namespace, clientAPI, resolveWithoutNamespace)
+      handler: build.serverCallHandler(
+        namespace,
+        clientAPI,
+        resolveWithoutNamespace
+      )
     };
 
     factory.server[namespace] = {
       client: build.clientProxyAtServer(namespace, clientAPI),
-      handler: build.clientCallHandler(namespace, serverAPI, resolveWithoutNamespace)
+      handler: build.clientCallHandler(
+        namespace,
+        serverAPI,
+        resolveWithoutNamespace
+      )
     };
   });
 
@@ -113,6 +121,17 @@ function generateClientServer(ClientClass, ServerClass, API = false) {
    * having to ever explicitly write socketio code.
    */
   attach(factory, "createClient", build.createClient(factory, ClientClass));
+
+  /**
+   * This function allows people to socket client that runs
+   * its own web+socket server for attaching a browser to,
+   * without having to ever explicitly write socketio code.
+   */
+  attach(
+    factory,
+    "createWebClient",
+    build.createWebClient(factory, ClientClass, API)
+  );
 
   // And we're done!
   return factory;

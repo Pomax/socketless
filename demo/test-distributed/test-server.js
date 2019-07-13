@@ -1,7 +1,7 @@
 // First, turn the API into a ClientServer object
-const ClientClass = require("../demo/Client.js");
-const ServerClass = require("../demo/Server.js");
-const { generateClientServer } = require("../src/generate-client-server.js");
+const ClientClass = require("../simple/Client.js");
+const ServerClass = require("../simple/Server.js");
+const { generateClientServer } = require("../../src/generate-client-server.js");
 const ClientServer = generateClientServer(ClientClass, ServerClass);
 
 // Then create a server using the ClientServer object
@@ -9,4 +9,6 @@ const ClientServer = generateClientServer(ClientClass, ServerClass);
 const server = ClientServer.createServer();
 
 // And then start the server, so clients can connect.
-server.listen(8080, () => console.log(`index> server listening on http://localhost:8080`));
+server.listen(8080, () =>
+  console.log(`index> server listening on http://localhost:8080`)
+);

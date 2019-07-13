@@ -1,0 +1,161 @@
+:root {
+  --ph: 4em;
+  --sep: 3px;
+  --p1: 180deg;
+  --p2: 270deg;
+  --p3: 0deg;
+  --p4: 90deg;
+}
+
+h1 s {
+  display: inline-block;
+  text-decoration: none;
+  font-family: Verdana;
+  width: 0;
+  position: relative;
+  top: 4px;
+  left: -18px;
+  color: red;
+  font-weight: 100;
+  opacity: 0.6;
+}
+
+button {
+  margin: 1em;
+  padding: 0;
+  display: inline-block;
+  background: white;
+  border-radius: 4px;
+  padding: 5px 10px;
+  font-family: Verdana;
+  color: black;
+  background: #f0f0f0;
+}
+
+button + button {
+  margin-left: 0 !important;
+}
+
+button[disabled] {
+  background: transparent;
+  color: #999;
+  border: 1px dashed;
+  margin: calc(1em + 2px);
+}
+
+#discard .tile {
+  vertical-align: middle;
+}
+
+.btn {
+  display: inline-block;
+  margin-left: 10px;
+}
+
+footer {
+  position: fixed;
+  height: 100px;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 10px;
+  background: #ccc;
+}
+
+footer p {
+  margin: 0;
+}
+
+.tiles, .locked, .bonus {
+  margin: 0.5em;
+  padding: 0;
+  text-indent: 0;
+  display: inline-block;
+  vertical-align: top;
+}
+
+#active-game {
+  padding: 1em;
+  padding-top: 1.5em;
+  background: #ffeac1;
+}
+
+.player {
+  position: relative;
+  background: #ffeac1;
+  margin: 2px;
+  padding-left: 2em;
+}
+
+.player + .player {
+  margin-top: 1em;
+}
+
+.player:before {
+  content: attr(data-wind);
+  vertical-align: -1em;
+  display: inline-block;
+  position: absolute;
+  top: 1em;
+  left: 0.25em;
+  background: rgb(70, 150, 16);
+  color: white;
+  text-shadow: 0 0 1px black;
+  padding: 2px 5px;
+  border-radius: 3px;
+  border: 1px solid black;
+}
+
+.player:after {
+  position: absolute;
+  content: attr(data-name);
+  left: -1em;
+  top: -1em;
+  font-family: Helvetica;
+  font-weight: bold;
+  color: #834828;
+  font-variant: small-caps;
+  text-transform: lowercase;
+}
+
+.player.active {
+  background: linear-gradient(to left, transparent, #fbb479);
+  border-radius: 10px;
+}
+
+.player.winner {
+  border: 3px solid gold;
+  background: #fbb479;
+}
+
+.player.left {
+  opacity: 0.4;
+}
+
+button.rename {
+  margin: 0;
+  display: inline-block;
+}
+
+button.claim-button.win-button {
+  background: #b7f0d0;
+}
+
+#claim-timer {
+  display: inline-block;
+  position: relative;
+  width: 10em;
+  height: 5px;
+  background: lightyellow;
+  vertical-align: middle;
+  border: 1px solid rgba(0, 0, 0, 0.3);
+  margin-left: 1em;
+}
+
+#claim-timer-bar {
+  display: inline-block;
+  position: absolute;
+  height: 100%;
+  width: 40%;
+  background: #ffb166;
+}

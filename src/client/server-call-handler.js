@@ -29,7 +29,9 @@ module.exports = function(namespace, clientFn, resolveWithoutNamespace) {
 
       // Throw if there is no processing function at all:
       if (!process) {
-        throw new Error(`Missing handler.${namespace}:${name} in ServerCallHandler.${namespace}.${name}`);
+        throw new Error(
+          `Missing handler.${namespace}:${name} in ServerCallHandler.${namespace}.${name}`
+        );
       }
 
       // Throw if this is a processing function, but it's not declared async:

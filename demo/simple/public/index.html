@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <!--
+            be nice to people: declare your charset and viewport,
+            and do that first. Not everyone uses the same browser.
+        -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <title>Browser test</title>
+        <link rel="stylesheet" href="style.css">
+
+        <!--
+            load our scripts asynchronously, but execute them in-order once
+            the DOM has finished parsing (but before "domcontentloaded").
+        -->
+        <script src="socketless.js" defer></script>
+        <script src="web-client-class.js" type="module" defer></script>
+        <script src="script.js" type="module" defer></script>
+
+    </head>
+
+    <body>
+        <h1>Test client <span id="clientid"></span></h1>
+
+        <div id="list">
+            <h2>Known users:</h2>
+            <ul>
+                <!--
+                    This list gets populated based on the
+                    userlist as sent to us by the server.
+                -->
+            </ul>
+            <button>refresh list</button>
+        </div>
+
+        <div>
+            <h2>Chat history:</h2>
+            <div id="chat">
+                <!--
+                    chat messages will go here
+                -->
+            </div>
+        </div>
+
+        <div>
+            <!--
+                this button gets hooked up to the quit instruction,
+                to explicitly make the client shut itself down.
+            -->
+            <p>Disconnect from the server: <button id="quit">quit</button></p>
+        </div>
+    </body>
+
+</html>

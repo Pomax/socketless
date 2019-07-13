@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Super Simple Socketless Mahjong</title>
+  <link rel="stylesheet" type="text/css" href="css/style.css">
+  <link rel="stylesheet" type="text/css" href="css/tiles.css">
+</head>
+
+<body>
+  <header>
+    <h1>Super Simple "Socketless" s<s>X</s>Mahjong</h1>
+    <p>
+      Mahjong is a four player "draw one, discard one" game in which players attempt
+      to turn a randomly assigned collection of tiles into a winning collection of
+      tiles. Any player may claim another player's discard (even when it would not be
+      the claiming player's turn; claiming makes them the active player) if that tile
+      can be used to form a set of three of a kind, or four of a kind. In addition,
+      suited number tiles may be claimed to form a set of three consecutive same
+      suited numbers, but this claim may not be made out of turn order. A player
+      wins once they have four sets and a pair. While pairs cannot be claimed during
+      normal play, if a tile completes a pair and in so doing forms a winning
+      four sets and a pair, that tile may be claimed <em>as a winning tile</em>
+      (the claim can be made because it's a win, not because it's a pair).
+    </p>
+  </header>
+
+  <main id="client">
+    <!-- this gets reactively populated by the client, based on state updates -->
+  </main>
+</body>
+
+<!-- In order to use the socketless framework, we MUST add this: -->
+<script src="socketless.js"></script>
+
+<!-- then, our code: a simple html templating lib, and our client UI -->
+<script src="mini-templating.js"></script>
+<script src="utils/claims.js"></script>
+<script src="random-names.js" type="module"></script>
+<script src="web-client-class.js" type="module"></script>
+<script src="script.js" type="module" defer></script>
+
+</html>

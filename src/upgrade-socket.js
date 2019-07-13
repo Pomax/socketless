@@ -1,3 +1,8 @@
+if (typeof process !== "undefined") {
+  // We do not want Node to artificially limit us to 10 sockets
+  process.setMaxListeners(0);
+}
+
 /**
  * This function takes a standard Socket.io socket,
  * and makes it better by rewriting the `on` and `emit`
@@ -34,7 +39,7 @@ function upgradeSocket(socket) {
    * deciding there is no response forthcoming and to clean
    * up the event listener for that response.
    */
-  socket.emit = async (eventName, data = {}, timeout = 5000) => {
+  socket.emit = async (eventName, data = {}, timeout = 1000) => {
     return new Promise((resolve, reject) => {
       // responses should always be "the event name, with :response added"
       const responseName = `${eventName}:response`;

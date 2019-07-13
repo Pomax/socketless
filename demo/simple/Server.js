@@ -16,6 +16,7 @@ class Server {
    */
   async onConnect(client) {
     const user = { id: this.clientIdCounter++, client };
+
     this.users.push(user);
     console.log(`server> client (id=${user.id}) connected to the server.`);
 
@@ -42,7 +43,8 @@ class Server {
    * If this was the last connected client: shut down.
    */
   async onDisconnect(client) {
-    const user = this.users.find(v => v.client === client);
+    const userPos = this.users.findIndex(v => v.client === client);
+    const user = this.users.splice(userPos, 1)[0];
     console.log(`server> client ${user.id} was disconnected.`);
 
     if (this.getConnectedClients().length === 0) {
@@ -77,7 +79,9 @@ class Server {
    */
   async "user:getUserList"() {
     console.log(`server> sending user list`);
-    return this.users.map(c => c.id);
+    let list = this.users.map(c => c.id);
+    console.log(`server> list = ${list}`);
+    return list;
   }
 }
 
