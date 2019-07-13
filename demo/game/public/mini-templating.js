@@ -39,7 +39,7 @@
           e.dataset[opt] = value;
         }
         if (opt === `dataset`) {
-          Object.keys(value).forEach(k => e.dataset[k] = value[k]);
+          Object.keys(value).forEach(k => (e.dataset[k] = value[k]));
         }
         if (opt.startsWith(`on-`) && value) {
           opt = opt.replace(`on-`, ``);

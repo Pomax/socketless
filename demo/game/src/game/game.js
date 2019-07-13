@@ -1,5 +1,7 @@
 const Wall = require("./wall.js");
+
 const CLAIM_TIMEOUT = 10000;
+
 const CLAIM_VALUES = {
   pair: 1,
   chow1: 1,
@@ -9,6 +11,7 @@ const CLAIM_VALUES = {
   kong: 2,
   win: 3
 };
+
 const generateRandomName = require("../utils/name-generator.js");
 
 /**
@@ -20,29 +23,27 @@ module.exports = class Game {
   constructor(owner) {
     this.name = generateRandomName();
     this.owner = owner;
-    this.players = [owner];
-    // TODO: track who has which tile sin hand, because claims should be verifiable
+    this.owner.setGame(this);
     this.inProgress = false;
-    owner.game = this;
+    this.players = [this.owner];
   }
 
   /**
    * Add a player to this game.
    */
   addPlayer(player) {
-    if (this.players.indexOf(player) > -1) return true;
+    if (this.players.find(p => p.id === player.id)) return true;
+    player.setGame(this);
     this.players.push(player);
-    player.game = this;
   }
 
   /**
    * Remove a player from this game, and notify all others.
    */
   leave(player) {
-    let pos = this.players.indexOf(player);
-    if (pos > -1) {
-      this.players.splice(pos, 1);
-    }
+    this.players.forEach(p => p.leftGame(player));
+    let pos = this.players.findIndex(p => p.id === player.id);
+    if (pos > -1) this.players.splice(pos, 1);
   }
 
   /**
@@ -54,13 +55,7 @@ module.exports = class Game {
     return {
       id: this.owner.id,
       name: this.name,
-      players: this.players.map(player => {
-        return {
-          id: player.id,
-          seat: player.seat,
-          wind: player.wind
-        };
-      }),
+      players: this.players.map(p => p.getDetails()),
       inProgress: this.inProgress,
       finished: this.finished
     };
@@ -74,7 +69,7 @@ module.exports = class Game {
     this.setupWall();
     this.assignSeats();
     let details = this.getDetails();
-    this.players.forEach(player => player.client.game.start(details));
+    this.players.forEach(p => p.startGame(details));
     this.currentWind = 0;
     this.windOfTheRound = 0;
     this.currentPlayer = 0;
@@ -94,24 +89,24 @@ module.exports = class Game {
   // A helper function to determine "roles" when playing.
   getWinds() {
     const len = this.players.length;
+    // there is technically no rule that says you HAVE to
+    // have four players, so we allow anywhere from 2 to 5.
     if (len === 2) return [`上`, `下`];
     if (len === 3) return [`発`, `中`, `白`];
     if (len === 4) return [`東`, `南`, `西`, `北`];
     if (len === 5) return [`火`, `水`, `木`, `金`, `土`];
-    return [`東`, `南`, `西`, `北`];
+    // with a silly last resort fallback. You can't even
+    // deal tiles to all players with 8 people.
+    return [`東`, `南`, `西`, `北`, `東`, `南`, `西`, `北`];
   }
 
   /**
    * Assign seats to all players
    */
   assignSeats() {
-    this.players.forEach((player, position) => {
-      player.seat = position;
-      player.wind = this.getWinds()[position];
-      player.client.game.setWind({
-        seat: player.seat,
-        wind: player.wind
-      });
+    this.players.forEach((player, seat) => {
+      let wind = this.getWinds()[seat];
+      player.assignSeat(seat, wind);
     });
   }
 
@@ -121,7 +116,7 @@ module.exports = class Game {
   dealInitialTiles() {
     this.players.forEach(player => {
       let tiles = this.wall.get(13);
-      player.client.game.initialDeal(tiles);
+      player.setTiles(tiles);
     });
   }
 
@@ -132,8 +127,8 @@ module.exports = class Game {
     this.currentDiscard = false;
     let tilenumber = this.wall.get();
     this.players.forEach((player, seat) => {
-      player.client.game.setCurrentPlayer(this.currentPlayer);
-      if (seat === this.currentPlayer) player.client.game.draw(tilenumber);
+      player.setCurrentPlayer(this.currentPlayer);
+      if (seat === this.currentPlayer) player.draw(tilenumber);
     });
   }
 
@@ -149,14 +144,9 @@ module.exports = class Game {
    * Notify everyone that a player drew a bonus tile.
    */
   playerDeclaredBonus(player, tilenumber) {
-    this.players.forEach(p =>
-      p.client.game.playerDeclaredBonus({
-        id: player.id,
-        seat: player.seat,
-        tilenumber: tilenumber
-      })
-    );
-    player.client.game.draw(this.wall.get());
+    if (!player.hasTile(tilenumber)) return;
+    this.players.forEach(p => p.seeBonus(player, tilenumber));
+    player.compensate(this.wall.get());
   }
 
   /**
@@ -167,22 +157,18 @@ module.exports = class Game {
   playerDiscarded(player, tilenumber) {
     if (player.seat !== this.currentPlayer)
       return `out-of-turn discard attempt`;
+
     if (this.currentDiscard) return `another discard is already active`;
+
+    if (!player.hasTile(tilenumber))
+      return `player does not have this tile to discard`;
 
     this.currentDiscard = tilenumber;
     this.claims = [];
     this.passes = [];
 
     // inform all clients of this discard
-    this.players.forEach(p =>
-      p.client.game.playerDiscarded({
-        gameName: this.name,
-        id: player.id,
-        seat: player.seat,
-        tilenumber,
-        timeout: CLAIM_TIMEOUT
-      })
-    );
+    this.players.forEach(p => p.seeDiscard(player, tilenumber, CLAIM_TIMEOUT));
 
     // start a claim timer. When it expires,
     // move to the next player if no claims
@@ -198,17 +184,12 @@ module.exports = class Game {
    */
   undoDiscard(player) {
     if (player.seat !== this.currentPlayer) return `not discarding player`;
+
     if (this.claims.length) return `discard is already claimed`;
 
     clearTimeout(this.claimTimer);
-
-    let undo = {
-      id: player.id,
-      seat: player.seat,
-      tilenumber: this.currentDiscard
-    };
+    this.players.forEach(p => p.undoDiscard(player, this.currentDiscard));
     this.currentDiscard = false;
-    this.players.forEach(p => p.client.game.playerTookBack(undo));
   }
 
   /**
@@ -217,9 +198,7 @@ module.exports = class Game {
   playerPasses(player) {
     if (this.passes.indexOf(player) === -1) {
       this.passes.push(player);
-      this.players.forEach(p =>
-        p.client.game.playerPassed({ id: player.id, seat: player.seat })
-      );
+      this.players.forEach(p => p.passed(player));
       if (this.claims.length + this.passes.length === this.players.length - 1) {
         this.handleClaims();
       }
@@ -255,19 +234,19 @@ module.exports = class Game {
 
     const claim = this.claims[0];
     const award = {
-      tilenumber: this.currentDiscard,
       id: claim.player.id,
       seat: claim.player.seat,
       claimtype: claim.claimtype,
-      wintype: claim.wintype
+      wintype: claim.wintype,
+      tilenumber: this.currentDiscard
     };
 
     this.currentDiscard = false;
-    this.players.forEach(player => player.client.game.claimAwarded(award));
+    this.players.forEach(p => p.claimAwarded(award));
     this.currentPlayer = claim.player.seat;
 
     if (claim.claimtype === `kong`) {
-      this.players[claim.seat].game.draw(this.wall.get());
+      this.players[this.currentPlayer].compensate(this.wall.get());
     }
 
     if (claim.claimtype === `win`) {
@@ -280,9 +259,7 @@ module.exports = class Game {
    */
   declareWin({ id, seat }) {
     this.finished = true;
-    this.players.forEach(player => {
-      player.client.game.playerWon({ id, seat });
-      player.client.game.updated(this.getDetails());
-    });
+    let details = this.getDetails();
+    this.players.forEach(p => p.handWon(id, seat, details));
   }
 };

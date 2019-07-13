@@ -8,7 +8,7 @@ export default class WebClientClass {
     const el = document.createElement("ul");
     this.users.forEach(u => {
       console.log(u);
-      
+
       let li = document.createElement("li");
       li.textContent = u;
       el.appendChild(li);

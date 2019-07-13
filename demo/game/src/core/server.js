@@ -1,21 +1,21 @@
-const Game = require("../core/game.js");
+const User = require("../game/user.js");
+const Game = require("../game/game.js");
 
 module.exports = class GameServer {
   constructor() {
-    this.clientIdCounter = 0;
     this.users = [];
     this.games = [];
   }
 
   // A helper function for getting a user object given a client socket
   getUser(client) {
-    return this.users.find(v => v.client === client);
+    return this.users.find(p => p.client === client);
   }
 
   // A helper funciton to get every user object except
   // the one associated with this client socket.
   getOthers(client) {
-    return this.users.filter(v => v.client !== client);
+    return this.users.filter(p => p.client !== client);
   }
 
   /**
@@ -23,11 +23,11 @@ module.exports = class GameServer {
    * and assign the client a unique id.
    */
   async onConnect(client) {
-    const user = { id: this.clientIdCounter++, client };
-    const otherUsers = this.users.slice();
+    const user = new User(client);
+    const others = this.users.slice();
     this.users.push(user);
-    client.admin.register(user.id);
-    otherUsers.forEach(other => other.client.user.joined(user.id));
+    user.register();
+    others.forEach(u => u.userJoined(user));
   }
 
   /**
@@ -36,9 +36,9 @@ module.exports = class GameServer {
    * cleaning up any games that drop to 0 players as a result.
    */
   async onDisconnect(client) {
-    const userPos = this.users.findIndex(v => v.client === client);
+    const userPos = this.users.findIndex(u => u.client === client);
     const user = this.users.splice(userPos, 1)[0];
-    this.users.forEach(other => other.client.user.left(user.id));
+    this.users.forEach(u => u.userLeft(user));
 
     // update all running games
     this.games.forEach(game => game.leave(user));
@@ -50,20 +50,15 @@ module.exports = class GameServer {
    */
   async "user:setName"(from, name) {
     const user = this.getUser(from);
-    user.name = name;
-    this.users.forEach(u =>
-      u.client.user.changedName({
-        id: user.id,
-        name: user.name
-      })
-    );
+    user.setName(name);
+    this.users.forEach(u => u.userChangedName(user.id, name));
   }
 
   /**
    * Send clients the known user list on request.
    */
   async "user:getUserList"() {
-    return this.users.map(u => ({ id: u.id, name: u.name }));
+    return this.users.map(u => u.getDetails());
   }
 
   /**
@@ -81,12 +76,7 @@ module.exports = class GameServer {
     let user = this.getUser(from);
     let game = new Game(user);
     this.games.push(game);
-    this.users.forEach(u =>
-      u.client.game.created({
-        id: user.id,
-        name: game.name
-      })
-    );
+    this.users.forEach(u => u.gameCreated(user.id, game.name));
   }
 
   /**
@@ -100,9 +90,8 @@ module.exports = class GameServer {
         let user = this.getUser(from);
         let alreadyJoined = game.addPlayer(user);
         if (!alreadyJoined) {
-          this.users.forEach(user =>
-            user.client.game.updated(game.getDetails())
-          );
+          let details = game.getDetails();
+          this.users.forEach(u => u.updateGame(details));
           return { joined: true };
         }
         return { joined: false, reason: `already joined` };
@@ -125,7 +114,7 @@ module.exports = class GameServer {
     if (game.players.length === 0) {
       let pos = this.games.findIndex(g => g === game);
       this.games.splice(pos, 1);
-      this.users.forEach(user => user.client.game.ended({ name: game.name }));
+      this.users.forEach(u => u.gameEnded());
     }
   }
 

@@ -405,13 +405,18 @@ export default class WebClientClass {
 
     // If a user clicks the win button, remove the regular
     // claim options and replace them with win options.
-    const generateWinButtons = (claimtype) => {
+    const generateWinButtons = claimtype => {
       removeOptions();
       const buttonRow = document.querySelector(`.pass-button`).parentNode;
 
       // Generate the win options, which are subtly
       // different from the general claim optons.
-      let claims = legalClaims(this.currentDiscard.tilenumber, this.tiles, this.mayChow(), true);
+      let claims = legalClaims(
+        this.currentDiscard.tilenumber,
+        this.tiles,
+        this.mayChow(),
+        true
+      );
       claims.forEach(c => {
         const wintype = c.type;
         const opt = {
@@ -433,12 +438,18 @@ export default class WebClientClass {
         {
           className: `btn claim-button`,
           "on-click": () =>
-            claimtype === "win" ? generateWinButtons(claimtype) : processClaim(claimtype)
+            claimtype === "win"
+              ? generateWinButtons(claimtype)
+              : processClaim(claimtype)
         },
         claimtype
       );
 
-    let claims = legalClaims(this.currentDiscard.tilenumber, this.tiles, this.mayChow());
+    let claims = legalClaims(
+      this.currentDiscard.tilenumber,
+      this.tiles,
+      this.mayChow()
+    );
     return claims.map(c => makeButton(c.type));
   }
 

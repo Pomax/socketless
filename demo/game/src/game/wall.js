@@ -1,6 +1,6 @@
 let Random = require("../utils/prng.js");
 
-// Standard wall definition. 
+// Standard wall definition.
 let base = [...new Array(34)].map((_, i) => i);
 const BASE = base
   .concat(base)

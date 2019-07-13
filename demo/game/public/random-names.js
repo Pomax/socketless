@@ -1,4 +1,3 @@
-
 const RANDOM_NAMES = [
   `Angler Fish`,
   `B- b- bear!`,

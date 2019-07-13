@@ -1,3 +1,4 @@
+const lockTiles = require("../utils/lock-tiles.js");
 const sortTiles = (a, b) => a - b;
 
 module.exports = class GameClient {
@@ -118,7 +119,7 @@ module.exports = class GameClient {
   /**
    * Set our wind and seat for the game we're in.
    */
-  async "game:setWind"({ seat, wind }) {
+  async "game:assignSeat"({ seat, wind }) {
     this.setState({
       seat: seat,
       wind: wind
@@ -130,9 +131,11 @@ module.exports = class GameClient {
    */
   async "game:initialDeal"(tiles) {
     tiles.sort(sortTiles);
-    this.state.bonus = tiles.filter(t => (t >= 34));
-    this.state.tiles = tiles.filter(t => (t <= 33));
-    this.state.bonus.forEach(tilenumber => this.server.game.bonusTile({ tilenumber }));
+    this.state.bonus = tiles.filter(t => t >= 34);
+    this.state.tiles = tiles.filter(t => t <= 33);
+    this.state.bonus.forEach(tilenumber =>
+      this.server.game.bonusTile({ tilenumber })
+    );
   }
 
   /**
@@ -146,23 +149,47 @@ module.exports = class GameClient {
     player.bonus.sort(sortTiles);
   }
 
+  // Helper function to make sure only play tiles make it
+  // into the tiles list. Bonus tiles are immediately moved
+  // into the bonus list, with a notification to the server
+  // that a bonus tile was locked away.
+  acceptTile(tilenumber) {
+    if (tilenumber >= 34) {
+      this.state.bonus.push(tilenumber);
+      this.state.bonus.sort(sortTiles);
+      this.server.game.bonusTile({ tilenumber });
+      return false;
+    }
+
+    let tiles = this.state.tiles;
+    tiles.push(tilenumber);
+    tiles.sort(sortTiles);
+    if (this.state.seat === this.state.currentPlayer) {
+      this.state.latestTile = tilenumber;
+    }
+  }
+
   /**
    * This function is called by the server rather than use
    * calling it: we have been dealt a tile, so add it to
    * our hand, or our bonus pile, depending on what it was.
    */
   async "game:draw"(tilenumber) {
-    if (tilenumber >= 34) {
-      this.state.bonus.push(tilenumber);
-      this.state.bonus.sort(sortTiles);
-      this.server.game.bonusTile({ tilenumber });
-      return;
-    }
+    this.acceptTile(tilenumber);
+  }
 
-    let tiles = this.state.tiles;
-    tiles.push(tilenumber);
-    tiles.sort(sortTiles);
-    this.state.latestTile = tilenumber;
+  /**
+   * When locking away bonus tiles or kongs, the player is
+   * awarded a compensation tile, to ensure that they still
+   * have enough tiles to form a winning pattern with.
+   *
+   * While the result is the same as game:draw, most rules
+   * have special scoring when winning uses a compensation
+   * tile.
+   */
+  async "game:compensate"(tilenumber) {
+    this.acceptTile(tilenumber);
+    this.state.compensationTile = true;
   }
 
   /**
@@ -171,6 +198,7 @@ module.exports = class GameClient {
   setSeat(seat) {
     this.setState({
       latestTile: false,
+      compensationTile: false,
       currentDiscard: false,
       currentPlayer: seat
     });
@@ -223,42 +251,13 @@ module.exports = class GameClient {
    */
   async "game:claimAwarded"(claim) {
     this.setSeat(claim.seat);
-    if (claim.id === this.state.id) this.lock(claim);
+    if (claim.id === this.state.id)
+      lockTiles(this.state.tiles, this.state.locked, claim);
     else {
       let player = this.state.players[claim.seat];
       if (!player.locked) player.locked = [];
       player.locked.push(claim);
     }
-  }
-
-  /**
-   * Lock away a collection of tiles based on the game
-   * server permitting our claim.
-   */
-  lock({ tilenumber, claimtype, wintype }) {
-    if (claimtype === "win") {
-      claimtype = wintype;
-    }
-
-    let set,
-      t = tilenumber,
-      tiles = this.state.tiles;
-
-    if (claimtype === "pair") set = [t];
-    if (claimtype === "chow1") set = [t + 1, t + 2];
-    if (claimtype === "chow2") set = [t - 1, t + 1];
-    if (claimtype === "chow3") set = [t - 2, t - 1];
-    if (claimtype === "pung") set = [t, t];
-    if (claimtype === "kong") set = [t, t, t];
-
-    set.forEach(t => {
-      let pos = tiles.indexOf(t);
-      tiles.splice(pos, 1);
-    });
-
-    set.push(t);
-
-    this.state.locked.push(set.sort(sortTiles));
   }
 
   /**
