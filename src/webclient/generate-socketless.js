@@ -1,6 +1,6 @@
 const fs = require(`fs`);
 const path = require(`path`);
-const generateProxyClientServer = require("./generate-proxy-client-server.js");
+const generateProxyClientServer = require(`./generate-proxy-client-server.js`);
 
 /**
  * create a "bundle" consisting of:
@@ -23,18 +23,15 @@ module.exports = function generateSocketless(API) {
   return [
     fs
       .readFileSync(
-        path.join(
-          __dirname,
-          `../../node_modules/morphdom/dist/morphdom-umd.min.js`
-        )
+        require.resolve(`morphdom/dist/morphdom-umd.min.js`)
       )
-      .toString("utf-8"),
+      .toString(`utf-8`),
 
     fs
       .readFileSync(
-        path.join(__dirname, `../../node_modules/jsonpatch/jsonpatch.min.js`)
+        require.resolve(`jsonpatch/jsonpatch.min.js`)
       )
-      .toString("utf-8"),
+      .toString(`utf-8`),
 
     `const ClientServer = { generateClientServer: function(WebClientClass) {`,
 
@@ -42,16 +39,13 @@ module.exports = function generateSocketless(API) {
 
     fs
       .readFileSync(
-        path.join(
-          __dirname,
-          `../../node_modules/socket.io-client/dist/socket.io.dev.js`
-        )
+        require.resolve(`socket.io-client/dist/socket.io.dev.js`)
       )
-      .toString("utf-8"),
+      .toString(`utf-8`),
 
     fs
       .readFileSync(path.join(__dirname, `../upgrade-socket.js`))
-      .toString("utf-8")
+      .toString(`utf-8`)
       .replace(`module.exports = upgradeSocket;`, ``),
 
     // also, this part is unreasonably hard to do with webpack:
