@@ -10,12 +10,19 @@ function attach(object, fname, value) {
   });
 }
 
-// help function to get all declared class functions
+// helper function to find all declared class functions
+// all the way up to the Object chain.
 function getAllFunctions(objectClass) {
-  const proto = objectClass.prototype;
-  const verify = v =>
-    typeof proto[v] === "function" && v.match(/[$:]/) !== null;
-  const functions = Object.getOwnPropertyNames(proto).filter(verify);
+  const functions = [];
+  while (objectClass.prototype) {
+    const proto = objectClass.prototype;
+    const verify = v =>
+      typeof proto[v] === "function" && v.match(/[$:]/) !== null;
+    Object.getOwnPropertyNames(proto).filter(verify).forEach(name => {
+      if (functions.indexOf(name) === -1) functions.push(name);
+    });
+    objectClass = objectClass.__proto__;
+  }
   return functions;
 }
 

@@ -1,3 +1,7 @@
+# v0.10.0
+
+Fixed the way function names are discovered, so that `SomeClass extends ClientClass` can be used as argument to `createClientServer()`. Previously, only the class's own function names were checked, so an empty class extensions -which you'd expect to inherit all functions- was considered as "not implementing anything". So that was bad and is now fixed.
+
 # v0.9.1
 
 Fixed incorrect dependency path resolution for generating socketless.js for web clients.
