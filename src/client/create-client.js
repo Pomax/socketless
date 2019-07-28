@@ -22,7 +22,7 @@ module.exports = function(clientServer, DefaultClientClass) {
 
     // And a trigger when they are disconnected from the server
     socketToServer.on("disconnect", (...data) => {
-      if (instance.onDisconnect()) {
+      if (instance.onDisconnect) {
         instance.onDisconnect(...data);
       }
     });
