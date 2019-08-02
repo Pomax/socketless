@@ -16,7 +16,7 @@ const generateProxyClientServer = require(`./generate-proxy-client-server.js`);
  * on style points (plus, have you ever tried reading a webpack bundle?).
  * Would it take a build step and tens of megabytes of dependencies? Yep.
  */
-module.exports = function generateSocketless(API) {
+module.exports = function generateSocketless(API, directSync) {
   const namespaces = Object.keys(API);
 
   return [
@@ -41,7 +41,7 @@ module.exports = function generateSocketless(API) {
     `
       const namespaces = ${JSON.stringify(namespaces)};
       const API = ${JSON.stringify(API)};
-      return ${generateProxyClientServer.toString()}(WebClientClass);
+      return ${generateProxyClientServer.toString()}(WebClientClass, ${directSync});
     `,
 
     `}}`

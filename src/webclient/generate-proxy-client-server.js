@@ -7,7 +7,7 @@
  * This code does _not_ run anywhere except in the browser,
  * as part of a webclient `createClientServer()` call.
  */
-function generateClientServer(WebClientClass) {
+function generateClientServer(WebClientClass, directSync) {
   const url = window.location.toString().replace("http", "ws");
   const socketToClient = new WebSocket(url);
   const socket = upgradeSocket(socketToClient);
@@ -16,6 +16,11 @@ function generateClientServer(WebClientClass) {
   // Create a client instances
   const handler = new WebClientClass();
   handler.server = proxyServer;
+  if (!directSync) {
+    handler.state = {'test': true};
+  }
+
+  const update_target = directSync ? handler : handler.state;
 
   let __seq_num = 0;
 
@@ -33,7 +38,7 @@ function generateClientServer(WebClientClass) {
   // bind all new state values
   function updateState(newstate) {
     if (handler.setState) handler.setState(newstate);
-    else Object.keys(newstate).forEach(key => (handler[key] = newstate[key]));
+    else Object.keys(newstate).forEach(key => (update_target[key] = newstate[key]));
     if (handler.update) handler.update();
   }
 
@@ -44,7 +49,7 @@ function generateClientServer(WebClientClass) {
     // verify we're still in sync by comparing messaging sequence numbers
     const seqnum = patch.slice(-1)[0].value;
     if (seqnum === __seq_num + 1) {
-      const state = jsonpatch.apply_patch(handler, patch);
+      const state = jsonpatch.apply_patch(update_target, patch);
       return updateState(state);
     }
 
@@ -62,14 +67,16 @@ function generateClientServer(WebClientClass) {
     handleStateDiff(diff);
     respond();
   });
+
   socket.upgraded.on(`sync:full`, (state, respond) => {
     updateState(state);
     respond();
   });
 
   // and offer a sync() function to manually trigger a full bootstrap
-  handler.sync = async () =>
+  handler.sync = async () => {
     updateState(await socket.upgraded.send(`sync:full`));
+  }
 
   // Then: add the server => client => browser forwarding
   namespaces.forEach(namespace => {

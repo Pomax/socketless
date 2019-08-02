@@ -54,9 +54,10 @@ function upgradeSocket(socket) {
   // top level message router specifically for the
   // message format used by the socketless code.
   const router = data => {
-    if (data.explicitOriginalTarget) {
+    if (data.srcElement) {
+      // get data out of browser WebSocket
       data = data.data;
-    } // browser WebSocket
+    }
     try {
       data = JSON.parse(data);
     } catch (e) {
@@ -69,6 +70,10 @@ function upgradeSocket(socket) {
     // don't handle these at all.
     if (BROWSER_RESERVED.indexOf(eventName) > -1) {
       return console.warn(`ignoring browser ${eventName} event`);
+    }
+
+    if (!handlers[eventName]) {
+      return console.error(`no handlers for ${eventName}`);
     }
 
     handlers[eventName].forEach(handler => {
