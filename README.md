@@ -43,7 +43,7 @@ This project was born out of a need to write quite a lot of communication betwee
 So, instead, this framework lets you specify a Client class, with namespaced functions (using either `async namespace$name()` or `async "namespace:name"()` format), and a Server class, with namespaced functions (using the same convention), as all the code you need to write:
 
 ```javascript
-class ClientClass {    
+class ClientClass {
     async "admin:register"(clientId) {
         this.id = clientId;
         this.userlist = await this.server.user.getUserList();
@@ -54,13 +54,13 @@ class ServerClass {
     constructor() {
         this.users = [];
     }
-    
+
     async onConnect(client) {
         user = { client, id: uuid() };
         this.users.push(user);
         client.admin.register(user.id);
     }
-    
+
     async "user:getUserList"() {
         return this.users.map(...);
     }
@@ -112,7 +112,7 @@ Or if you're using this in a project that uses `package.json` dependency trackin
 ```bash
 npm install socketless --save
 ```
- 
+
 
 ### 1. Set up the minimal code
 
@@ -209,11 +209,11 @@ server.listen(8080, () => {
 ### 5. Read through a real example
 
 Have a look at the [demo](https://github.com/Pomax/socketless/tree/master/demo) directory, which contains three examples:
-  
+
   - a simple example similar to the code above, with one web client
   - a true distributed version of the simple example, minus the web client, and
   - a full blown multiplayer mahjong game using `socketless`.
- 
+
 #### A simple example: `npm test`
 
 This test starts up a server, followed by three clients plus one web client. 10 seconds after joining, each client (including the webclient) will set out a chat message, and 5 seconds later will disconnect from the server, _except_ for the web client, which needs to be told to "quit" through its browser interface: as clients connect, the web client will log its URL to the console, and this URL should be loaded in the browser:
@@ -245,7 +245,7 @@ This is the same test as the simple test, but with four regular clients, without
 
 This is an ***elaborate example*** of how you can use `socketless` to implement a multiplayer game with all the bells and whistles you need.
 
-The code is lavishly commented, so start reading at `demo/game/index.js` and branch out to other files as questions about how things work arise. 
+The code is lavishly commented, so start reading at `demo/game/index.js` and branch out to other files as questions about how things work arise.
 
 # Conventions
 
@@ -406,7 +406,7 @@ class Client {
 
 Webclient classes are treated as extensions of regular Client classes, with the following additionals:
 
-Webclient code has access a read-only `this.is_web_client` property that is set to `true`. This can be used to write classes that act as autonomous clients when created using `ClientServer.createClient()`, and act as browser controlled proxies when created using `ClientServer.createWebclient()`. 
+Webclient code has access a read-only `this.is_web_client` property that is set to `true`. This can be used to write classes that act as autonomous clients when created using `ClientServer.createClient()`, and act as browser controlled proxies when created using `ClientServer.createWebclient()`.
 
 Webclient code has access to a read-only `this.browser_connected` property is set to `true` when a browser connection has been established.
 
@@ -416,7 +416,7 @@ Webclient classes, by default (although this can be changed, see below) use a `t
 
 #### Bypassing `this.state`
 
-Webclients can be created such that rather than using `this.state` as the source of truth for their browser interface, the client object itself is the source of truth for their browser interface. This is not advisable, but _can_ be done by passing `{ directSync: true }` as third argument for the `ClientServer.createWebclient()` function. 
+Webclients can be created such that rather than using `this.state` as the source of truth for their browser interface, the client object itself is the source of truth for their browser interface. This is not advisable, but _can_ be done by passing `{ directSync: true }` as third argument for the `ClientServer.createWebclient()` function.
 
 #### Browser interfaces
 
@@ -427,18 +427,18 @@ class UIClass {
   // Any state value that in the true client is found in `this.state`
   // can be access as local variable in this class. For example, if
   // the client has a this.state.opCount property with value 10, then
-  // this class can access that value as this.opCount directly.  
+  // this class can access that value as this.opCount directly.
 
-  update() {
+  update(updatedState) {
     // Called any time the true client updates their state.
     // Effect UI updates through this call, based on all synced properties.
   }
 }
 ```
 
-Calling this functions yields both an object `{ client, server }`, and builds a UIClass instance that will have its `.update()` function called any time the true client and the browser are synchronised. 
+Calling this functions yields both an object `{ client, server }`, and builds a UIClass instance that will have its `.update(updatedState)` function called any time the true client and the browser are synchronised, with `updatedState` reflecting the latest known state.
 
-As for regular Clients, the browser UI is built with several functions and properties presupplied: `this.server` is, for all intents and purposes, the same as `this.server` in the client; `this.state` is equally the same thing, unless `directSync:true` was used to construct the web client. There is also a `this.sync()` function that the browser can use to force a full state synchronisation with the client, and there is a `this.server.quit()` that can be called by the browser to effect a client-disconnect.   
+As for regular Clients, the browser UI is built with several functions and properties presupplied: `this.server` is, for all intents and purposes, the same as `this.server` in the client; `this.state` is equally the same thing, unless `directSync:true` was used to construct the web client. There is also a `this.sync()` function that the browser can use to force a full state synchronisation with the client, and there is a `this.server.quit()` that can be called by the browser to effect a client-disconnect.
 
 # The `socketless` API
 
@@ -518,7 +518,7 @@ class ClientClass {
         // broadcast to all clients, specifically to their "someOtherFunction" function:
         this.server.broadcast(this.someOtherFunction, "test");
     }
-    
+
     async someOtherFunction(stringData) {
         console.log(`triggered by broadcast: ${stringData}`);
     }
@@ -606,7 +606,7 @@ The client _may_ implement the following function:
 
 The browser-side client class is a thin client that is kept in sync with the server-side client's `state` object. As such, the browser-side client is never a source of authority, all true state is maintained by the real client. The only function the browser-side client needs to implement is:
 
-- `update()`, called automatically any time the real client's state has changed (typically in response to an API function call).
+- `update(updatedState)`, called automatically any time the real client's state has changed (typically in response to an API function call), `updatedState` reflecting the latest known clietn state.
 
 The browser-side client _may_ additionally implement any of the API functions, with namespacing, in which case `socketless` will trigger those functions in the browser _after_ resolving those functions in the real client. Use this as signals, not as UI updates.
 
@@ -614,7 +614,7 @@ The browswer-side client has access to `this.server`, which is the proxy object 
 
 There is no local proxy for the real client: all state is synchronised automatically through `this.state`, which is a reflection of the real client's state. If the web client was built using `directSync` (see below), the browser-side client is the direct reflection of the real client without a `state` property. Needless to say, this is not advisable.
 
-Should the browser-side client need to trigger a synchronisation outside of the normal update mechanism, `this.sync()` may be called to effect a full state resynchronisation ending in `update()` getting run.
+Should the browser-side client need to trigger a synchronisation outside of the normal update mechanism, `this.sync()` may be called to effect a full state resynchronisation ending in `update(updatedState)` getting run.
 
 In order to signal a shutdown of the client, browser-side clients may call `this.server.quit()`, which is a special function that effects a server disconnect followed by a `client.onQuit()` call (provided the client has `onQuit()` implemented). Note that this means that just closing the browser will _not_ cause the client to disconnect from the server.
 

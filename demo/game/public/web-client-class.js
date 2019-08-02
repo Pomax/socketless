@@ -32,12 +32,7 @@ export default class WebClientClass {
    * framework coordinates synchronization, and any time the
    * client state is updated, this function will run.
    */
-  update() {
-    // We're working with an explicit state, so we can either
-    // extract that in every single function, or we can just
-    // pass it forward, which by far less work.
-    const state = this.state;
-
+  update(state) {
     // We "rebuild" the entire UI every time an update comes in,
     // which browsers can do REALLY REALLY FAST as long as you
     // don't update the live DOM until you're done, because it's

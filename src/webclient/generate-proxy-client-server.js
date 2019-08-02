@@ -39,7 +39,7 @@ function generateClientServer(WebClientClass, directSync) {
   function updateState(newstate) {
     if (handler.setState) handler.setState(newstate);
     else Object.keys(newstate).forEach(key => (update_target[key] = newstate[key]));
-    if (handler.update) handler.update();
+    if (handler.update) handler.update(update_target);
   }
 
   // turn a state diff into a state update
