@@ -1,7 +1,7 @@
 {
   "name": "socketless",
   "version": "0.10.1",
-  "description": "A framework and methodology for using socket.io without writing any socket code yourself.",
+  "description": "A framework and methodology for writing web socket client/server code, without writing any socket code.",
   "main": "src/generate-client-server.js",
   "scripts": {
     "prettier": "prettier --write ./**/*.js",
@@ -19,7 +19,6 @@
   "keywords": [
     "client",
     "server",
-    "socket.io",
     "websocket",
     "javascript",
     "framework"
@@ -29,7 +28,7 @@
   "bugs": {
     "url": "https://github.com/Pomax/socketless/issues"
   },
-  "homepage": "https://github.com/Pomax/async-socket.io#readme",
+  "homepage": "https://github.com/Pomax/socketless#readme",
   "dependencies": {
     "jsonpatch": "^3.0.1",
     "morphdom": "^2.5.4",

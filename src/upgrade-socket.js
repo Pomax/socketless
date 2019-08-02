@@ -7,7 +7,7 @@ if (typeof process !== "undefined") {
 const upgradeLabel = `this socket has been upgraded by socketless/upgrade-socket.js`;
 
 // Special event names that require lower-level handling than the message router.
-const RESERVED = [`close`,`error`,`open`,`ping`,`pong`];
+const RESERVED = [`close`, `error`, `open`, `ping`, `pong`];
 const BROWSER_RESERVED = [`onDisconnect`];
 
 // responses should always be "the event name, with :response added"
@@ -36,7 +36,7 @@ const getResponseName = eventName => `${eventName}:response`;
  *
  *   socket.upgraded.off('get-me-stuff', handleStuff);
  *
-  * And that's just so much nicer than plain websockets.
+ * And that's just so much nicer than plain websockets.
  */
 function upgradeSocket(socket) {
   // don't upgrade an already-upgraded socket
@@ -45,7 +45,7 @@ function upgradeSocket(socket) {
   socket.upgraded = {
     on: () => {},
     off: () => {},
-    send: async() => {}
+    send: async () => {}
   };
 
   // top level message handlers
@@ -53,10 +53,15 @@ function upgradeSocket(socket) {
 
   // top level message router specifically for the
   // message format used by the socketless code.
-  const router = (data) => {
-    if (data.explicitOriginalTarget) { data = data.data; }  // browser WebSocket
-    try { data = JSON.parse(data); }
-    catch (e) { return console.error("Could not parse websocket data:", data); }
+  const router = data => {
+    if (data.explicitOriginalTarget) {
+      data = data.data;
+    } // browser WebSocket
+    try {
+      data = JSON.parse(data);
+    } catch (e) {
+      return console.error("Could not parse websocket data:", data);
+    }
 
     const eventName = data.name;
     const payload = data.payload;
@@ -82,7 +87,8 @@ function upgradeSocket(socket) {
 
   // and then redefine .on() so that it works like .addEventListener()/2.
   socket.upgraded.on = (eventName, handler) => {
-    if (RESERVED.indexOf(eventName) > -1) return socket.addEventListener(eventName, handler);
+    if (RESERVED.indexOf(eventName) > -1)
+      return socket.addEventListener(eventName, handler);
     if (!handlers[eventName]) {
       handlers[eventName] = [];
     }
@@ -91,7 +97,8 @@ function upgradeSocket(socket) {
 
   // with a corresponding .off() function, that works like .removeEventListener()/2.
   socket.upgraded.off = (eventName, handler) => {
-    if (RESERVED.indexOf(eventName) > -1) return socket.removeEventListener(eventName, handler);
+    if (RESERVED.indexOf(eventName) > -1)
+      return socket.removeEventListener(eventName, handler);
     if (!handlers[eventName]) return;
     const pos = handlers[eventName].indexOf(handler);
     handlers[eventName].splice(pos, 1);
@@ -106,8 +113,8 @@ function upgradeSocket(socket) {
    * deciding there is no response forthcoming and to clean
    * up the event listener for that response.
    */
-  socket.upgraded.send = async(eventName, data = {}, timeout = 1000) => {
-    return await new Promise( resolve => {
+  socket.upgraded.send = async (eventName, data = {}, timeout = 1000) => {
+    return await new Promise(resolve => {
       const responseName = getResponseName(eventName);
 
       // cleanup function for the event listener
@@ -133,10 +140,12 @@ function upgradeSocket(socket) {
       socket.upgraded.on(responseName, handler);
 
       // And then, second, send the event off to the client.
-      socket.send(JSON.stringify({
-        name: eventName,
-        payload: data
-      }));
+      socket.send(
+        JSON.stringify({
+          name: eventName,
+          payload: data
+        })
+      );
     });
   };
 

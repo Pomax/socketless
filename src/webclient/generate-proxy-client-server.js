@@ -8,7 +8,7 @@
  * as part of a webclient `createClientServer()` call.
  */
 function generateClientServer(WebClientClass) {
-  const url = window.location.toString().replace('http', 'ws');
+  const url = window.location.toString().replace("http", "ws");
   const socketToClient = new WebSocket(url);
   const socket = upgradeSocket(socketToClient);
   const proxyServer = {};
@@ -68,7 +68,8 @@ function generateClientServer(WebClientClass) {
   });
 
   // and offer a sync() function to manually trigger a full bootstrap
-  handler.sync = async () => updateState(await socket.upgraded.send(`sync:full`));
+  handler.sync = async () =>
+    updateState(await socket.upgraded.send(`sync:full`));
 
   // Then: add the server => client => browser forwarding
   namespaces.forEach(namespace => {

@@ -21,15 +21,11 @@ module.exports = function generateSocketless(API) {
 
   return [
     fs
-      .readFileSync(
-        require.resolve(`morphdom/dist/morphdom-umd.min.js`)
-      )
+      .readFileSync(require.resolve(`morphdom/dist/morphdom-umd.min.js`))
       .toString(`utf-8`),
 
     fs
-      .readFileSync(
-        require.resolve(`jsonpatch/jsonpatch.min.js`)
-      )
+      .readFileSync(require.resolve(`jsonpatch/jsonpatch.min.js`))
       .toString(`utf-8`),
 
     `const ClientServer = { generateClientServer: function(WebClientClass) {`,

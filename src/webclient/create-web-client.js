@@ -35,7 +35,8 @@ module.exports = function createWebClient(factory, ClientClass, API) {
           // always send a state diff to ensure client and browser have the same state.
           sockets.browser.sync();
           // capture and use the browser's response, if it implements this call handler.
-          response = (await sockets.browser.upgraded.send(evt, data)) || response;
+          response =
+            (await sockets.browser.upgraded.send(evt, data)) || response;
         }
         return response;
       };
