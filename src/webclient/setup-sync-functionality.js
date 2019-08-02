@@ -39,7 +39,7 @@ module.exports = function setupSyncFunctionality(
   };
 
   // differential sync request handler for browser sync request
-  socket.on(`sync`, (_data, respond) => respond(getStateUpdate()));
+  socket.upgraded.on(`sync`, (_data, respond) => respond(getStateUpdate()));
 
   /**
    * The full state function returns the entire state rather than a
@@ -57,16 +57,16 @@ module.exports = function setupSyncFunctionality(
   };
 
   // full sync request handler for browser sync request
-  socket.on(`sync:full`, (_data, respond) => respond(getFullState()));
+  socket.upgraded.on(`sync:full`, (_data, respond) => respond(getFullState()));
 
   // bind sync functions so that we use them during call routing
-  socket.fullsync = () => socket.emit(`sync:full`, getFullState());
+  socket.fullsync = () => socket.upgraded.send(`sync:full`, getFullState());
   socket.sync = async () => {
     if (syncing) return (lastsync = true);
     let update = getStateUpdate();
     if (update.length) {
       syncing = true;
-      await socket.emit(`sync`, update);
+      await socket.upgraded.send(`sync`, update);
       syncing = false;
       if (lastsync) {
         lastsync = false;

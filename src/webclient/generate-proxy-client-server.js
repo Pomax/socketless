@@ -8,7 +8,8 @@
  * as part of a webclient `createClientServer()` call.
  */
 function generateClientServer(WebClientClass) {
-  const socketToClient = exports.io(window.location.toString());
+  const url = window.location.toString().replace('http', 'ws');
+  const socketToClient = new WebSocket(url);
   const socket = upgradeSocket(socketToClient);
   const proxyServer = {};
 
@@ -24,7 +25,7 @@ function generateClientServer(WebClientClass) {
     API[namespace].server.forEach(fname => {
       let evt = namespace + ":" + fname;
       proxyServer[namespace][fname] = async function(data) {
-        return await socket.emit(evt, data);
+        return await socket.upgraded.send(evt, data);
       };
     });
   });
@@ -49,7 +50,7 @@ function generateClientServer(WebClientClass) {
 
     // if we get here, wee're not in sync and need to request a full
     // state object instead of trying to apply differential states.
-    const state = await socket.emit(`sync:full`, {
+    const state = await socket.upgraded.send(`sync:full`, {
       last_seq_num: __seq_num
     });
 
@@ -57,17 +58,17 @@ function generateClientServer(WebClientClass) {
   }
 
   // ensure that bootstrap instructions are processed
-  socket.on(`sync`, (diff, respond) => {
+  socket.upgraded.on(`sync`, (diff, respond) => {
     handleStateDiff(diff);
     respond();
   });
-  socket.on(`sync:full`, (state, respond) => {
+  socket.upgraded.on(`sync:full`, (state, respond) => {
     updateState(state);
     respond();
   });
 
   // and offer a sync() function to manually trigger a full bootstrap
-  handler.sync = async () => updateState(await socket.emit(`sync:full`));
+  handler.sync = async () => updateState(await socket.upgraded.send(`sync:full`));
 
   // Then: add the server => client => browser forwarding
   namespaces.forEach(namespace => {
@@ -79,7 +80,7 @@ function generateClientServer(WebClientClass) {
       // Web clients need not implement the full interface, as some
       // things don't need to be handled by the browser at all.
       if (process) {
-        socket.on(evt, async (data, respond) => {
+        socket.upgraded.on(evt, async (data, respond) => {
           let response = await process.bind(handler)(data);
           respond(response);
         });
@@ -88,12 +89,12 @@ function generateClientServer(WebClientClass) {
       // If they don't, signal an undefined response, mostly to
       // make sure that the response listener gets cleaned up
       // immediately on the true client's side.
-      else socket.on(evt, async (_data, respond) => respond());
+      else socket.upgraded.on(evt, async (_data, respond) => respond());
     });
   });
 
   // Add a dedicated .quit() function so browsers can effect a disconnect
-  proxyServer.quit = () => socket.emit("quit", {});
+  proxyServer.quit = () => socket.upgraded.send("quit", {});
 
   // And we're done building this object
   return {

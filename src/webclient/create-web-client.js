@@ -1,12 +1,14 @@
 const generateSocketless = require("./generate-socketless.js");
 const makeRoutes = require("./utils/routes.js");
 const setupConnectionHandler = require("./setup-connection-handler.js");
+const WebSocket = require("ws");
 
 module.exports = function createWebClient(factory, ClientClass, API) {
   /**
-   * This function creates a socket.io server with all the bells and
+   * This function creates a websocket client with all the bells and
    * whistles taken care of so the user doesn't ever need to write
-   * any socket.io code explicitly.
+   * any socket code explicitly, with built-in server capabilities
+   * so that it can act as proxy between the server, and a browser.
    */
   return function(serverURL, publicDir, options = {}) {
     const { useHttps, directSync } = options;
@@ -33,7 +35,7 @@ module.exports = function createWebClient(factory, ClientClass, API) {
           // always send a state diff to ensure client and browser have the same state.
           sockets.browser.sync();
           // capture and use the browser's response, if it implements this call handler.
-          response = (await sockets.browser.emit(evt, data)) || response;
+          response = (await sockets.browser.upgraded.send(evt, data)) || response;
         }
         return response;
       };
@@ -56,11 +58,11 @@ module.exports = function createWebClient(factory, ClientClass, API) {
     // Set up the web+socket server for browser connections
     const routes = makeRoutes(rootDir, publicDir, generateSocketless(API));
     const webserver = require(useHttps ? "https" : "http").createServer(routes);
-    const io = require("socket.io")(webserver);
+    const ws = new WebSocket.Server({ server: webserver });
     const connectBrowser = setupConnectionHandler(sockets, API, directSync);
 
-    io.on(`connection`, connectBrowser);
-    io.on(`disconnect`, () => {
+    ws.on(`connection`, connectBrowser);
+    ws.on(`close`, () => {
       sockets.client.browser_connected = sockets.browser = false;
     });
 

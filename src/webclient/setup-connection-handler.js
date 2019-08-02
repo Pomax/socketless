@@ -23,14 +23,14 @@ module.exports = function setupConnectionHandler(
     // Set up proxy functions for routing browser => server
     namespaces.forEach(namespace => {
       API[namespace].server.forEach(fname => {
-        socket.on(`${namespace}:${fname}`, async (data, respond) => {
+        socket.upgraded.on(`${namespace}:${fname}`, async (data, respond) => {
           respond(await server[namespace][fname](data));
         });
       });
     });
 
     // Add a quit() handler so the browser can "kill" the client:
-    socket.on("quit", async () => {
+    socket.upgraded.on("quit", async () => {
       await server.disconnect();
       if (client.onQuit) client.onQuit();
     });

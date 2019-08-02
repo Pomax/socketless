@@ -13,11 +13,11 @@ module.exports = function(clientServer, namespaces) {
     });
 
     clientProxy.disconnect = function() {
-      socket.disconnect(true);
+      socket.close();
     };
 
     clientProxy.onDisconnect = function(handler) {
-      socket.on("disconnect", data => handler(data));
+      socket.on(`close`, data => handler(data));
     };
 
     return clientProxy;

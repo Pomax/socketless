@@ -107,10 +107,9 @@ class Client {
    * client broadcasts, so we need to ignore any sent "by us".
    */
   async chat$message({ id, message }) {
-    if (id === this.id) return;
-    console.log(
-      `client ${this.id}> received chat message from ${id}: ${message}`
-    );
+    let msg = `received chat message from ${id}: ${message}`;
+    if (id === this.id) msg = `saw own chat message.`;
+    console.log(`client ${this.id}> ${msg}`);
   }
 }
 

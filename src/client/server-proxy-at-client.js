@@ -12,7 +12,7 @@ module.exports = function(namespace, serverFn) {
 
   serverFn.forEach(name => {
     ServerProxyAtClient.prototype[name] = async function(data) {
-      return await this.socket.emit(`${namespace}:${name}`, data);
+      return await this.socket.upgraded.send(`${namespace}:${name}`, data);
     };
   });
 

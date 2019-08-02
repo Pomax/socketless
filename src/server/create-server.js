@@ -1,13 +1,15 @@
+const WebSocket = require("ws");
+
 module.exports = function(clientServer, namespaces, ServerClass, API) {
   /**
-   * This function creates a socket.io server with all the bells and
+   * This function creates a websocket server with all the bells and
    * whistles taken care of so the user doesn't ever need to write
-   * any socket.io code explicitly.
+   * any websocket code explicitly.
    */
   return function(https = false) {
-    // Create a socket.io server
+    // Create a websocket server
     const webserver = require(https ? "https" : "http").createServer();
-    const io = require("socket.io")(webserver);
+    const ws = new WebSocket.Server({ server: webserver });
 
     // Create an instance of the API handler
     const instance = new ServerClass();
@@ -31,7 +33,7 @@ module.exports = function(clientServer, namespaces, ServerClass, API) {
       clients.push(client);
 
       // and make sure it'll get removed when it disconnects:
-      socket.on(`disconnect`, () => {
+      socket.on(`close`, () => {
         let pos = clients.indexOf(client);
         clients.splice(pos, 1)[0];
         if (instance.onDisconnect) instance.onDisconnect(client);
@@ -40,9 +42,9 @@ module.exports = function(clientServer, namespaces, ServerClass, API) {
       // also make sure broadcasts to all client, by clients, work:
       namespaces.forEach(namespace => {
         API[namespace].client.forEach(fname => {
-          socket.on(`broadcast:${namespace}:${fname}`, data => {
+          socket.upgraded.on(`broadcast:${namespace}:${fname}`, data => {
             clients.forEach(client => {
-              client.__socket.emit(`${namespace}:${fname}`, data);
+              client.__socket.upgraded.send(`${namespace}:${fname}`, data);
             });
           });
         });
@@ -60,8 +62,7 @@ module.exports = function(clientServer, namespaces, ServerClass, API) {
       onConnect(socket);
     };
 
-    io.on(`connection`, connectSocket);
-    io.on(`reconnect`, connectSocket);
+    ws.on(`connection`, connectSocket);
 
     // Add a binding so that people can get to this instance,
     // should they really need to. Which they shouldn't.

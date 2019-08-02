@@ -15,11 +15,11 @@ module.exports = function(clientServer, namespaces) {
     });
 
     serverProxy.disconnect = function() {
-      socket.disconnect(true);
+      socket.close();
     };
 
     serverProxy.onDisconnect = function(handler) {
-      socket.on("disconnect", data => handler(data));
+      socket.on(`close`, data => handler(data));
     };
 
     serverProxy.broadcast = function(functionref, data) {
@@ -28,7 +28,7 @@ module.exports = function(clientServer, namespaces) {
         `:`
       );
       let evtname = `broadcast:${fname}`;
-      socket.emit(evtname, data);
+      socket.upgraded.send(evtname, data);
     };
 
     return serverProxy;

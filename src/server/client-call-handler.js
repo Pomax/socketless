@@ -11,7 +11,7 @@ module.exports = function(namespace, serverFn, resolveWithoutNamespace) {
     let socket = (this.socket = upgradeSocket(socketFromClient));
     this.handler = handler;
     serverFn.forEach(name => {
-      socket.on(`${namespace}:${name}`, (data, respond) =>
+      socket.upgraded.on(`${namespace}:${name}`, (data, respond) =>
         this[name](data, respond)
       );
     });
