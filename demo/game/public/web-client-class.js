@@ -22,7 +22,7 @@ export default class WebClientClass {
   }
 
   setRandomName() {
-    let name = RANDOM_NAMES[this.id];
+    let name = RANDOM_NAMES[this.state.id];
     if (name) this.server.user.setName(name);
   }
 
@@ -45,22 +45,22 @@ export default class WebClientClass {
     // actually going to be a little bit smarter even.
     const ui = main(
       { id: `client` },
-      this.renderActiveGame(),
+      this.renderActiveGame(state),
       div(
         { id: `lobbydata` },
-        this.currentGame
+        state.currentGame
           ? undefined
           : section(
               { id: `gamelist` },
-              ul({ id: `games` }, this.renderGames())
+              ul({ id: `games` }, this.renderGames(state))
             ),
         section(
           { id: `lobby` },
-          ul({ id: `users` }, this.renderUsers()),
+          ul({ id: `users` }, this.renderUsers(state)),
           ul({ id: `chat` })
         )
       ),
-      this.renderFooter()
+      this.renderFooter(state)
     );
 
     // This is the smarter part: we regenerate the entire UI,
@@ -80,12 +80,12 @@ export default class WebClientClass {
    * This function renders the game that we're currently playing,
    * provided, of course, that we're involved in an active game.
    */
-  renderActiveGame() {
-    if (!this.currentGame) return;
+  renderActiveGame(state) {
+    if (!state.currentGame) return;
 
     // If the game is over, we want a button that lets us
     // "leave" the active game and "return" to the lobby.
-    const leaveGameButton = this.winner
+    const leaveGameButton = state.winner
       ? button(
           {
             className: `leave`,
@@ -98,9 +98,9 @@ export default class WebClientClass {
     // An active game is a fairly straightforward affair:
     return section(
       { id: `active-game` },
-      this.wall ? div({ id: `wall` }, this.renderWall()) : false,
-      div({ id: `players` }, this.renderPlayers()),
-      div({ id: `discard` }, this.renderDiscard()),
+      state.wall ? div({ id: `wall` }, this.renderWall(state)) : false,
+      div({ id: `players` }, this.renderPlayers(state)),
+      div({ id: `discard` }, this.renderDiscard(state)),
       div({ id: `prompt` }),
       leaveGameButton
     );
@@ -111,9 +111,9 @@ export default class WebClientClass {
    * might still look like, in absence of knowing what
    * every other player is holding.
    */
-  renderWall() {
-    return Object.keys(this.wall).map(tilenumber => {
-      let count = this.wall[tilenumber];
+  renderWall(state) {
+    return Object.keys(state.wall).map(tilenumber => {
+      let count = state.wall[tilenumber];
       if (count < 0)
         return console.error(`wall count for ${tilenumber} is ${count}`);
       return div(
@@ -131,15 +131,15 @@ export default class WebClientClass {
    * that are shared between us and others, and delegates
    * the bits that are different to secondary functions.
    */
-  renderPlayers() {
-    return this.players.map(player => {
-      const user = this.users.find(u => u.id === player.id);
+  renderPlayers(state) {
+    return state.players.map(player => {
+      const user = state.users.find(u => u.id === player.id);
       if (!user) return false;
       const props = {
         id: `seat-${player.seat}`,
         className: classes(`player`, {
-          active: player.seat === this.currentPlayer,
-          winner: this.winner && this.winner.id === player.id,
+          active: player.seat === state.currentPlayer,
+          winner: state.winner && state.winner.id === player.id,
           left: player.left
         }),
         dataset: {
@@ -151,7 +151,7 @@ export default class WebClientClass {
 
       // As the only thing that differes is in showing
       // tiles, that's the only thing we delegate.
-      return div(props, this.renderTiles(player));
+      return div(props, this.renderTiles(state, player));
     });
   }
 
@@ -160,9 +160,9 @@ export default class WebClientClass {
    * own tiles (which we should see), or other player's
    * tiles (about which we know almost nothing).
    */
-  renderTiles(player) {
-    if (player.id === this.id) return this.renderOwnTiles();
-    return this.renderOtherTiles(player);
+  renderTiles(state, player) {
+    if (player.id === state.id) return this.renderOwnTiles(state);
+    return this.renderOtherTiles(state, player);
   }
 
   /**
@@ -173,40 +173,40 @@ export default class WebClientClass {
    * if it's our turn, because that makes play much easier
    * for human players.
    */
-  renderOwnTiles() {
+  renderOwnTiles(state) {
     const tiles = [
-      this.renderHandTiles(),
-      this.renderLockedTiles(),
+      this.renderHandTiles(state),
+      this.renderLockedTiles(state),
       ul(
         { className: `bonus` },
-        this.bonus.map(tilenumber =>
+        state.bonus.map(tilenumber =>
           li({ className: `tile`, "data-tile": tilenumber }, tilenumber)
         )
       ),
-      this.renderWinButton()
+      this.renderWinButton(state)
     ];
-    this.highlightLatest(tiles);
+    this.highlightLatest(state, tiles);
     return tiles;
   }
 
   /**
    * Render our own tiles: build `<li>` for each tile in this.tiles.
    */
-  renderHandTiles() {
+  renderHandTiles(state) {
     const buildTile = tilenumber => {
       const props = {
         className: `tile`,
         "data-tile": tilenumber,
         "on-click": async evt => {
           let tilenumber = parseInt(evt.target.dataset.tile);
-          if (!this.currentDiscard)
+          if (!state.currentDiscard)
             this.server.game.discardTile({ tilenumber });
         }
       };
       return li(props, tilenumber);
     };
 
-    return ul({ className: `tiles` }, this.tiles.map(buildTile));
+    return ul({ className: `tiles` }, state.tiles.map(buildTile));
 
     // TODO: add a way to declare a kong.
     // TODO: add a way to merge a kong.
@@ -217,7 +217,7 @@ export default class WebClientClass {
    * show them in groups, we tag all tiles with their
    * respective "set number".
    */
-  renderLockedTiles() {
+  renderLockedTiles(state) {
     const buildTile = (tilenumber, setnum) =>
       li(
         {
@@ -227,7 +227,7 @@ export default class WebClientClass {
         tilenumber
       );
     const buildSet = (set, setnum) => set.map(t => buildTile(t, setnum));
-    return ul({ className: `locked` }, this.locked.map(buildSet));
+    return ul({ className: `locked` }, state.locked.map(buildSet));
   }
 
   /**
@@ -239,9 +239,9 @@ export default class WebClientClass {
    * This is very much intentional, and many rules cost you
    * a whole lot of points if you declare a win erroneously.
    */
-  renderWinButton() {
-    if (this.seat !== this.currentPlayer) return;
-    if (this.winner) return;
+  renderWinButton(state) {
+    if (state.seat !== state.currentPlayer) return;
+    if (state.winner) return;
     return button(
       {
         className: `declare-win-button`,
@@ -259,9 +259,10 @@ export default class WebClientClass {
    * In order to allow human players to track what just happened
    * during a deal, we want to highlight the latest received tile.
    */
-  highlightLatest(tiles) {
-    if (!this.latestTile) return;
-    const qs = `.tile[data-tile="${this.latestTile}"]`;
+  highlightLatest(state, tiles) {
+    const latest = state.latestTile;
+    if (latest) return;
+    const qs = `.tile[data-tile="${latest}"]`;
     const tile = tiles[0].querySelector(qs);
     if (tile) tile.classList.add(`latest`);
   }
@@ -275,7 +276,7 @@ export default class WebClientClass {
    * have locked, and then use that to determine how many tiles they
    * must therefore have left in their hand. Maths!
    */
-  renderOtherTiles(player) {
+  renderOtherTiles(state, player) {
     let tilecount = 13;
 
     // First, figure out how many tiles this player has locked
@@ -303,7 +304,7 @@ export default class WebClientClass {
     // If this is the active player, and they've not discarded yet,
     // they will have one more tile because they just drew one, or
     // they just claimed something and have an extra tile that way.
-    if (player.seat === this.currentPlayer && !this.currentDiscard) {
+    if (player.seat === state.currentPlayer && !state.currentDiscard) {
       tilecount++;
     }
 
@@ -341,11 +342,11 @@ export default class WebClientClass {
    * - the player that just discarded it should be able to take it back, and
    * - all other players should be able to place a claim on it.
    */
-  renderDiscard() {
-    if (!this.currentDiscard) return;
+  renderDiscard(state) {
+    if (!state.currentDiscard) return;
 
     let undoDiscard = false;
-    if (this.currentDiscard.id === this.id) {
+    if (state.currentDiscard.id === state.id) {
       undoDiscard = async evt => {
         let result = await this.server.game.undoDiscard();
         if (!result.allowed) evt.target.classList.add("claimed");
@@ -354,13 +355,13 @@ export default class WebClientClass {
 
     const discardTile = span({
       className: `tile`,
-      "data-tile": this.currentDiscard.tilenumber,
+      "data-tile": state.currentDiscard.tilenumber,
       "on-click": undoDiscard
     });
 
     let claimOptions = false;
-    if (this.currentDiscard.id !== this.id) {
-      claimOptions = span({ id: `discard-buttons` }, this.renderClaimOptions());
+    if (state.currentDiscard.id !== state.id) {
+      claimOptions = span({ id: `discard-buttons` }, this.renderClaimOptions(state));
     }
 
     return span(
@@ -373,17 +374,17 @@ export default class WebClientClass {
 
   // A helper function to determine whether we may claim a chow
   // from the discarding player.
-  mayChow() {
-    let l = this.players.length;
-    let cs = (this.currentPlayer + 1) % l;
-    return this.seat === cs;
+  mayChow(state) {
+    let l = state.players.length;
+    let cs = (state.currentPlayer + 1) % l;
+    return state.seat === cs;
   }
 
   /**
    * Claim options depend on the tile being playd, and the player's
    * tiles in hand. However, one option is always to pass.
    */
-  renderClaimOptions() {
+  renderClaimOptions(state) {
     const removeOptions = () => {
       document
         .querySelectorAll(`.claim-button`)
@@ -401,11 +402,11 @@ export default class WebClientClass {
         {
           className: `btn pass-button`,
           "on-click": pass,
-          disabled: this.passed
+          disabled: state.passed
         },
         "pass"
       ),
-      this.generateClaimButtons()
+      this.generateClaimButtons(state)
     ];
   }
 
@@ -415,8 +416,8 @@ export default class WebClientClass {
    * this will present us with all the ways we can claim a win,
    * rather than all the ways we can normally claim a tile.
    */
-  generateClaimButtons() {
-    if (this.passed) return;
+  generateClaimButtons(state) {
+    if (state.passed) return;
 
     const removeOptions = () => {
       document
@@ -445,9 +446,9 @@ export default class WebClientClass {
       // Generate the win options, which are subtly
       // different from the general claim optons.
       let claims = legalClaims(
-        this.currentDiscard.tilenumber,
-        this.tiles,
-        this.mayChow(),
+        state.currentDiscard.tilenumber,
+        state.tiles,
+        this.mayChow(state),
         true
       );
       claims.forEach(c => {
@@ -479,9 +480,9 @@ export default class WebClientClass {
       );
 
     let claims = legalClaims(
-      this.currentDiscard.tilenumber,
-      this.tiles,
-      this.mayChow()
+      state.currentDiscard.tilenumber,
+      state.tiles,
+      this.mayChow(state)
     );
     return claims.map(c => makeButton(c.type));
   }
@@ -523,10 +524,10 @@ export default class WebClientClass {
   /**
    * Figure out which game we're playing in, if we're playing one.
    */
-  getActiveGame() {
-    if (this.currentGame) return true;
-    return this.games.some(g =>
-      g.players.some(p => p.id === this.id && g.id !== this.id)
+  getActiveGame(state) {
+    if (state.currentGame) return true;
+    return state.games.some(g =>
+      g.players.some(p => p.id === state.id && g.id !== state.id)
     );
   }
 
@@ -537,20 +538,20 @@ export default class WebClientClass {
    * join, and if the player was the one who created the game,
    * offer them the option to start the game.
    */
-  renderGames() {
-    return this.games.map(g => {
+  renderGames(state) {
+    return state.games.map(g => {
       if (g.finished) return;
 
-      let label = g.id === this.id ? "start" : "join";
+      let label = g.id === state.id ? "start" : "join";
       let item = li(
         { className: `game` },
         `game: `,
         strong(g.name),
         `, players: `,
         g.players
-          .map(p => this.users.find(u => u.id === p.id).name || p.id)
+          .map(p => state.users.find(u => u.id === p.id).name || p.id)
           .join(", "),
-        button({ disabled: this.getActiveGame() }, label)
+        button({ disabled: this.getActiveGame(state) }, label)
       );
 
       let join = item.querySelector("button");
@@ -582,11 +583,11 @@ export default class WebClientClass {
    * This function renders "lobby" information relating to users:
    * show an entry for each client that the server thinks is connected.
    */
-  renderUsers() {
+  renderUsers(state) {
     // If the user we're rendering is ourselves, offer a button
     // that lets us change our name. Because why not?
     const nameChangeButton = user => {
-      if (user.id !== this.id) return;
+      if (user.id !== state.id) return;
       return [
         ` ←`,
         button(
@@ -612,13 +613,13 @@ export default class WebClientClass {
         nameChangeButton(user)
       );
 
-    return this.users.map(renderUser);
+    return state.users.map(renderUser);
   }
 
   /**
    * The footer contains the "create a game" and "quit from the server" buttons.
    */
-  renderFooter() {
+  renderFooter(state) {
     // The create button and guide text.
     const create = p(
       `Create a game: `,
