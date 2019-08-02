@@ -1,3 +1,7 @@
+# v0.11.0
+
+Changed how client/webclient state synchronization works: with `directSync` the client instance is reflected to the web client directly. Without it (which is the default behaviour) the client's `this.state` will be reflected as the web client's `this.state`. Previously, the client's `this.state` would be reflected as the web client's state without `this.state` scoping, which was super fragile. This way, things are both more robust, and more obvious: if you're using `this.state`, you're using `this.state` both in the client and the webclient. If you're not... you're not.
+
 # v0.10.0
 
 Fixed the way function names are discovered, so that `SomeClass extends ClientClass` can be used as argument to `createClientServer()`. Previously, only the class's own function names were checked, so an empty class extensions -which you'd expect to inherit all functions- was considered as "not implementing anything". So that was bad and is now fixed.
