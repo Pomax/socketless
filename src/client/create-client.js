@@ -14,14 +14,7 @@ module.exports = function(clientServer, DefaultClientClass) {
     // Build a client and add state management
     const instance = addStateManagement(new ClientClass());
 
-    // Ensure that clients receive a trigger when they connect to the server.
-    socketToServer.on(`connect`, (...data) => {
-      if (instance.onConnect) {
-        instance.onConnect(...data);
-      }
-    });
-
-    // And a trigger when they are disconnected from the server
+    // Make sure the client is informed of disconnects.
     socketToServer.on(`close`, (...data) => {
       if (instance.onDisconnect) {
         instance.onDisconnect(...data);
@@ -29,16 +22,22 @@ module.exports = function(clientServer, DefaultClientClass) {
     });
 
     // And create the server proxy for the client to make direct
-    // calls to, once the socket is ready for use.
+    // calls to, once the socket is ready for use, with a 'connect'
+    // trigger to run custom code.
     //
     // TODO: this probably needs some clever code to handle any
     //       "before ready" communication...
-    socketToServer.onopen = () => {
+    //
+    socketToServer.on(`open`, (...data) => {
       instance.server = clientServer.client.createServer(
         socketToServer,
         instance
       );
-    };
+
+      if (instance.onConnect) {
+        instance.onConnect(...data);
+      }
+    });
 
     return instance;
   };
