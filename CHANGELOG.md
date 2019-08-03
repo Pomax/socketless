@@ -1,3 +1,7 @@
+# v0.11.5
+
+Removed the `jsonpatch` dependency, saving another 250KB of on-disk footprint. Previously, `rfc6902` did not have a dist dir with a for-browser min.js, but as of v3.0.4 it does, and so `jsonpatch` no longer has any reason to exist as dependency, or in the code.
+
 # v0.11.2, 0.11.3
 
 Tiny tweaks
