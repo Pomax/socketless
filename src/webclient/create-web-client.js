@@ -4,12 +4,9 @@ const setupConnectionHandler = require("./setup-connection-handler.js");
 const WebSocket = require("ws");
 
 module.exports = function createWebClient(factory, ClientClass, API) {
-
   // Prep: derive all client functions that we may need to proxy
   const APInames = Object.keys(API).flatMap(namespace =>
-    API[namespace].client.map(fname =>
-      `${namespace}:${fname}`
-    )
+    API[namespace].client.map(fname => `${namespace}:${fname}`)
   );
 
   /**
@@ -73,7 +70,11 @@ module.exports = function createWebClient(factory, ClientClass, API) {
     });
 
     // Set up the web+socket server for browser connections
-    const routes = makeRoutes(rootDir, publicDir, generateSocketless(API, directSync));
+    const routes = makeRoutes(
+      rootDir,
+      publicDir,
+      generateSocketless(API, directSync)
+    );
     const webserver = require(useHttps ? "https" : "http").createServer(routes);
     const ws = new WebSocket.Server({ server: webserver });
     const connectBrowser = setupConnectionHandler(sockets, API, directSync);

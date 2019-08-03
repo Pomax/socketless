@@ -356,7 +356,10 @@ export default class WebClientClass {
 
     let claimOptions = false;
     if (state.currentDiscard.id !== state.id) {
-      claimOptions = span({ id: `discard-buttons` }, this.renderClaimOptions(state));
+      claimOptions = span(
+        { id: `discard-buttons` },
+        this.renderClaimOptions(state)
+      );
     }
 
     return span(

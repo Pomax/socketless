@@ -18,7 +18,6 @@ const generateProxyClientServer = require(`./generate-proxy-client-server.js`);
  */
 module.exports = function generateSocketless(API, directSync) {
   const namespaces = Object.keys(API);
-
   return [
     fs
       .readFileSync(require.resolve(`morphdom/dist/morphdom-umd.min.js`))
@@ -28,9 +27,10 @@ module.exports = function generateSocketless(API, directSync) {
       .readFileSync(require.resolve(`jsonpatch/jsonpatch.min.js`))
       .toString(`utf-8`),
 
-    `const ClientServer = { generateClientServer: function(WebClientClass) {`,
-
-    `const exports = {};`,
+    `
+    const ClientServer = {
+      generateClientServer: function(WebClientClass) {
+        const exports = {};`,
 
     fs
       .readFileSync(path.join(__dirname, `../upgrade-socket.js`))
@@ -39,11 +39,10 @@ module.exports = function generateSocketless(API, directSync) {
 
     // also, this part is unreasonably hard to do with webpack:
     `
-      const namespaces = ${JSON.stringify(namespaces)};
-      const API = ${JSON.stringify(API)};
-      return ${generateProxyClientServer.toString()}(WebClientClass, ${directSync});
-    `,
-
-    `}}`
+        const namespaces = ${JSON.stringify(namespaces)};
+        const API = ${JSON.stringify(API)};
+        return ${generateProxyClientServer.toString()}(WebClientClass, ${directSync});
+      }
+    };`
   ].join(`\n`);
 };

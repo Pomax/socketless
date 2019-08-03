@@ -17,7 +17,7 @@ function generateClientServer(WebClientClass, directSync) {
   const handler = new WebClientClass();
   handler.server = proxyServer;
   if (!directSync) {
-    handler.state = {'test': true};
+    handler.state = {};
   }
 
   const update_target = directSync ? handler : handler.state;
@@ -38,7 +38,10 @@ function generateClientServer(WebClientClass, directSync) {
   // bind all new state values
   function updateState(newstate) {
     if (handler.setState) handler.setState(newstate);
-    else Object.keys(newstate).forEach(key => (update_target[key] = newstate[key]));
+    else
+      Object.keys(newstate).forEach(
+        key => (update_target[key] = newstate[key])
+      );
     if (handler.update) handler.update(update_target);
   }
 
@@ -76,7 +79,7 @@ function generateClientServer(WebClientClass, directSync) {
   // and offer a sync() function to manually trigger a full bootstrap
   handler.sync = async () => {
     updateState(await socket.upgraded.send(`sync:full`));
-  }
+  };
 
   // Then: add the server => client => browser forwarding
   namespaces.forEach(namespace => {
