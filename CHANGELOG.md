@@ -1,6 +1,7 @@
 # v0.11.1
 
 Update the web client `update()` function to be called as `update(state)` purely to spare you having to issue `const state = this.state;` as first line of your update function.
+
 # v0.11.0
 
 Changed how client/webclient state synchronization works: with `directSync` the client instance is reflected to the web client directly. Without it (which is the default behaviour) the client's `this.state` will be reflected as the web client's `this.state`. Previously, the client's `this.state` would be reflected as the web client's state without `this.state` scoping, which was super fragile. This way, things are both more robust, and more obvious: if you're using `this.state`, you're using `this.state` both in the client and the webclient. If you're not... you're not.
