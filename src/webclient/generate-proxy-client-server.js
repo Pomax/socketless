@@ -52,7 +52,7 @@ function generateClientServer(WebClientClass, directSync) {
     // verify we're still in sync by comparing messaging sequence numbers
     const seqnum = patch.slice(-1)[0].value;
     if (seqnum === __seq_num + 1) {
-      const state = jsonpatch.apply_patch(update_target, patch);
+      const state = rfc6902.applyPatch(update_target, patch);
       return updateState(state);
     }
 

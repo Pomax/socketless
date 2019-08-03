@@ -30,9 +30,8 @@
   },
   "homepage": "https://github.com/Pomax/socketless#readme",
   "dependencies": {
-    "jsonpatch": "^3.0.1",
     "morphdom": "^2.5.4",
-    "rfc6902": "^3.0.2",
+    "rfc6902": "^3.0.4",
     "ws": "^7.1.1"
   },
   "devDependencies": {

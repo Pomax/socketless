@@ -24,7 +24,7 @@ module.exports = function generateSocketless(API, directSync) {
       .toString(`utf-8`),
 
     fs
-      .readFileSync(require.resolve(`jsonpatch/jsonpatch.min.js`))
+      .readFileSync(require.resolve(`rfc6902/dist/rfc6902.min.js`))
       .toString(`utf-8`),
 
     `
