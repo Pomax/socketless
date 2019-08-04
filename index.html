@@ -1,28 +1,122 @@
 <!doctype html>
-<html>
-    <head>
-        <meta charset="utf-8">
-        <title>page title</title>
-        <style>
-            /* styles */
-        </style>
-        <script defer>
-            // deferred javascript
-        </script>
-    </head>
-    <body>
-        <header>
-            <h1>Page title</h1>
-            <h2>subtitle</h2>
-        </header>
+<html lang="en">
 
-        <main>
-            <section id="section-id">
-                <h1>section title</h1>
-                <p>
-                    ...
-                </p>
-            </section>
-        </main>
-    </body>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <title>Socketless - writing websocket client/servers without writing websocket code</title>
+
+    <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link href="bootstrap/css/bootstrap-grid.min.css" rel="stylesheet">
+    <link href="bootstrap/css/bootstrap-reboot.min.css" rel="stylesheet">
+    <link href="style.css" rel="stylesheet">
+    <script src="bootstrap/js/bootstrap.bundle.min.js" defer></script>
+    <script src="index.js" defer></script>
+</head>
+
+<body>
+    <nav class="container-fluid">
+        <ul class="row justify-content-around" aria-role="navigation">
+            <li class="col-12 col-sm-3"><a href="#one">one</a></li>
+            <li class="col-12 col-sm-3"><a href="#two">two</a></li>
+            <li class="col-12 col-sm-3"><a href="#three">three</a></li>
+        </ul>
+    </nav>
+
+    <header class="container-fluid">
+        <h1 class="col-12 text-center">Page title</h1>
+        <h2 class="col-12 text-center">subtitle</h2>
+        <p>
+            This is some text before the quick start.
+        </p>
+    </header>
+
+    <main class="container-fluid">
+        <section id="one" class="row justify-content-around">
+            <h3 class="col-12 text-center">Quick start</h3>
+
+            <p class="col-12">
+                Define your client/server API using vanilla JS classes.
+            </p>
+
+            <div class="client-code col-12 col-md-5">
+                <code>
+                    <pre class="m-2">class ClientClass {
+                        async "admin:register"(clientId) {
+                            this.id = clientId;
+                        }
+
+                        async "users:joined"(userId) {
+                            console.log(`${this.id}> ${userId} joined`);
+                        }
+                    }</pre>
+                </code>
+            </div>
+
+            <div class="server-code col-12 col-md-5">
+                <code>
+                    <pre class="m-2">class ServerClass {
+                        constructor() {
+                            this.users = [];
+                        }
+
+                        async onConnect(client) {
+                            user = { client, id: uuid() };
+                            await client.admin.register(user.id);
+                            this.users.push(user);
+
+                            this.users.forEach(
+                                ur => u.client.users.joined(user.id)
+                            );
+                        }
+                    }</pre>
+                </code>
+            </div>
+
+            <p class="col-12">
+                Load socketless with the client and server class, and use it to build your clients and server.
+            </p>
+
+            <div class="client-server-code col-12 col-md-8">
+                <code>
+                    <pre class="m-2">const { generateClientServer } = require('socketless');
+                    const ClientServer = generateClientServer(ClientClass, ServerClass);
+
+                    ClientServer.createServer().listen(1234, () => {
+                        ClientServer.createClient(`http://localhost:1234`);
+                        ClientServer.createClient(`http://localhost:1234`);
+                        ClientServer.createClient(`http://localhost:1234`);
+                    });
+                    </pre>
+                </code>
+            </div>
+
+            <p class="col-12">
+                And we're done.
+            </p>
+        </section>
+
+        <section id="two" class="row">
+            <h3 class="col-12 text-center">section title</h3>
+
+            <p class="col-12">
+                ...
+            </p>
+        </section>
+
+        <section id="three" class="row">
+            <h3 class="col-12 text-center">section title</h3>
+
+            <p class="col-12">
+                ...
+            </p>
+        </section>
+    </main>
+
+    <footer class="container-fluid">
+        <h3>foot information</h3>
+    </footer>
+</body>
+
 </html>

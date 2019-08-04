@@ -1,0 +1,41 @@
+nav ul {
+    list-style:  none;
+}
+
+nav img.logo {
+    width: 100px;
+    height: 100px;
+}
+
+nav {
+    background: rgb(129, 107, 129);
+}
+nav a {
+    color: white;
+}
+
+header {
+
+}
+
+main {
+
+}
+
+main section:nth-child(even) {
+    background: lightblue;
+}
+
+code {
+    display: inline-block;
+    background: cornsilk;
+    width: 100%;
+}
+
+code pre {
+    background: inherit;
+}
+
+footer {
+    background: darkslateblue;
+}
