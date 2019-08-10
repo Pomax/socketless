@@ -3,9 +3,7 @@
  */
 export default class WebClientClass {
   // update the page in a silly way:
-  update(state) {
-    console.log(state);
-
+  update() {
     document.querySelector("#clientid").textContent = this.id;
 
     const el = document.createElement("ul");
