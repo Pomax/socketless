@@ -1,4 +1,4 @@
-# v0.11.7
+# v0.11.8
 
 Fixed an edge case bug where direct-syncing web clients when using `$` rather than `:` as namespace separator in Client functors caused the syncing code to do everything right up to the point where it had to call the correct API function. And then called the `:` one instead of the `$` one.
 
