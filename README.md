@@ -205,9 +205,9 @@ server.listen(8080, () => {
 
 ### 5. Read through a real example
 
-Have a look at the [demo directory](https://github.com/Pomax/socketless/tree/master/socketless-demo), which houses several demos that you can run to see the `socketless` library in action.
+Have a look at the [socketless demos](https://github.com/Pomax/socketless-demo), which contain several demos that you can run to see the `socketless` library in action.
 
-The most interesting of these is the [multiplayer game demo](https://github.com/Pomax/socketless/tree/master/socketless-demo/game) which implements (most of) the game of mahjong, which is a four player, draw-one-play-one style game.
+The most interesting of these is the [multiplayer game demo](https://github.com/Pomax/socketless-demo/tree/master/game) which implements (most of) the game of mahjong, which is a four player, draw-one-play-one style game.
 
 # Conventions
 
