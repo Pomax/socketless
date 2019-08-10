@@ -1,3 +1,7 @@
+# v0.11.7
+
+Fixed an edge case bug where direct-syncing web clients when using `$` rather than `:` as namespace separator in Client functors caused the syncing code to do everything right up to the point where it had to call the correct API function. And then called the `:` one instead of the `$` one.
+
 # v0.11.6
 
 Stripped the demo code for the npm published version, because why bloat the library with 150KB of source that you're not going to care about if you just need this as one of the tools in your codebase toolbox?

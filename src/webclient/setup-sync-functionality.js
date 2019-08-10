@@ -7,7 +7,7 @@ const getStateDiff = require("./utils/get-state-diff.js");
 module.exports = function setupSyncFunctionality(
   sockets,
   socket,
-  direct = false // pull straight from the client instance, rather than client.state
+  directSync = false // pull straight from the client instance, rather than client.state
 ) {
   // sync lock mechanism
   let syncing = false;
@@ -18,9 +18,8 @@ module.exports = function setupSyncFunctionality(
   const getNextSeqNum = () => prevSeqNum++;
 
   const getState = () => {
-    return direct
-      ? JSON.parse(JSON.stringify(sockets.client))
-      : sockets.client.state;
+    if (!directSync) return sockets.client.state;
+    return JSON.parse(JSON.stringify(sockets.client));
   };
 
   /**

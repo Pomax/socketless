@@ -5,12 +5,12 @@
   "main": "src/generate-client-server.js",
   "scripts": {
     "prettier": "prettier --write ./**/*.js",
-    "test": "node demo/simple/index.js",
-    "game": "node demo/game/index.js",
-    "game:client": "node demo/game/start-web-client.js",
-    "test:distributed": "node demo/test-distributed/index.js",
-    "test:client": "node demo/test-distributed/test-client.js",
-    "test:server": "node demo/test-distributed/test-server.js"
+    "test": "node socketless-demo/simple/index.js",
+    "game": "node socketless-demo/game/index.js",
+    "game:client": "node socketless-demo/game/start-web-client.js",
+    "test:distributed": "node socketless-demo/test-distributed/index.js",
+    "test:client": "node socketless-demo/test-distributed/test-client.js",
+    "test:server": "node socketless-demo/test-distributed/test-server.js"
   },
   "repository": {
     "type": "git",

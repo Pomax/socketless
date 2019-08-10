@@ -1,5 +1,5 @@
 // First, bootstrap the ClientServer object:
-const { generateClientServer } = require("../../src/generate-client-server.js");
+const { generateClientServer } = require("socketless");
 const ClientServer = generateClientServer(
   require("./src/core/client.js"),
   require("./src/core/server.js")

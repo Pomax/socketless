@@ -23,6 +23,7 @@ module.exports = function setupConnectionHandler(
     // Set up proxy functions for routing browser => server
     namespaces.forEach(namespace => {
       API[namespace].server.forEach(fname => {
+        // event transport always uses `:` as namespace separator.
         socket.upgraded.on(`${namespace}:${fname}`, async (data, respond) => {
           respond(await server[namespace][fname](data));
         });

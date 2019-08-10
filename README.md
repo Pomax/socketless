@@ -208,44 +208,9 @@ server.listen(8080, () => {
 
 ### 5. Read through a real example
 
-Have a look at the [demo](https://github.com/Pomax/socketless/tree/master/demo) directory, which contains three examples:
+Have a look at the [demo directory](https://github.com/Pomax/socketless/tree/master/socketless-demo), which houses several demos that you can run to see the `socketless` library in action.
 
-  - a simple example similar to the code above, with one web client
-  - a true distributed version of the simple example, minus the web client, and
-  - a full blown multiplayer mahjong game using `socketless`.
-
-#### A simple example: `npm test`
-
-This test starts up a server, followed by three clients plus one web client. 10 seconds after joining, each client (including the webclient) will set out a chat message, and 5 seconds later will disconnect from the server, _except_ for the web client, which needs to be told to "quit" through its browser interface: as clients connect, the web client will log its URL to the console, and this URL should be loaded in the browser:
-
-```bash
-...
-server> client confirmed registration
-client 0> user 2 joined. Known users: [ 0, 1, 2 ]
-client 1> user 2 joined. Known users: [ 0, 1, 2 ]
-client 2> user 2 joined. Known users: [ 0, 1, 2 ]
-client 1> state digest requested.
-server> client digest = 0.8928493726586841
-
-web client listening on http://localhost:52909
-
-server> client (id=3) connected to the server.
-client> connected to server.
-client> received registration id 3
-client 3> setting name to antvrmciam
-client 3> requesting user list
-...
-```
-
-#### A distributed simple example: `npm run test:distributed`
-
-This is the same test as the simple test, but with four regular clients, without a web client, and each client is executed as a true independent process (using the `spawn` command).
-
-#### Multiplayer mahjong: `npm run game`.
-
-This is an ***elaborate example*** of how you can use `socketless` to implement a multiplayer game with all the bells and whistles you need.
-
-The code is lavishly commented, so start reading at `demo/game/index.js` and branch out to other files as questions about how things work arise.
+The most interesting of these is the [multiplayer game demo](https://github.com/Pomax/socketless/tree/master/socketless-demo/game) which implements (most of) the game of mahjong, which is a four player, draw-one-play-one style game.
 
 # Conventions
 

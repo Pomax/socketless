@@ -35,8 +35,10 @@ module.exports = function createWebClient(factory, ClientClass, API) {
     Object.getOwnPropertyNames(ClientClass.prototype).forEach(name => {
       const evtName = name.replace("$", ":");
 
-      // Skip over any name not mentioned in the earlier-abstracted API
-      if (APInames.indexOf(name) === -1) return;
+      // Skip over any name not mentioned in the earlier-abstracted API,
+      // noting that the namespace separator is `:`, even if the code itself
+      // uses the `$` separator in any functors.
+      if (APInames.indexOf(evtName) === -1) return;
 
       // TODO: document the fact that this means we MUST use namespacing
       //       for webclients, because otherwise proxying won't work.

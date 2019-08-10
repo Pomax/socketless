@@ -3,8 +3,11 @@
  */
 export default class WebClientClass {
   // update the page in a silly way:
-  async update() {
+  update(state) {
+    console.log(state);
+
     document.querySelector("#clientid").textContent = this.id;
+
     const el = document.createElement("ul");
     this.users.forEach(u => {
       let li = document.createElement("li");
@@ -12,6 +15,7 @@ export default class WebClientClass {
       el.appendChild(li);
     });
     let ul = document.querySelector("#list ul");
+
     ul.parentNode.replaceChild(el, ul);
   }
 
