@@ -1,8 +1,7 @@
 {
   "name": "socketless-demo",
-  "version": "1.0.0",
+  "version": "demos-v1.0.0",
   "description": "Demo code for using socketless",
-  "main": "simple/index.js",
   "scripts": {
     "prettier": "prettier --write ./**/*.js",
     "game": "node game/index.js",
