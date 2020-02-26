@@ -1,4 +1,4 @@
-const addStateManagement = require("./add-state-management.js");
+const addStateManagement = require("../util/add-state-management.js");
 const WebSocket = require("ws");
 
 module.exports = function(clientServer, DefaultClientClass) {
@@ -7,7 +7,7 @@ module.exports = function(clientServer, DefaultClientClass) {
    * whistles taken care of so the user doesn't ever need to write
    * any socket code explicitly.
    */
-  return function(serverURL, ClientClass = DefaultClientClass) {
+  return function createClient(serverURL, ClientClass = DefaultClientClass) {
     // Set up a connection to the socket server and build a client instance.
     const socketToServer = new WebSocket(serverURL);
 

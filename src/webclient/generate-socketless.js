@@ -19,25 +19,30 @@ const generateProxyClientServer = require(`./generate-proxy-client-server.js`);
 module.exports = function generateSocketless(API, directSync) {
   const namespaces = Object.keys(API);
   return [
+    // Include a full copy of morphdom. This is non-optional and not
+    // so much "a build step" as simply "we know where it lives, add it".
     fs
       .readFileSync(require.resolve(`morphdom/dist/morphdom-umd.min.js`))
       .toString(`utf-8`),
 
+    // The same goes for the rfc6902 patch/diff/apply library.
     fs
       .readFileSync(require.resolve(`rfc6902/dist/rfc6902.min.js`))
       .toString(`utf-8`),
 
+    // We then build our builder:
     `
     const ClientServer = {
       generateClientServer: function(WebClientClass) {
         const exports = {};`,
 
+    // Which should include our socket upgrade code...
     fs
       .readFileSync(path.join(__dirname, `../upgrade-socket.js`))
       .toString(`utf-8`)
       .replace(`module.exports = upgradeSocket;`, ``),
 
-    // also, this part is unreasonably hard to do with webpack:
+    // and the rest of the library code.
     `
         const namespaces = ${JSON.stringify(namespaces)};
         const API = ${JSON.stringify(API)};

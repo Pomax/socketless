@@ -34,12 +34,8 @@ module.exports = function(namespace, serverFn, resolveWithoutNamespace) {
         );
       }
 
-      // Throw if this is a processing function, but it's not declared async:
-      if (process.constructor.name !== "AsyncFunction") {
-        throw new Error(
-          `Missing 'async' keyword for handler.${namespace}:${name} in ClientCallHandler.${namespace}.${name}`
-        );
-      }
+      // There used to be a check for async-ness here, but that check is now
+      // performed much earlier, when API functions are extracted.
 
       // ensure that the function will run with the
       // correct object as its execution context:
@@ -51,7 +47,7 @@ module.exports = function(namespace, serverFn, resolveWithoutNamespace) {
       const response = await process(client, data);
       if (response) respond(response);
 
-      // TODO: optimise this so that ClientCallHandler.prototype[name] gets rebound after the initial process() lookup.
+      // TODO: optimise this so that ClientCallHandler.prototype[name] gets rebound after the initial process() lookup?
     };
   });
 

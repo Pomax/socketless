@@ -1,3 +1,9 @@
+# v0.12.0
+
+Changed the APIs and added Jest testing to make sure they actually work
+Updated the README.md to be a hell of a lot clearer
+Created a web page for https://pomax.github.io/socketless
+
 # v0.11.8
 
 Fixed an edge case bug where direct-syncing web clients when using `$` rather than `:` as namespace separator in Client functors caused the syncing code to do everything right up to the point where it had to call the correct API function. And then called the `:` one instead of the `$` one.

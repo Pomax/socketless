@@ -105,7 +105,7 @@ function generateClientServer(WebClientClass, directSync) {
   });
 
   // Add a dedicated .quit() function so browsers can effect a disconnect
-  proxyServer.quit = () => socket.upgraded.send("quit", {});
+  handler.quit = () => socket.upgraded.send("quit", {});
 
   // And we're done building this object
   return {
