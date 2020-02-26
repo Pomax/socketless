@@ -20,7 +20,7 @@ A short example is the easiest way to demonstrate how Socketless works.
 
 If we have the following client class:
 
-```
+```js
 class ClientClass {
   constructor() {
     console.log("client> created");
@@ -42,7 +42,7 @@ class ClientClass {
 
 And we have the following server class:
 
-```
+```js
 class ServerClass {
   constructor() {
     console.log("server> created");
@@ -71,7 +71,7 @@ class ServerClass {
 
 Then we can make things "just work" by bootstrapping Socketless with these two classes, using:
 
-```
+```js
 const ClientClass = require('./client.js);
 const ServerClass = require('./server.js);
 const { generateClientServer } = require(`socketless`);
@@ -85,7 +85,7 @@ server.listen(8000, () => {
 
 By running the above code, we should see the following output on the console:
 
-```
+```bash
 server> created
 client> created
 server> new connection, 1 clients connected
@@ -96,6 +96,35 @@ client> registered as user1582572704133: true
 server> client user1582572704133 disconnected
 server> no clients connected, shutting down.
 ```
+
+Note that this (especially) works when the client and server are not running on the same machine or even network. We could run the following code on a machine with a reverse proxy that maps a public host/port `1.2.3.4:80` to an internal `127.0.0.1:8000`:
+
+```js
+const ClientClass = require('./client.js);
+const ServerClass = require('./server.js);
+const { generateClientServer } = require(`socketless`);
+
+const factory = generateClientServer(ClientClass, ServerClass);
+factory.createServer().listen(8000, () => {
+  console.log("Server listening on port 8000");
+});
+``` 
+
+And this code running on a machine somewhere halfway across the world:
+
+```js
+const ClientClass = require('./client.js);
+const ServerClass = require('./server.js);
+const { generateClientServer } = require(`socketless`);
+
+const factory = generateClientServer(ClientClass, ServerClass);
+factory.createClient("http://1.2.3.4");
+```
+
+As long as there is agreement on the ClientClass and ServerClass, there's nothing else you need to do:
+
+_Things just work._
+
 
 # API documentation
 
@@ -133,7 +162,7 @@ Server instances are created using `factory.createServer(https?)`.
 
 - `onConnect(client)`, called when a client connects to the server
 - `onDisconnect(client)`, called when a client initiated a disconnection
-- `onQuit()`, called in response to `.quit()`, after closing all connections. 
+- `onQuit()`, called in response to `.quit()`, after closing all connections.
 
 
 ## Client API
@@ -171,13 +200,13 @@ The web client has the same API as the regular client, with two additional prope
 
 The `publicDir` will be used to serve this web client's HTML/CSS/JS interface when connected to by any web browser. In order for this to work, the `index.html` (or whatever custom name you decide on) **must** contain the following script code:
 
-```
+```html
 <script src="socketless.js" async defer></script>
 ```
 
 This will create a global `ClientServer` object that can be used to bootstrap a web interface for the client. See the next section for more details on this process.
 
-Also, please note that this is _not_ the same socketless.js as gets loaded in Node context, and is a virtual file hat is generated only when the web client's web server is asked to server `./socketless.js`. It is _not_ a file located on-disk and you should _absolutely not_ create a file called `socketless.js` in the web client's `publicDir`.
+Also, please note that this is _not_ the same socketless.js as gets loaded in Node context, and is a virtual file that is generated only when the web client's web server is asked to service the `./socketless.js` route. It is _not_ a file located on-disk and you should _absolutely not_ create a file called `socketless.js` in the web client's `publicDir`.
 
 
 ## Creating a client interface for the browser
@@ -186,7 +215,7 @@ Any standard JavaScript class that implements the API described below can be use
 
 In order to register an interface class for use with a web client, your interface web page code should, after loading the web `socketless.js` library, use:
 
-```
+```js
 ClientServer.generateClientServer(WebClientClass)
 ```
 
@@ -225,7 +254,7 @@ These properties are added by `socketless` and can be accessed using `this.[prop
 
 A basic web UI class has the following form:
 
-```
+```js
 import { RANDOM_NAMES } from "./random-names.js";
 
 class WebUI {
