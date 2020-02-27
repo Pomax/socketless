@@ -108,7 +108,7 @@ const factory = generateClientServer(ClientClass, ServerClass);
 factory.createServer().listen(8000, () => {
   console.log("Server listening on port 8000");
 });
-``` 
+```
 
 And this code running on a machine somewhere halfway across the world:
 
@@ -193,10 +193,13 @@ Web clients are an extension of the standard client with built-in functionality 
 
 Web clients are created with `factory.createWebClient(serverURL, publicDir, options? = { useHttps?, directSync?})`
 
-The web client has the same API as the regular client, with two additional properties:
+The web client has the same API as the regular client, with three additional properties:
 
 - `is_web_client`, a fixed value set to `true`
 - `browser_connected`, `true` if a browser is connected to this client.
+- `state`, an object used for internal state synchronization with a connected web interface. Any values that you want synced should be set on this object )note: there is not special `setState`, values can be set directly on this object).
+
+Of these three `state` is technically not guaranteed, and depends on the `directSync` boolean passed as part of the creation call. When `true`, no state variable is used and the webclient itself is treated as the state object. _This is incredibly error prone, and is highly discouraged_ not to mention might be removed as functionality in the future, so don't rely on it.
 
 The `publicDir` will be used to serve this web client's HTML/CSS/JS interface when connected to by any web browser. In order for this to work, the `index.html` (or whatever custom name you decide on) **must** contain the following script code:
 
@@ -231,6 +234,11 @@ These properties are added by `socketless` and can be accessed using `this.[prop
 - `client`, a proxy into the client this browser client is connected to.
 - `server`, a proxy for the server that the true client is connected to.
 
+### Provided methods
+
+- `sync()`, fetches the full client state (this should almost never be necessary), and does a full state replacement, throwing away anything in `this.staet` and rebinding it with the newly fetched data.
+- `quit()`, instructs the associated client that we wish to disconnect from the server.
+
 ### Required methods
 
 - `update(state)`, signal function to kick off "whatever needs to happen" with a reference to the state object for `this`less argument passing.
@@ -239,10 +247,7 @@ These properties are added by `socketless` and can be accessed using `this.[prop
 
 - `setState(newstate)`, the current state of the server-side client. This function may be declared by you, or left implied, in which case `socketless` will create it for you.
 
-### Provided client methods
-
-- `client.sync()`, fetches the full client state (this should almost never be necessary), and does a full state replacement, throwing away anything in `this.staet` and rebinding it with the newly fetched data.
-- `client.quit()`, instructs the associated client that we wish to disconnect from the server.
+In addition to the `setState` method, UI code can also implement any "real" method implemented in the client class, in which case whenever the client's function gets call, the web UI's copy will be called afterwards. This can be useful for dealing with signals from the server that don't necessarily lead to state updates, such as counting signals (e.g. 'you have until 5 seconds from now to decide on a move').
 
 ### Optional event Handlers
 

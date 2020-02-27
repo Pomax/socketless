@@ -1,22 +1,34 @@
 const path = require(`path`);
-const fetch = require(`node-fetch`);
+const puppeteer = require('puppeteer');
+
 const { generateClientServer } = require(`../src/generate-client-server.js`);
 
 describe("web client tests", () => {
-  let webclient;
 
   it("should support all publically documented properties and functions", async (done) => {
+    let webclient;
+    let runTests = async() => {
+      const browser = await puppeteer.launch({
+        // devtools: true
+      });
+      const page = await browser.newPage();
+      await page.goto(`http://localhost:${webclient.address().port}`);
+      await page.waitForSelector(`#value`);
+      await page.waitForSelector(`#quit`);
+      await page.click(`#quit`);
+    };
+
+
     class WebClientClass {
-      async onConnect() {
-        await page.goto(`http://localhost:${webclient.address().port}`);
-        await page.click('#quit');
-      }
       async "test:set"(value) {
-        this.value = value;
+        this.state.value = value;
       }
     }
 
     class ServerClass {
+      onConnect() {
+        runTests();
+      }
       onDisconnect(client) {
         this.quit();
       }
@@ -36,7 +48,9 @@ describe("web client tests", () => {
         `http://localhost:${server.address().port}`,
         path.join(__dirname, `public-test`)
       );
+
       webclient.listen(0);
     });
   });
+
 });

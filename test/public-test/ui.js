@@ -1,8 +1,9 @@
 class WebUI {
   constructor() {
-    document.getElementById('quit').addEventListener('click', evt => {
-      this.client.quit();
-    });
+    const ui = document.createElement("div");
+    ui.innerHTML = `<button id="quit">quit</button>`;
+    ui.querySelector('#quit').addEventListener('click', () => this.quit());
+    document.body.appendChild(ui);
     setTimeout(() => this.test(), 500);
   }
 
@@ -11,7 +12,12 @@ class WebUI {
   }
 
   update(state) {
-    document.getElementById('div').textContent = state.value;
+    if (state.value) {
+      let div = document.createElement('div');
+      div.id = "value";
+      div.textContent = state.value;
+      document.body.appendChild(div);
+    }
   }
 }
 

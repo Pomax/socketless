@@ -14,13 +14,13 @@ function generateClientServer(WebClientClass, directSync) {
   const proxyServer = {};
 
   // Create a client instances
-  const handler = new WebClientClass();
-  handler.server = proxyServer;
+  const webclient = new WebClientClass();
+  webclient.server = proxyServer;
   if (!directSync) {
-    handler.state = {};
+    webclient.state = {};
   }
 
-  const update_target = directSync ? handler : handler.state;
+  const update_target = directSync ? webclient : webclient.state;
 
   let __seq_num = 0;
 
@@ -37,12 +37,12 @@ function generateClientServer(WebClientClass, directSync) {
 
   // bind all new state values
   function updateState(newstate) {
-    if (handler.setState) handler.setState(newstate);
+    if (webclient.setState) webclient.setState(newstate);
     else
       Object.keys(newstate).forEach(
         key => (update_target[key] = newstate[key])
       );
-    if (handler.update) handler.update(update_target);
+    if (webclient.update) webclient.update(update_target);
   }
 
   // turn a state diff into a state update
@@ -77,7 +77,7 @@ function generateClientServer(WebClientClass, directSync) {
   });
 
   // and offer a sync() function to manually trigger a full bootstrap
-  handler.sync = async () => {
+  webclient.sync = async () => {
     updateState(await socket.upgraded.send(`sync:full`));
   };
 
@@ -85,14 +85,14 @@ function generateClientServer(WebClientClass, directSync) {
   namespaces.forEach(namespace => {
     API[namespace].client.forEach(fname => {
       let evt = namespace + ":" + fname;
-      let process = handler[evt];
-      if (!process) process = handler[evt.replace(":", "$")];
+      let process = webclient[evt];
+      if (!process) process = webclient[evt.replace(":", "$")];
 
       // Web clients need not implement the full interface, as some
       // things don't need to be handled by the browser at all.
       if (process) {
         socket.upgraded.on(evt, async (data, respond) => {
-          let response = await process.bind(handler)(data);
+          let response = await process.bind(webclient)(data);
           respond(response);
         });
       }
@@ -105,11 +105,11 @@ function generateClientServer(WebClientClass, directSync) {
   });
 
   // Add a dedicated .quit() function so browsers can effect a disconnect
-  handler.quit = () => socket.upgraded.send("quit", {});
+  webclient.quit = () => socket.upgraded.send("quit", {});
 
   // And we're done building this object
   return {
-    client: handler,
+    client: webclient,
     server: proxyServer
   };
 }

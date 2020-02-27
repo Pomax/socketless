@@ -7,9 +7,6 @@
     "prettier": "prettier --write ./**/*.js",
     "test": "jest"
   },
-  "jest": {
-    "preset": "jest-puppeteer"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Pomax/socketless.git"
@@ -34,7 +31,6 @@
   },
   "devDependencies": {
     "jest": "^24.9.0",
-    "jest-puppeteer": "^4.4.0",
     "node-fetch": "^2.6.0",
     "prettier": "^1.18.2",
     "puppeteer": "^2.1.1"
