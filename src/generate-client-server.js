@@ -1,49 +1,5 @@
-const build = require("./build.js");
-
-// helper function to make defineProperty easier to use.
-function attach(object, fname, value) {
-  Object.defineProperty(object, fname, {
-    enumerable: false,
-    configurable: false,
-    writable: false,
-    value: value
-  });
-}
-
-// helper function to find all declared class functions
-// all the way up to the Object chain.
-function getAllFunctions(objectClass) {
-  const functions = [];
-  while (objectClass.prototype) {
-    const proto = objectClass.prototype;
-    const verify = v =>
-      typeof proto[v] === "function" && v.match(/[$:]/) !== null;
-    Object.getOwnPropertyNames(proto)
-      .filter(verify)
-      .forEach(name => {
-        if (functions.indexOf(name) === -1) functions.push(name);
-      });
-    objectClass = objectClass.__proto__;
-  }
-  return functions;
-}
-
-// helper function to record function names for namespaces
-function register(API, type, name) {
-  const [namespace, fname] = name.split(/[$:]/);
-  if (!API[namespace]) API[namespace] = { client: [], server: [] };
-  API[namespace][type].push(fname);
-}
-
-/**
- * API abstraction function that takes the two classes,
- * and turns it into a namespaced API object.
- */
-function generateAPIfromClasses(ClientClass, ServerClass, API = {}) {
-  getAllFunctions(ClientClass).forEach(name => register(API, "client", name));
-  getAllFunctions(ServerClass).forEach(name => register(API, "server", name));
-  return API;
-}
+const generateAPIfromClasses = require("./util/generate-api-from-classes.js");
+const ClientServerFactory = require("./client-server-factory.js");
 
 /**
  * Generate a factory object for building clients and servers that know how
@@ -64,83 +20,29 @@ function generateClientServer(ClientClass, ServerClass, API = false) {
   const namespaces = Object.keys(API);
 
   // This is the thing we'll be building up
-  const factory = {
-    client: {},
-    server: {}
-  };
+  const factory = new ClientServerFactory();
 
   // Create client/server proxies and call handlers for each namespace:
   namespaces.map(namespace => {
     const clientAPI = API[namespace].client;
     const serverAPI = API[namespace].server;
 
-    factory.client[namespace] = {
-      server: build.serverProxyAtClient(namespace, serverAPI),
-      handler: build.serverCallHandler(
-        namespace,
-        clientAPI,
-        resolveWithoutNamespace
-      )
-    };
+    factory.setClientNamespace(
+      namespace,
+      clientAPI,
+      serverAPI,
+      resolveWithoutNamespace
+    );
 
-    factory.server[namespace] = {
-      client: build.clientProxyAtServer(namespace, clientAPI),
-      handler: build.clientCallHandler(
-        namespace,
-        serverAPI,
-        resolveWithoutNamespace
-      )
-    };
+    factory.setServerNamespace(
+      namespace,
+      clientAPI,
+      serverAPI,
+      resolveWithoutNamespace
+    );
   });
 
-  /**
-   * This function creates a server-proxy object that clients
-   * can make direct calls against as if the server were a
-   * locally accessible resource.
-   */
-  attach(
-    factory.client,
-    "createServer",
-    build.createServerProxy(factory, namespaces)
-  );
-
-  /**
-   * This function creates a client-proxy object that servers
-   * can make direct calls against as if the client were a
-   * locally accessible resource.
-   */
-  attach(
-    factory.server,
-    "createClient",
-    build.createClientProxy(factory, namespaces)
-  );
-
-  /**
-   * This function allows people to setup a web+socket server
-   * without having to ever explicitly write socketio code.
-   */
-  attach(
-    factory,
-    "createServer",
-    build.createServer(factory, namespaces, ServerClass, API)
-  );
-
-  /**
-   * This allows people to setup a socket client without
-   * having to ever explicitly write socketio code.
-   */
-  attach(factory, "createClient", build.createClient(factory, ClientClass));
-
-  /**
-   * This function allows people to socket client that runs
-   * its own web+socket server for attaching a browser to,
-   * without having to ever explicitly write socketio code.
-   */
-  attach(
-    factory,
-    "createWebClient",
-    build.createWebClient(factory, ClientClass, API)
-  );
+  factory.finalise(namespaces, ClientClass, ServerClass, API);
 
   // And we're done!
   return factory;

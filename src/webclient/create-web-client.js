@@ -1,3 +1,4 @@
+const attach = require("../util/attach.js");
 const generateSocketless = require("./generate-socketless.js");
 const makeRoutes = require("./utils/routes.js");
 const setupConnectionHandler = require("./setup-connection-handler.js");
@@ -65,11 +66,7 @@ module.exports = function createWebClient(factory, ClientClass, API) {
     sockets.client = factory.createClient(serverURL, WebClientClass);
 
     // and set an immutable flag that marks this as a web client
-    Object.defineProperty(sockets.client, "is_web_client", {
-      configurable: false,
-      writable: false,
-      value: true
-    });
+    attach(sockets.client, "is_web_client", true);
 
     // Set up the web+socket server for browser connections
     const routes = makeRoutes(
@@ -84,6 +81,10 @@ module.exports = function createWebClient(factory, ClientClass, API) {
     ws.on(`connection`, connectBrowser);
     ws.on(`close`, () => {
       sockets.client.browser_connected = sockets.browser = false;
+      if (client.onBrowserDisconnect) {
+        client.onBrowserDisconnect();
+      }
+
     });
 
     return webserver;

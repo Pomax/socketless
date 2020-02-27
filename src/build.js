@@ -1,3 +1,7 @@
+/**
+ * This module is a convenience module for accessing all
+ * the various build functions under a single namespace.
+ */
 module.exports = {
   // generators for call routing at the client and server.
   clientCallHandler: require("./server/client-call-handler.js"),

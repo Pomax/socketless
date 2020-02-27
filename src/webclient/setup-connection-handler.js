@@ -17,6 +17,10 @@ module.exports = function setupConnectionHandler(
     browser = sockets.browser = upgradeSocket(socket);
     client.browser_connected = true;
 
+    if (client.onBrowserConnect) {
+      client.onBrowserConnect();
+    }
+
     // set up the sync functionality
     setupSyncFunctionality(sockets, socket, directSync);
 

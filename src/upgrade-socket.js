@@ -11,7 +11,9 @@ const RESERVED = [`close`, `error`, `open`, `ping`, `pong`];
 const BROWSER_RESERVED = [`onDisconnect`];
 
 // responses should always be "the event name, with :response added"
-const getResponseName = eventName => `${eventName}:response`;
+function getResponseName(eventName) {
+  return `${eventName}:response`;
+}
 
 /**
  * This function takes a standard websocket, and
@@ -67,11 +69,13 @@ function upgradeSocket(socket) {
     const eventName = data.name;
     const payload = data.payload;
 
-    // don't handle these at all.
+    // don't handle reserved message types.
     if (BROWSER_RESERVED.indexOf(eventName) > -1) {
       return console.warn(`ignoring browser ${eventName} event`);
     }
 
+    // do we know how to handle this message? if not, the people writing
+    // the socketless-using code forgot something and should be made aware.
     if (!handlers[eventName]) {
       return console.error(`no handlers for ${eventName}`);
     }
@@ -90,17 +94,17 @@ function upgradeSocket(socket) {
     socket.onmessage = router;
   }
 
-  // and then redefine .on() so that it works like .addEventListener()/2.
+  // and then redefine .on() so that it works like .addEventListener()
   socket.upgraded.on = (eventName, handler) => {
+    // reserved events go straight on the socket itself
     if (RESERVED.indexOf(eventName) > -1)
       return socket.addEventListener(eventName, handler);
-    if (!handlers[eventName]) {
-      handlers[eventName] = [];
-    }
+    // everything else gets added to the appropriate handling bin.
+    if (!handlers[eventName]) handlers[eventName] = [];
     handlers[eventName].push(handler);
   };
 
-  // with a corresponding .off() function, that works like .removeEventListener()/2.
+  // correspondingly, add an .off() that works like .removeEventListener()
   socket.upgraded.off = (eventName, handler) => {
     if (RESERVED.indexOf(eventName) > -1)
       return socket.removeEventListener(eventName, handler);
@@ -109,15 +113,11 @@ function upgradeSocket(socket) {
     handlers[eventName].splice(pos, 1);
   };
 
-  /**
-   * Add a promise-based emit/receive to the socket,
-   * so that server code can `await` the client's
-   * response in an asynchronous fashion. Note that there
-   * is an optional third argument `timeout` that can be
-   * used to say how long the emit should wait before
-   * deciding there is no response forthcoming and to clean
-   * up the event listener for that response.
-   */
+  // Add a promise-based emit/receive to the socket, so that server code can
+  // `await` the client's response in an asynchronous fashion. Note that there
+  // is an optional third argument `timeout` that can be used to say how long
+  // the emit should wait before deciding there is no response forthcoming and
+  // to clean up the event listener for that response.
   socket.upgraded.send = async (eventName, data = {}, timeout = 1000) => {
     return await new Promise(resolve => {
       const responseName = getResponseName(eventName);

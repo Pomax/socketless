@@ -1,4 +1,7 @@
 const WebSocket = require("ws");
+const attach = require("../util/attach");
+
+// TODO: allow passing in a preexisting server?
 
 module.exports = function(clientServer, namespaces, ServerClass, API) {
   /**
@@ -6,7 +9,7 @@ module.exports = function(clientServer, namespaces, ServerClass, API) {
    * whistles taken care of so the user doesn't ever need to write
    * any websocket code explicitly.
    */
-  return function(https = false) {
+  return function createServer(https = false) {
     // Create a websocket server
     const webserver = require(https ? "https" : "http").createServer();
     const ws = new WebSocket.Server({ server: webserver });
@@ -14,11 +17,22 @@ module.exports = function(clientServer, namespaces, ServerClass, API) {
     // Create an instance of the API handler
     const instance = new ServerClass();
 
+    // with a binding to the server
+    attach(instance, `__webserver`, webserver);
+
     // Set up a clients list
     let clients = [];
 
     // And give the instance a way to access it
-    instance.getConnectedClients = () => clients;
+    attach(instance, `clients`, clients);
+
+    // Also make sure servers can quit.
+    attach(instance, `quit`, () => {
+      [ws,webserver].forEach(w => w.close());
+      if (instance.onQuit) {
+        instance.onQuit();
+      }
+    });
 
     // When a client connects to the server, route it to
     // the server.addClient(client) function for handling.

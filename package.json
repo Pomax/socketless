@@ -5,12 +5,7 @@
   "main": "src/generate-client-server.js",
   "scripts": {
     "prettier": "prettier --write ./**/*.js",
-    "test": "node socketless-demo/simple/index.js",
-    "game": "node socketless-demo/game/index.js",
-    "game:client": "node socketless-demo/game/start-web-client.js",
-    "test:distributed": "node socketless-demo/test-distributed/index.js",
-    "test:client": "node socketless-demo/test-distributed/test-client.js",
-    "test:server": "node socketless-demo/test-distributed/test-server.js"
+    "test": "jest"
   },
   "repository": {
     "type": "git",
@@ -35,6 +30,9 @@
     "ws": "^7.1.1"
   },
   "devDependencies": {
-    "prettier": "^1.18.2"
+    "jest": "^24.9.0",
+    "node-fetch": "^2.6.0",
+    "prettier": "^1.18.2",
+    "puppeteer": "^2.1.1"
   }
 }
