@@ -1,4 +1,7 @@
 node_modules
 .gitignore
+docs
+demo
+test
 CHANGELOG.md
 README.md
