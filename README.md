@@ -72,8 +72,8 @@ class ServerClass {
 Then we can make things "just work" by bootstrapping Socketless with these two classes, using:
 
 ```js
-const ClientClass = require('./client.js);
-const ServerClass = require('./server.js);
+const ClientClass = require(`./client.js`);
+const ServerClass = require(`./server.js`);
 const { generateClientServer } = require(`socketless`);
 const factory = generateClientServer(ClientClass, ServerClass);
 
@@ -100,8 +100,8 @@ server> no clients connected, shutting down.
 Note that this (especially) works when the client and server are not running on the same machine or even network. We could run the following code on a machine with a reverse proxy that maps a public host/port `1.2.3.4:80` to an internal `127.0.0.1:8000`:
 
 ```js
-const ClientClass = require('./client.js);
-const ServerClass = require('./server.js);
+const ClientClass = require(`./client.js`);
+const ServerClass = require(`./server.js`);
 const { generateClientServer } = require(`socketless`);
 
 const factory = generateClientServer(ClientClass, ServerClass);
@@ -113,8 +113,8 @@ factory.createServer().listen(8000, () => {
 And this code running on a machine somewhere halfway across the world:
 
 ```js
-const ClientClass = require('./client.js);
-const ServerClass = require('./server.js);
+const ClientClass = require(`./client.js`);
+const ServerClass = require(`./server.js`);
 const { generateClientServer } = require(`socketless`);
 
 const factory = generateClientServer(ClientClass, ServerClass);
