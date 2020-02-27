@@ -183,7 +183,7 @@ Clients are created using `factory.createClient(serverURL)`
 ### Event Handlers
 
 - `onConnect()`, called when the client has connected to the server
-- `onDisconnect(details)`, called when the client gets disconnected by the server
+- `onDisconnect()`, called when the client gets disconnected by the server
 
 
 
@@ -193,6 +193,8 @@ Web clients are an extension of the standard client with built-in functionality 
 
 Web clients are created with `factory.createWebClient(serverURL, publicDir, options? = { useHttps?, directSync?})`
 
+### Properties
+
 The web client has the same API as the regular client, with three additional properties:
 
 - `is_web_client`, a fixed value set to `true`
@@ -200,6 +202,20 @@ The web client has the same API as the regular client, with three additional pro
 - `state`, an object used for internal state synchronization with a connected web interface. Any values that you want synced should be set on this object )note: there is not special `setState`, values can be set directly on this object).
 
 Of these three `state` is technically not guaranteed, and depends on the `directSync` boolean passed as part of the creation call. When `true`, no state variable is used and the webclient itself is treated as the state object. _This is incredibly error prone, and is highly discouraged_ not to mention might be removed as functionality in the future, so don't rely on it.
+
+### Methods
+
+The web client has the same API as the regular client.
+
+### Event handlers
+
+The web client has the same API as the regular client, with two additional event handlers:
+
+- `onBrowserConnect()`, called when a browser connects to this web client
+- `onBrowserDisconnect()`, called when a connected browser disconnectrs from this web client
+
+
+### Additional details
 
 The `publicDir` will be used to serve this web client's HTML/CSS/JS interface when connected to by any web browser. In order for this to work, the `index.html` (or whatever custom name you decide on) **must** contain the following script code:
 
@@ -209,7 +225,7 @@ The `publicDir` will be used to serve this web client's HTML/CSS/JS interface wh
 
 This will create a global `ClientServer` object that can be used to bootstrap a web interface for the client. See the next section for more details on this process.
 
-Also, please note that this is _not_ the same socketless.js as gets loaded in Node context, and is a virtual file that is generated only when the web client's web server is asked to service the `./socketless.js` route. It is _not_ a file located on-disk and you should _absolutely not_ create a file called `socketless.js` in the web client's `publicDir`.
+Also, please note that this is _not_ the same `socketless.js` as gets loaded in Node context, and is a virtual file that is generated only when the web client's web server is asked to service the `./socketless.js` route. It is _not_ a file located on-disk and you should _absolutely not_ create a file called `socketless.js` in the web client's `publicDir`.
 
 
 ## Creating a client interface for the browser

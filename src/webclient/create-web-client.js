@@ -81,6 +81,10 @@ module.exports = function createWebClient(factory, ClientClass, API) {
     ws.on(`connection`, connectBrowser);
     ws.on(`close`, () => {
       sockets.client.browser_connected = sockets.browser = false;
+      if (client.onBrowserDisconnect) {
+        client.onBrowserDisconnect();
+      }
+
     });
 
     return webserver;

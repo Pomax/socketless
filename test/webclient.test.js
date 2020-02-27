@@ -20,6 +20,17 @@ describe("web client tests", () => {
 
 
     class WebClientClass {
+      onConnect() {
+        expect(this.is_web_client).toBe(true);
+      }
+      onBrowserConnect() {
+        expect(this.browser_connected).toBe(true);
+      }
+
+      onBrowserDisconnect() {
+        expect(this.browser_connected).toBe(false);
+      }
+
       async "test:set"(value) {
         this.state.value = value;
       }
