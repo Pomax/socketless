@@ -1,4 +1,4 @@
-# v0.12.1
+# v0.12.3
 
 Removed morphdom from the dependency list. It had no reason to be there.
 
