@@ -1,3 +1,7 @@
+# v0.12.1
+
+Removed morphdom from the dependency list. It had no reason to be there.
+
 # v0.12.0
 
 Changed the APIs and added Jest testing to make sure they actually work
