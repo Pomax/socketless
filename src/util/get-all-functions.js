@@ -18,11 +18,11 @@ module.exports = function getAllFunctions(objectClass) {
     Object.getOwnPropertyNames(proto)
       .filter(verify)
       .forEach(name => {
-        if (functions.indexOf(name) > -1)
-          console.warn(
-            `duplicate function ${name} found in ${proto.constructor.name} (ignoring duplicate)`
-          );
-        else functions.push(name);
+        if (functions.indexOf(name) > -1) {
+          // If we've already seen a binding for this function name, then that
+          // binding was for a subclass overriding a superclass function, and
+          // we should ignore this new binding.
+        } else functions.push(name);
       });
 
     objectClass = objectClass.__proto__;

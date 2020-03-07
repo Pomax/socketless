@@ -1,3 +1,7 @@
+# v0.12.4
+
+Removed a warning while parsing an override function chain, because the behaviour was correct but the warning was nonsense.
+
 # v0.12.3
 
 Removed morphdom from the dependency list. It had no reason to be there.

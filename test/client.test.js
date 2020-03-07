@@ -2,7 +2,13 @@ const { generateClientServer } = require("../src/generate-client-server.js");
 
 test("client supports all publically documented properties and functions", async () => {
   await new Promise(resolve => {
-    class ClientClass {
+    class CMaster {
+      async "test:receive"(msg) {
+        expect(msg).toBe(`test`);
+      }
+    }
+
+    class ClientClass extends CMaster {
       async onConnect() {
         expect(this.server).toBeDefined();
         expect(this.server).toHaveProperty(`test.remote`);
@@ -15,7 +21,7 @@ test("client supports all publically documented properties and functions", async
       }
 
       async "test:receive"(msg) {
-        expect(msg).toBe(`test`);
+        super["test:receive"](msg);
       }
     }
 
