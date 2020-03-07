@@ -1,13 +1,12 @@
 const path = require(`path`);
-const puppeteer = require('puppeteer');
+const puppeteer = require("puppeteer");
 
 const { generateClientServer } = require(`../src/generate-client-server.js`);
 
 describe("web client tests", () => {
-
-  it("should support all publically documented properties and functions", async (done) => {
+  it("should support all publically documented properties and functions", async done => {
     let webclient;
-    let runTests = async() => {
+    let runTests = async () => {
       const browser = await puppeteer.launch({
         // devtools: true
       });
@@ -17,7 +16,6 @@ describe("web client tests", () => {
       await page.waitForSelector(`#quit`);
       await page.click(`#quit`);
     };
-
 
     class WebClientClass {
       onConnect() {
@@ -48,7 +46,7 @@ describe("web client tests", () => {
         done();
       }
       async "test:receive"(client) {
-        client.test.set('test');
+        client.test.set("test");
       }
     }
 
@@ -63,5 +61,4 @@ describe("web client tests", () => {
       webclient.listen(0);
     });
   });
-
 });

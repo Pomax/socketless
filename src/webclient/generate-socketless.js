@@ -19,13 +19,9 @@ const generateProxyClientServer = require(`./generate-proxy-client-server.js`);
 module.exports = function generateSocketless(API, directSync) {
   const namespaces = Object.keys(API);
   return [
-    // Include a full copy of morphdom. This is non-optional and not
-    // so much "a build step" as simply "we know where it lives, add it".
-    fs
-      .readFileSync(require.resolve(`morphdom/dist/morphdom-umd.min.js`))
-      .toString(`utf-8`),
-
-    // The same goes for the rfc6902 patch/diff/apply library.
+    // Include a full copy of the rfc6902 patch/diff/apply library. This
+    // is non-optional and not so much "a build step" as simply "we know
+    // where it lives, add it".
     fs
       .readFileSync(require.resolve(`rfc6902/dist/rfc6902.min.js`))
       .toString(`utf-8`),

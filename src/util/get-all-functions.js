@@ -9,7 +9,7 @@ module.exports = function getAllFunctions(objectClass) {
     const verify = v => {
       let fn = proto[v];
       if (typeof fn !== `function`) return false;
-      if (fn.toString().indexOf(`async`)!==0) return false;
+      if (fn.toString().indexOf(`async`) !== 0) return false;
       let m = v.match(/[$:]/);
       if (!m) return false;
       return m.index > 0;

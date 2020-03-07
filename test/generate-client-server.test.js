@@ -27,7 +27,9 @@ test("can build clientserver", async () => {
   await new Promise(resolve => {
     server.__close = resolve;
     server.listen(0, () => {
-      const client = ClientServer.createClient(`http://localhost:${server.address().port}`);
+      const client = ClientServer.createClient(
+        `http://localhost:${server.address().port}`
+      );
       expect(client).toBeDefined();
     });
   });

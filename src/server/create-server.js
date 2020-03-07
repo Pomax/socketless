@@ -28,7 +28,7 @@ module.exports = function(clientServer, namespaces, ServerClass, API) {
 
     // Also make sure servers can quit.
     attach(instance, `quit`, () => {
-      [ws,webserver].forEach(w => w.close());
+      [ws, webserver].forEach(w => w.close());
       if (instance.onQuit) {
         instance.onQuit();
       }

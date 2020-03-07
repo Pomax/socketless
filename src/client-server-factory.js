@@ -111,4 +111,4 @@ class ClientServerFactory {
   }
 }
 
-module.exports =ClientServerFactory;
+module.exports = ClientServerFactory;

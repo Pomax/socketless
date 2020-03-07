@@ -84,7 +84,6 @@ module.exports = function createWebClient(factory, ClientClass, API) {
       if (client.onBrowserDisconnect) {
         client.onBrowserDisconnect();
       }
-
     });
 
     return webserver;

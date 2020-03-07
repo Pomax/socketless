@@ -4,7 +4,9 @@ class ServerClass {
   }
 
   onConnect(client) {
-    console.log(`server> new connection, ${this.clients.length} clients connected`);
+    console.log(
+      `server> new connection, ${this.clients.length} clients connected`
+    );
     client.startup.register();
   }
 
