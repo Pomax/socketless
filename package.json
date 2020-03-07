@@ -1,6 +1,6 @@
 {
   "name": "socketless",
-  "version": "0.12.2",
+  "version": "0.12.3",
   "description": "A framework and methodology for writing web socket client/server code, without writing any socket code.",
   "main": "src/generate-client-server.js",
   "scripts": {
