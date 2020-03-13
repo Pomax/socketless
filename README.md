@@ -126,7 +126,7 @@ As long as there is agreement on the ClientClass and ServerClass, there's nothin
 _Things just work._
 
 
-&nmbsp;
+&nbsp;
 
 
 # Demos
@@ -134,7 +134,7 @@ _Things just work._
 There are various demos in the [`./demos`](https://github.com/Pomax/socketless/tree/master/demos) directory, showing off the various ways in which you might want to use `socketless`.
 
 
-&nmbsp;
+&nbsp;
 
 
 # API documentation
