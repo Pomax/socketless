@@ -2,8 +2,6 @@
 
 Socketless is a websocket-based RPC-like minimal framework for client/server implementations, with web-wrappers for clients, requiring you to write exactly zero websocket code, and being able to call client or server functions on local objects, as if there was no network involved at all.
 
-## Usage
-
 Socketless works by you writing your client and server as two main classes with a specific function naming scheme: any `async` function with a namespaced function name will be automatically picked up by Socketless when generating actual clients and servers.
 
 Async namespaced functions takes the form of `async "namespace:fname"(...)` or `async namespace$fname(...)`.
