@@ -8,9 +8,7 @@ Async namespaced functions takes the form of `async "namespace:fname"(...)` or `
 
 With these two classes defined, you can generate client and server instances using the `generateClientServer` function that Socketless exports.
 
-
 &nbsp;
-
 
 # Table of contents
 
@@ -24,9 +22,7 @@ With these two classes defined, you can generate client and server instances usi
  - [Webclient API](webclient-api)
    - [Browser interface](creating-a-client-interface-for-the-browser)
 
-
 &nbsp;
-
 
 # Installation
 
@@ -34,9 +30,7 @@ Socketless can be installed using `npm`/`yarn`.
 
 Note that because `socketless` is code that by definition needs to run server-side, it does not provide a precompiled single-file library in a `dist` directory, nor should it ever (need to) be part of a bundling task.
 
-
 &nbsp;
-
 
 # Implementation and use example
 
@@ -149,17 +143,13 @@ As long as there is agreement on the ClientClass and ServerClass, there's nothin
 
 _Things just work._
 
-
 &nbsp;
-
 
 # Demos
 
 There are various demos in the [`./demos`](https://github.com/Pomax/socketless/tree/master/demos) directory, showing off the various ways in which you might want to use `socketless`.
 
-
 &nbsp;
-
 
 # API documentation
 
