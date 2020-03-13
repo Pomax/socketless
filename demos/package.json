@@ -1,0 +1,18 @@
+{
+  "name": "demos",
+  "version": "0.0.1",
+  "description": "Socketless demos",
+  "main": "",
+  "author": "Pomax",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Pomax/socketless/issues"
+  },
+  "homepage": "https://github.com/Pomax/socketless#readme",
+  "dependencies": {
+    "socketless": "file:.."
+  },
+  "scripts": {
+    "simple": "node simple/index.js"
+  }
+}

@@ -1,7 +1,7 @@
 const { main } = require("../package.json");
 const ClientClass = require("./ClientClass.js");
 const ServerClass = require("./ServerClass.js");
-const { generateClientServer } = require(`../${main}`);
+const { generateClientServer } = require(`socketless`);
 const factory = generateClientServer(ClientClass, ServerClass);
 const server = factory.createServer();
 
