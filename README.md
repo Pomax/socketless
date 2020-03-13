@@ -132,7 +132,7 @@ Socketless exports a single function:
 
 ## generateClientServer
 
-- `generateClientServer(ClientClass, ServerClass)`
+- `const factory = generateClientServer(ClientClass, ServerClass)`
 
 This function yields a client/server factory when called, with the following public API:
 
@@ -144,7 +144,7 @@ This function yields a client/server factory when called, with the following pub
 
 ## Server API
 
-Server instances are created using `factory.createServer(https?)`.
+Server instances are created using `const server = factory.createServer(https?)`.
 
 ### Properties
 
@@ -167,7 +167,7 @@ Server instances are created using `factory.createServer(https?)`.
 
 ## Client API
 
-Clients are created using `factory.createClient(serverURL)`
+Clients are created using `cosnt client = factory.createClient(serverURL)`
 
 ### Properties
 
@@ -191,7 +191,7 @@ Clients are created using `factory.createClient(serverURL)`
 
 Web clients are an extension of the standard client with built-in functionality for exposing the client through a web interface by connecting a browser to the web client's own http(s) server.
 
-Web clients are created with `factory.createWebClient(serverURL, publicDir, options? = { useHttps?, directSync?})`
+Web clients are created with `const webclient = factory.createWebClient(serverURL, publicDir, options? = { useHttps?, directSync?})`
 
 ### Properties
 
@@ -235,7 +235,7 @@ Any standard JavaScript class that implements the API described below can be use
 In order to register an interface class for use with a web client, your interface web page code should, after loading the web `socketless.js` library, use:
 
 ```js
-ClientServer.generateClientServer(WebClientClass)
+const userInterface = ClientServer.generateClientServer(WebClientClass)
 ```
 
 This will instantiate your client UI, and start the client syncing loop that ensures that your UI state is always a reflection of the current client's state.
