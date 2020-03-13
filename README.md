@@ -8,13 +8,29 @@ Async namespaced functions takes the form of `async "namespace:fname"(...)` or `
 
 With these two classes defined, you can generate client and server instances using the `generateClientServer` function that Socketless exports.
 
-### Installation
+# Table of contents
+
+- [Installation](#installation)
+- [Implementation and use example](#implementation-and-use-example)
+- [Demos](#demos)
+- [API documentation](#api-documentation)
+ - [Client/Server factory](#generateclientserver)
+ - [Server API](server-api)
+ - [Client API](client-api)
+ - [Webclient API](webclient-api)
+   - [Browser interface](creating-a-client-interface-for-the-browser)
+
+
+&nbsp;
+
+
+# Installation
 
 Socketless can be installed using `npm`/`yarn`.
 
 Note that because `socketless` is code that by definition needs to run server-side, it does not provide a precompiled single-file library in a `dist` directory, nor should it ever (need to) be part of a bundling task.
 
-### Implementation and use example
+# Implementation and use example
 
 A short example is the easiest way to demonstrate how Socketless works.
 
