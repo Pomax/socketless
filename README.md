@@ -12,7 +12,9 @@ With these two classes defined, you can generate client and server instances usi
 
 ### Installation
 
-Socketless can be installed using `npm`/`yarn`. As a compiler that needs to run server-side, it does not provide a precompiled single-file library for bundling in larger code bases, nor should it ever (need to) be part of a larger bundling task.
+Socketless can be installed using `npm`/`yarn`.
+
+Note that because `socketless` is code that by definition needs to run server-side, it does not provide a precompiled single-file library in a `dist` directory, nor should it ever (need to) be part of a bundling task.
 
 ### Implementation and use example
 
