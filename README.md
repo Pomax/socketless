@@ -257,11 +257,11 @@ These properties are added by `socketless` and can be accessed using `this.[prop
 
 ### Required methods
 
-- `update(state)`, signal function to kick off "whatever needs to happen" with a reference to the state object for `this`less argument passing.
+- `update(state)`, a "signal" function to kick off "whatever needs to happen" when the web client syncs state to the server-side client, with a reference to the state object so that it can be passed down without having to constantly refer to `this.state` in downstream code.
 
 ### Optional methods
 
-- `setState(newstate)`, the current state of the server-side client. This function may be declared by you, or left implied, in which case `socketless` will create it for you.
+- `setState(newstate)`, this function is called when syncing the web client to the current state of the server-side client. This function may be declared by you, but is almost always better left implied. Do not use this function to forward the state update: use the `update(state)` function instead.
 
 In addition to the `setState` method, UI code can also implement any "real" method implemented in the client class, in which case whenever the client's function gets call, the web UI's copy will be called afterwards. This can be useful for dealing with signals from the server that don't necessarily lead to state updates, such as counting signals (e.g. 'you have until 5 seconds from now to decide on a move').
 
