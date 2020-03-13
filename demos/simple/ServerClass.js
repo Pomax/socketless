@@ -1,8 +1,14 @@
 class ServerClass {
+  /**
+   * ...
+   */
   constructor() {
     console.log("server> created");
   }
 
+  /**
+   * ...
+   */
   onConnect(client) {
     console.log(
       `server> new connection, ${this.clients.length} clients connected`
@@ -10,6 +16,9 @@ class ServerClass {
     client.startup.register();
   }
 
+  /**
+   * ...
+   */
   onDisconnect(client) {
     console.log(`server> client ${client.name} disconnected`);
     if (this.clients.length === 0) {
@@ -18,6 +27,9 @@ class ServerClass {
     }
   }
 
+  /**
+   * ...
+   */
   async "user:setName"(client, name) {
     console.log(`server> client is now known as ${name}`);
     client.name = name;

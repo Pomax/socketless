@@ -1,8 +1,14 @@
 class ClientClass {
+  /**
+   * ...
+   */
   constructor() {
     console.log("client> created");
   }
 
+  /**
+   * ...
+   */
   onConnect() {
     console.log("client> connected to server");
     setTimeout(
@@ -12,6 +18,9 @@ class ClientClass {
     console.log("client> disconnecting in 3 +/- 1 seconds");
   }
 
+  /**
+   * ...
+   */
   async "startup:register"() {
     this.name = `user${Date.now()}`;
     this.registered = await this.server.user.setName(this.name);
