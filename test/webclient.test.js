@@ -16,15 +16,6 @@ describe("web client tests", () => {
         devtools: true
       });
       const page = await browser.newPage();
-
-      page.on("pageerror", function(err) {
-        console.error("\n","pageerror:", err,"\n");
-      });
-
-      page.on("console", function(data) {
-        console[data._type]("\n","Page console>", data._text,"\n");
-      });
-
       await page.goto(`http://localhost:${webclient.address().port}`);
       await page.waitForSelector(`#value`);
       await page.waitForSelector(`#quit`);
@@ -72,8 +63,7 @@ describe("web client tests", () => {
       async "test:receive"(client) {
         client.test.set("test");
       }
-      async "test:events"(client, data) {
-        console.log("test>server>", data);
+      async "test:events"(client) {
         functionCalls.push("test:events");
       }
     }

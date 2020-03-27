@@ -23,7 +23,6 @@ class WebUI {
   }
 
   update(state) {
-    console.log("on page state:", JSON.stringify(state));
     if (state.value) {
       let div = document.createElement("div");
       div.id = "value";

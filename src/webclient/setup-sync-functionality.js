@@ -54,7 +54,6 @@ module.exports = function setupSyncFunctionality(
     const state = getState();
     prevState = JSON.parse(JSON.stringify(state));
     state.__seq_num = getNextSeqNum();
-    console.log(`full sync: ${JSON.stringify(state)}`);
     return state;
   };
 

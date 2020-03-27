@@ -43,7 +43,6 @@ function generateClientServer(WebClientClass, directSync) {
   function updateState(newstate) {
     // Generate a global update event for this webclient
     if (!noGlobalEvent) {
-      console.log("updateState signal:", JSON.stringify(newstate));
       document.dispatchEvent(
         new CustomEvent("webclient:update", {
           detail: {
@@ -74,16 +73,11 @@ function generateClientServer(WebClientClass, directSync) {
   async function handleStateDiff(patch) {
     if (patch.length === 0) return;
 
-    console.log(`Patch incoming: ${JSON.stringify(patch)}`);
-
-
     // verify we're still in sync by comparing messaging sequence numbers
     const seq_num = patch.slice(-1)[0].value;
     if (seq_num === update_target.__seq_num + 1) {
-      console.log(`Patch compare: ${JSON.stringify(update_target)} vs ${JSON.stringify(patch)}`);
-      const state = rfc6902.applyPatch(update_target, patch);
-      console.log(`new state: ${state}`);
-      return updateState(state);
+      rfc6902.applyPatch(update_target, patch); // Note: this call updates in-place
+      return updateState(update_target);
     }
 
     // if we get here, wee're not in sync and need to request a full
