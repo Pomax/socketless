@@ -13,7 +13,7 @@ describe("web client tests", () => {
      */
     let runTests = async () => {
       const browser = await puppeteer.launch({
-        devtools: true
+        // devtools: true
       });
       const page = await browser.newPage();
       await page.goto(`http://localhost:${webclient.address().port}`);
