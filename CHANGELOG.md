@@ -1,3 +1,7 @@
+# v0.12.5
+
+Fixed webclient syncing (sequencing was failing, and so each update led to a secondary full sync)
+
 # v0.12.4
 
 Removed a warning while parsing an override function chain, because the behaviour was correct but the warning was nonsense.
