@@ -17,12 +17,13 @@ function generateClientServer(WebClientClass, directSync) {
   const webclient = new WebClientClass();
   webclient.server = proxyServer;
   if (!directSync) {
-    webclient.state = {};
+    Object.defineProperty(webclient, `state`, {
+      writable: false,
+      value: {}
+    });
   }
 
   const update_target = directSync ? webclient : webclient.state;
-
-  let __seq_num = 0;
 
   // Add the browser => client => server forwarding
   namespaces.forEach(namespace => {
@@ -35,14 +36,37 @@ function generateClientServer(WebClientClass, directSync) {
     });
   });
 
+  // TODO: make this an optional parameter similar to directSync
+  const noGlobalEvent = false;
+
   // bind all new state values
   function updateState(newstate) {
-    if (webclient.setState) webclient.setState(newstate);
-    else
+    // Generate a global update event for this webclient
+    if (!noGlobalEvent) {
+      document.dispatchEvent(
+        new CustomEvent("webclient:update", {
+          detail: {
+            update: newstate
+          }
+        })
+      );
+    }
+
+    // call setState, if it exists, otherwise just perform the updates
+    if (webclient.setState) {
+      webclient.setState(newstate);
+    }
+
+    else {
       Object.keys(newstate).forEach(
         key => (update_target[key] = newstate[key])
       );
-    if (webclient.update) webclient.update(update_target);
+    }
+
+    // call the update function, if it exists.
+    if (webclient.update) {
+      webclient.update(update_target);
+    }
   }
 
   // turn a state diff into a state update
@@ -50,16 +74,16 @@ function generateClientServer(WebClientClass, directSync) {
     if (patch.length === 0) return;
 
     // verify we're still in sync by comparing messaging sequence numbers
-    const seqnum = patch.slice(-1)[0].value;
-    if (seqnum === __seq_num + 1) {
-      const state = rfc6902.applyPatch(update_target, patch);
-      return updateState(state);
+    const seq_num = patch.slice(-1)[0].value;
+    if (seq_num === update_target.__seq_num + 1) {
+      rfc6902.applyPatch(update_target, patch); // Note: this call updates in-place
+      return updateState(update_target);
     }
 
     // if we get here, wee're not in sync and need to request a full
     // state object instead of trying to apply differential states.
     const state = await socket.upgraded.send(`sync:full`, {
-      last_seq_num: __seq_num
+      last_seq_num: update_target.__seq_num
     });
 
     updateState(state);

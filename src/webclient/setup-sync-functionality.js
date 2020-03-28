@@ -13,14 +13,16 @@ module.exports = function setupSyncFunctionality(
   let syncing = false;
   let lastsync = false;
 
-  let prevState = {};
-  let prevSeqNum = 0;
-  const getNextSeqNum = () => prevSeqNum++;
-
   const getState = () => {
     if (!directSync) return sockets.client.state;
     return JSON.parse(JSON.stringify(sockets.client));
   };
+
+  let prevState = getState();
+  let prevSeqNum = prevState.__seq_num || 0;
+  prevState.__seq_num = prevSeqNum;
+
+  const getNextSeqNum = () => prevSeqNum++;
 
   /**
    * The state update function returns a diff between the current

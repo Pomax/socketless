@@ -13,6 +13,7 @@
     "socketless": "file:.."
   },
   "scripts": {
-    "simple": "node simple/index.js"
+    "simple": "node ./simple/index.js",
+    "web": "node ./web/index.js"
   }
 }

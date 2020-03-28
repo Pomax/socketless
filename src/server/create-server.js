@@ -14,6 +14,8 @@ module.exports = function(clientServer, namespaces, ServerClass, API) {
     const webserver = require(https ? "https" : "http").createServer();
     const ws = new WebSocket.Server({ server: webserver });
 
+    // TODO: slot into existing servers that are passed in the createServer call
+
     // Create an instance of the API handler
     const instance = new ServerClass();
 

@@ -337,22 +337,39 @@ class WebUI {
 }
 ```
 
-<!--
-
 ## Socketless webclients and UI Framework interoperability
 
-Socketless is ui-framework agnostic, and only cares the fact that you pass it a class with an `update(state)` function that it can instantiate. As such, for most UI frameworks the job of adding socketless is a matter of creating a minimal class that socketless can instantiate, and then having that expose its properties, as well as forward state updates, to your real UI code.
+Socketless is ui-framework agnostic, and only cares the fact that you pass it a class with a `setState(update)` or `update(state)` function that it can call. However, in order to ensure maximum interoperability, `socketless` also fires off a document level event called `webclient:update` with the state update as payload. This means that whatever framework you're using, you can add an event listener to the document that you can then unpack and route to wherever it needs to go:
 
-#### React
+```js
+document.addEventListener("webclient:update", evt => {
+  const data = evt.detail.update;
+  this.setState(data);
+});
+```
 
-...
+So if you're using React, this would be something like:
 
-#### Vue.js
+```js
+import WebClientClass from "./web-client-class.js";
+import { Component } from "React";
 
-...
+class MyReactComponent extends Component {
+  constructor(props) {
+    super(props);
 
-#### Angular
+    const { client, server} = ClientServer.generateClientServer(WebClientClass);
+    this.server = server;
 
-...
-
--->
+    };
+    document.addEventListener("webclient:update", evt => {
+      const data = evt.detail.update;
+      this.setState(data);
+    });
+  }
+  onClick(evt) {
+    this.server.doSomething(this.withSomeData);
+  }
+  ...
+}
+```
