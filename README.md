@@ -179,6 +179,10 @@ Server instances are created using `const server = factory.createServer(https?)`
 
 - `quit()`, closes all sockets and terminates the server.
 
+### Special Client properties
+
+- `client.id`, a unique string identifer that can be used for keying. (It's usually a good idea to send a digest of this id to each client when they connect)
+
 ### Special Client methods
 
 - `client.disconnect()`, break the connection to a specific client.
@@ -192,7 +196,7 @@ Server instances are created using `const server = factory.createServer(https?)`
 
 ## Client API
 
-Clients are created using `cosnt client = factory.createClient(serverURL)`
+Clients are created using `const client = factory.createClient(serverURL)`
 
 ### Properties
 

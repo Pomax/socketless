@@ -1,3 +1,7 @@
+# v0.12.7
+
+Added automatic client id generation at the server, so that the server has a keyable value, and can communicate that back to the client if necessary.
+
 # v0.12.5
 
 Fixed webclient syncing (sequencing was failing, and so each update led to a secondary full sync)

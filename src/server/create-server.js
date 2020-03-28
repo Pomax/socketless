@@ -47,6 +47,11 @@ module.exports = function(clientServer, namespaces, ServerClass, API) {
 
       client.__socket = socket;
       clients.push(client);
+      const clientId = `${Date.now()}-${clients.length}-${Math.random().toFixed(6).substring(2)}`;
+      Object.defineProperty(client, `id`, {
+        writable: false,
+        value: clientId
+      });
 
       // and make sure it'll get removed when it disconnects:
       socket.on(`close`, () => {
