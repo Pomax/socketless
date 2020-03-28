@@ -4,6 +4,7 @@ class ServerClass {
    */
   constructor() {
     console.log("server> created");
+    this.games = [];
   }
 
   /**
@@ -13,7 +14,8 @@ class ServerClass {
     console.log(
       `server> new connection, ${this.clients.length} clients connected`
     );
-    client.startup.register();
+    const id = this.games.length;
+    client.setId(id);
   }
 
   /**
@@ -27,14 +29,11 @@ class ServerClass {
     }
   }
 
-  /**
-   * ...
-   */
-  async "user:setName"(client, name) {
-    console.log(`server> client is now known as ${name}`);
-    client.name = name;
-    return true;
-  }
+  view all games
+  start a game
+  add a bot
+  play a move
+
 }
 
 module.exports = ServerClass;
