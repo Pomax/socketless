@@ -1,4 +1,4 @@
-const Game = require(`./game.js`);
+const Game = require(`./Game.js`);
 
 class GameManager {
   constructor() {
