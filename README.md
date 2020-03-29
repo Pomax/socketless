@@ -169,11 +169,11 @@ This function yields a client/server factory when called, with the following pub
 
 ## Server API
 
-Server instances are created using `const server = factory.createServer(https?)`.
+Server instances are created using `const server = factory.createServer(https?)`. All Server API functions must have `client` as their first argument, which will be automatically supplied by `socketless` when routing calls.
 
 ### Properties
 
-- `clients`, an array of Client representations, allowing calls to client API functions as `[await] this.client.namespace.functionName(data)`.
+- `clients`, the "list of clients" representations, allowing broadcasts to all clients using `[await] this.clients.namespace.functionName(data)`.
 
 ### Methods
 
@@ -196,7 +196,7 @@ Server instances are created using `const server = factory.createServer(https?)`
 
 ## Client API
 
-Clients are created using `const client = factory.createClient(serverURL)`
+Clients are created using `const client = factory.createClient(serverURL)`.
 
 ### Properties
 

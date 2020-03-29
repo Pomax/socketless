@@ -10,7 +10,6 @@ test("can build clientserver", async () => {
 
   class ServerClass {
     onConnect(client) {
-      client.id = this.clients.length;
       client.admin.register(client.id);
     }
     onDisconnect() {

@@ -1,0 +1,43 @@
+:root {
+  --quad: 4em;
+}
+
+.gameboard {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  height: calc(3 * var(--quad));
+  width: calc(3 * var(--quad));
+  background: red;
+  opacity: 0.5;
+}
+
+.gameboard.winner {
+  border: 3px solid gold;
+}
+
+.gameboard.draw {
+  border: 3px solid lightskyblue;
+}
+
+.gameboard.loser {
+  border: 3px solid red;
+}
+
+.gameboard.ourturn,
+.gameboard.over {
+  opacity: 1;
+}
+
+.gameboard .space {
+  display: flex;
+  flex: 0 0 auto;
+  background: grey;
+  height: var(--quad);
+  width: var(--quad);
+  line-height: var(--quad);
+  justify-content: center;
+}
+.gameboard .space:nth-child(2n) {
+  background: blue;
+}

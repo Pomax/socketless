@@ -60,16 +60,25 @@ module.exports = function(clientServer, namespaces, ServerClass, API) {
         if (instance.onDisconnect) instance.onDisconnect(client);
       });
 
-      // also make sure broadcasts to all client, by clients, work:
+      // make sure broadcasts to all client, by both the server, and other clients, works:
       namespaces.forEach(namespace => {
         API[namespace].client.forEach(fname => {
-          socket.upgraded.on(`broadcast:${namespace}:${fname}`, data => {
-            clients.forEach(client => {
-              client.__socket.upgraded.send(`${namespace}:${fname}`, data);
-            });
-          });
+          const broadcastData = (data) => Promise.all(
+            clients.map(client =>
+              client.__socket.upgraded.send(`${namespace}:${fname}`, data)
+            )
+          );
+
+          // client-to-clients
+          socket.upgraded.on(`broadcast:${namespace}:${fname}`, broadcastData);
+
+          // server-to-clients
+          if (!clients[namespace]) Object.defineProperty(clients, namespace, { enumerable: false, value: {}});
+          clients[namespace][fname] = broadcastData;
         });
       });
+
+
 
       // and then call connected(client)
       if (instance.onConnect) instance.onConnect(client);

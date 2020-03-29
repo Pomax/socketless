@@ -1,39 +1,54 @@
+const GameManager = require(`./game-manager.js`);
+
 class ServerClass {
-  /**
-   * ...
-   */
   constructor() {
-    console.log("server> created");
-    this.games = [];
+    log("created");
+    this.gm = new GameManager();
   }
 
-  /**
-   * ...
-   */
   onConnect(client) {
-    console.log(
-      `server> new connection, ${this.clients.length} clients connected`
-    );
-    const id = this.games.length;
-    client.setId(id);
+    log(`new connection, ${this.clients.length} clients connected`);
+    client.admin.setId(client.id);
+    client.game.list({ games: this.gm.getList() });
   }
 
-  /**
-   * ...
-   */
   onDisconnect(client) {
-    console.log(`server> client ${client.name} disconnected`);
+    log(`client ${client.id} disconnected`);
     if (this.clients.length === 0) {
-      console.log(`server> no clients connected, shutting down.`);
+      log(`no clients connected, shutting down.`);
       this.quit();
     }
   }
 
-  view all games
-  start a game
-  add a bot
-  play a move
+  async "game:getList"(client) {
+    return this.gm.getList();
+  }
 
+  notifyGameList() {
+    this.clients.forEach(client =>
+      client.game.list({
+        games: this.gm.getList(client)
+      })
+    );
+  }
+
+  async "game:create"(client) {
+    this.gm.create(client);
+    this.notifyGameList();
+  }
+
+  async "game:join"(client, { gameId }) {
+    this.gm.join(gameId, client);
+    this.notifyGameList();
+  }
+
+  async "game:play"(client, { gameId, position }) {
+    this.gm.play(gameId, client.id, position);
+  }
 }
 
 module.exports = ServerClass;
+
+function log(...data) {
+  console.log("server>", ...data);
+}
