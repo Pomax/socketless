@@ -5,7 +5,7 @@ const generate404 = require("./404.js");
 const nodeToESM = require("./node-to-esm.js");
 
 // Create a route handler for our local web server
-module.exports = function(rootDir, publicDir, socketlessjs) {
+module.exports = function(rootDir, publicDir, socketlessjs, customRouter) {
   return (request, response) => {
     const url = request.url;
 
@@ -20,6 +20,9 @@ module.exports = function(rootDir, publicDir, socketlessjs) {
       response.writeHead(200, { "Content-Type": getContentType(`.js`) });
       return response.end(socketlessjs, `utf-8`);
     }
+
+    // custom route handing
+    if (customRouter.handle(url, request, response)) return;
 
     // convert the URL request into a file path
     var location = sanitizeLocation(request.url, rootDir, publicDir);
