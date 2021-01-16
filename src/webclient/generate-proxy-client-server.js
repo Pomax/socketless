@@ -100,6 +100,10 @@ function generateClientServer(WebClientClass, directSync) {
     respond();
   });
 
+  socket.upgraded.on(`keepalive`, (_, respond) => {
+    respond(`acknowledged`);
+  });
+
   // and offer a sync() function to manually trigger a full bootstrap
   webclient.sync = async () => {
     updateState(await socket.upgraded.send(`sync:full`));

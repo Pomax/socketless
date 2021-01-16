@@ -34,10 +34,19 @@ module.exports = function setupConnectionHandler(
       });
     });
 
+    // set up a keepalive message every 45 seconds
+    const keepalive = setInterval(() => {
+      const ack = browser.upgraded.send(`keepalive`);
+      if (!ack) {
+        console.log('client seems to have gotten lost...');
+      }
+    }, 45000); 
+
     // Add a quit() handler so the browser can "kill" the client:
     socket.upgraded.on("quit", async () => {
       await server.disconnect();
       if (client.onQuit) client.onQuit();
+      clearInterval(keepalive);
     });
   };
 };
