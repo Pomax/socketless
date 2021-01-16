@@ -1,6 +1,7 @@
 const attach = require("../util/attach.js");
 const generateSocketless = require("./generate-socketless.js");
 const makeRoutes = require("./utils/routes.js");
+const CustomRouter = require("./utils/custom-router.js");
 const setupConnectionHandler = require("./setup-connection-handler.js");
 const WebSocket = require("ws");
 
@@ -69,10 +70,12 @@ module.exports = function createWebClient(factory, ClientClass, API) {
     attach(sockets.client, "is_web_client", true);
 
     // Set up the web+socket server for browser connections
+    const router = new CustomRouter(sockets.client);
     const routes = makeRoutes(
       rootDir,
       publicDir,
-      generateSocketless(API, directSync)
+      generateSocketless(API, directSync),
+      router,
     );
     const webserver = require(useHttps ? "https" : "http").createServer(routes);
     const ws = new WebSocket.Server({ server: webserver });
@@ -85,6 +88,9 @@ module.exports = function createWebClient(factory, ClientClass, API) {
         client.onBrowserDisconnect();
       }
     });
+
+    // Rebind the function that allows users to specify custom route handling:
+    webserver.addRoute = router.addRouteHandler.bind(router);
 
     return webserver;
   };

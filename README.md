@@ -17,10 +17,10 @@ With these two classes defined, you can generate client and server instances usi
 - [Demos](#demos)
 - [API documentation](#api-documentation)
  - [Client/Server factory](#generateclientserver)
- - [Server API](server-api)
- - [Client API](client-api)
- - [Webclient API](webclient-api)
-   - [Browser interface](creating-a-client-interface-for-the-browser)
+ - [Server API](#server-api)
+ - [Client API](#client-api)
+ - [Webclient API](#webclient-api)
+   - [Browser interface](#creating-a-client-interface-for-the-browser)
 
 &nbsp;
 
@@ -233,7 +233,32 @@ Of these three `state` is technically not guaranteed, and depends on the `direct
 
 ### Methods
 
-The web client has the same API as the regular client.
+The web client has the same API as the regular client, with the addition of method to add custom routes to the webclient's server:
+
+- `addRoute(url, handler)`, allows bind of handlers of the form `function(client, request, response){ ... }` for handling requests to the webclient's server. The `request` and `response` arguments to the handler are Node's own http(s) library's request and response objects, and the `url` argument maps to the `request.url` string. Note that this string always has a leading `/`. The `client` argument will be a reference to the client class instance used, allowing you to call any regular functions defined in that class as part of the route handling.
+
+This allows the browser to invoke functions on the client by fetching a URL. For example, to change client behaviour in a multiplayer game, the following webclient code might be used:
+
+```js
+import Client from "...";
+import Server from "...";
+import socketless from "socketless";
+const ClientServer = socketless.generateClientServer(Client, Server);
+
+const url = `http://localhost:8080`;
+const publicDir = `./public`;
+const webclient = ClientServer.createWebClient(url, publicDir);
+
+// Add a custom route to go from being a normal player to having this client act as bot
+webclient.addRoute(`/become-a-bot`, (client, _request, response) => {
+  const result = client.switchPrototypesToBot();
+  response.end(result);
+});
+
+webclient.listen(0, () => {
+  console.log(`web client listening on ${webclient.address().port}`);
+});
+```
 
 ### Event handlers
 

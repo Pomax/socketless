@@ -78,6 +78,9 @@ describe("web client tests", () => {
         `http://localhost:${server.address().port}`,
         path.join(__dirname, `public-test`)
       );
+      webclient.addRoute(`/route-test`, function(client, request, response) {
+        // we're not testing the handling, just the route adding.
+      });
       webclient.listen(0);
     });
   });
