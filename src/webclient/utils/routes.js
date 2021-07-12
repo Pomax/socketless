@@ -7,6 +7,12 @@ const nodeToESM = require("./node-to-esm.js");
 // Create a route handler for our local web server
 module.exports = function(rootDir, publicDir, socketlessjs, customRouter) {
   return (request, response) => {
+    if (request.url.includes(`?`)) {
+      const [url, params] = request.url.split(/\\?\?/);
+      request.url = url;
+      request.params = new URLSearchParams(params);
+    }
+
     const url = request.url;
 
     // this should never have been default behaviour
