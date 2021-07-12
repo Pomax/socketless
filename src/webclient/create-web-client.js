@@ -18,6 +18,17 @@ module.exports = function createWebClient(factory, ClientClass, API) {
    * so that it can act as proxy between the server, and a browser.
    */
   return function(serverURL, publicDir, options = {}) {
+    let queryParameters = {};
+
+    if (serverURL.includes(`?`)) {
+      const query = new URLSearchParams(serverURL.split(/\\?\?/)[1]);
+      const entries = Array.from(query.keys()).map(k => {
+        const items = query.getAll(k);
+        return [k, items.length > 1 ? items:items[0]];
+      });
+      queryParameters = Object.fromEntries(entries);
+    }
+
     const { useHttps, directSync } = options;
 
     const rootDir = `${__dirname}/../`;
@@ -28,7 +39,7 @@ module.exports = function createWebClient(factory, ClientClass, API) {
     // Proxy class
     class WebClientClass extends ClientClass {
       constructor(...args) {
-        super(...args);
+        super(queryParameters, ...args);
       }
     }
 
@@ -68,6 +79,9 @@ module.exports = function createWebClient(factory, ClientClass, API) {
 
     // and set an immutable flag that marks this as a web client
     attach(sockets.client, "is_web_client", true);
+
+    // then bind the client URL parameters?
+    attach(sockets.client, "params", queryParameters);
 
     // Set up the web+socket server for browser connections
     const router = new CustomRouter(sockets.client);

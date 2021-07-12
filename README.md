@@ -223,13 +223,21 @@ Web clients are created with `const webclient = factory.createWebClient(serverUR
 
 ### Properties
 
-The web client has the same API as the regular client, with three additional properties:
+The web client has the same API as the regular client, with four additional properties:
 
 - `is_web_client`, a fixed value set to `true`
 - `browser_connected`, `true` if a browser is connected to this client.
 - `state`, an object used for internal state synchronization with a connected web interface. Any values that you want synced should be set on this object )note: there is not special `setState`, values can be set directly on this object).
+- `params`, an object containing all values passed as query arguments in the `serverURL` argument to `createWebClient()`. Note that arrays of values can only by specifying multiple values for the same key. As such, the following params objects:
+```
+{
+  username: "Socketless",
+  defaultValues: [1,2,3]
+}
+```
+has the query argument format `?username=Socketless&defaultValues=1&defaultValues=2defaultValues=3`.
 
-Of these three `state` is technically not guaranteed, and depends on the `directSync` boolean passed as part of the creation call. When `true`, no state variable is used and the webclient itself is treated as the state object. _This is incredibly error prone, and is highly discouraged_ not to mention might be removed as functionality in the future, so don't rely on it.
+Of these four properties, `state` is technically not guaranteed, and depends on the `directSync` boolean passed as part of the creation call. When `true`, no state variable is used and the webclient itself is treated as the state object. _This is incredibly error prone, and is highly discouraged_ not to mention might be removed as functionality in the future, so don't rely on it.
 
 ### Methods
 
