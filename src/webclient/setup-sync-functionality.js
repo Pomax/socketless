@@ -29,11 +29,12 @@ module.exports = function setupSyncFunctionality(
    * state and the previous state. This function should only ever
    * be called in response to sync() calls.
    */
-  const getStateUpdate = () => {
+   const getStateUpdate = () => {
     const state = getState();
     const diff = getStateDiff(state, prevState);
     if (diff.length) {
       prevState = JSON.parse(JSON.stringify(state));
+      diff.push({ op: "replace", path: "/__time_stamp", value: `${Date.now()}` });
       diff.push({ op: "replace", path: "/__seq_num", value: getNextSeqNum() });
     }
     return diff;
@@ -53,6 +54,7 @@ module.exports = function setupSyncFunctionality(
   const getFullState = () => {
     const state = getState();
     prevState = JSON.parse(JSON.stringify(state));
+    state.__time_stamp = `${Date.now()}`;
     state.__seq_num = getNextSeqNum();
     return state;
   };
