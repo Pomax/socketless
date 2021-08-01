@@ -144,13 +144,18 @@ function upgradeSocket(socket) {
       // First, make sure we're ready to receive the response...
       socket.upgraded.on(responseName, handler);
 
-      // And then, second, send the event off to the client.
-      socket.send(
-        JSON.stringify({
-          name: eventName,
-          payload: data
-        })
-      );
+      // And then, send the event off to the client.
+      const sendEvent = () => {
+        socket.send(
+          JSON.stringify({
+            name: eventName,
+            payload: data
+          })
+        );
+      }
+
+      if (socket.readyState === 1) sendEvent();
+      else socket.onopen = sendEvent;
     });
   };
 
