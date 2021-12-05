@@ -7,7 +7,7 @@ module.exports = function(clientServer, namespaces, ServerClass, API) {
    * whistles taken care of so the user doesn't ever need to write
    * any websocket code explicitly.
    */
-  return function createServer(httpsOptions = false) {
+  return function createServer(httpsOptions = undefined) {
     // Create a websocket server
     const webserver = require(httpsOptions ? "https" : "http").createServer(httpsOptions);
     const ws = new WebSocket.Server({ server: webserver });
