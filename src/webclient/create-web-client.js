@@ -29,7 +29,7 @@ module.exports = function createWebClient(factory, ClientClass, API) {
       queryParameters = Object.fromEntries(entries);
     }
 
-    const { useHttps, directSync } = options;
+    const { httpsOptions, directSync } = options;
 
     const rootDir = `${__dirname}/../`;
 
@@ -91,7 +91,8 @@ module.exports = function createWebClient(factory, ClientClass, API) {
       generateSocketless(API, directSync),
       router,
     );
-    const webserver = require(useHttps ? "https" : "http").createServer(routes);
+    const serverArguments = httpsOptions ? [httpsOptions, routes] : [routes]
+    const webserver = require(httpsOptions ? "https" : "http").createServer(...serverArguments);
     const ws = new WebSocket.Server({ server: webserver });
     const connectBrowser = setupConnectionHandler(sockets, API, directSync);
 

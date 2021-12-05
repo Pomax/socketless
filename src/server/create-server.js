@@ -1,17 +1,15 @@
 const WebSocket = require("ws");
 const attach = require("../util/attach");
 
-// TODO: allow passing in a preexisting server?
-
 module.exports = function(clientServer, namespaces, ServerClass, API) {
   /**
    * This function creates a websocket server with all the bells and
    * whistles taken care of so the user doesn't ever need to write
    * any websocket code explicitly.
    */
-  return function createServer(https = false) {
+  return function createServer(httpsOptions = undefined) {
     // Create a websocket server
-    const webserver = require(https ? "https" : "http").createServer();
+    const webserver = require(httpsOptions ? "https" : "http").createServer(httpsOptions);
     const ws = new WebSocket.Server({ server: webserver });
 
     // TODO: slot into existing servers that are passed in the createServer call

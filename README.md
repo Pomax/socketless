@@ -219,7 +219,9 @@ Clients are created using `const client = factory.createClient(serverURL)`.
 
 Web clients are an extension of the standard client with built-in functionality for exposing the client through a web interface by connecting a browser to the web client's own http(s) server.
 
-Web clients are created with `const webclient = factory.createWebClient(serverURL, publicDir, options? = { useHttps?, directSync?})`
+Web clients are created with `const webclient = factory.createWebClient(serverURL, publicDir, options? = { httpsOptions?, directSync?})`
+
+The `httpsOptions` are the same as those used by Node's `https` module, see https://nodejs.org/api/https.html#httpscreateserveroptions-requestlistener for more details, `directSync` takes a boolean value.
 
 ### Properties
 
