@@ -10,7 +10,7 @@ module.exports = function(namespace, serverFn, resolveWithoutNamespace) {
   function ClientCallHandler(socketFromClient, handler) {
     let socket = (this.socket = upgradeSocket(socketFromClient));
     this.handler = handler;
-    serverFn.forEach(name => {
+    serverFn.forEach((name) => {
       socket.upgraded.on(`${namespace}:${name}`, (data, respond) =>
         this[name](data, respond)
       );
@@ -19,7 +19,7 @@ module.exports = function(namespace, serverFn, resolveWithoutNamespace) {
 
   ClientCallHandler.prototype = {};
 
-  serverFn.forEach(name => {
+  serverFn.forEach((name) => {
     // The initial binding has to "find" the function that needs to be used.
     ClientCallHandler.prototype[name] = async function(data, respond) {
       // Determing whether we can use explicit namespacing:
@@ -44,8 +44,18 @@ module.exports = function(namespace, serverFn, resolveWithoutNamespace) {
       // As we now know which function to actually route through, rebind
       // the servercallhandler function so that it immediately uses that.
       const client = this.socket.clientServer.client.instance;
-      const response = await process(client, data);
-      if (response) respond(response);
+
+      try {
+        const response = await process(client, data);
+        if (response) respond(response);
+      } catch (e) {
+        console.error(
+          `An error was caught that would have crashed the system if allowed through`
+        );
+        console.error(`======`);
+        console.error(e);
+        console.error(`======`);
+      }
 
       // TODO: optimise this so that ClientCallHandler.prototype[name] gets rebound after the initial process() lookup?
     };
