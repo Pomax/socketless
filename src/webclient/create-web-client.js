@@ -94,13 +94,18 @@ module.exports = function createWebClient(factory, ClientClass, API) {
 
     if (middleware) {
       const handle = routeHandling;
-      routeHandling = (q, r) => {
-        middleware.forEach(process => process(q, r));
-        handle(q, r);
+      routeHandling = (req, res) => {
+        for (process of middleware) {
+          process(req, res);
+          if (res.finished) return;
+        }
+        handle(req, res);
       };
     }
 
-    const serverArguments = httpsOptions ? [httpsOptions, routeHandling] : [routeHandling];
+    const serverArguments = httpsOptions
+      ? [httpsOptions, routeHandling]
+      : [routeHandling];
     const webserver = require(httpsOptions ? "https" : "http").createServer(
       ...serverArguments
     );
