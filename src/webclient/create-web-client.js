@@ -1,14 +1,14 @@
 const attach = require("../util/attach.js");
 const generateSocketless = require("./generate-socketless.js");
-const makeRoutes = require("./utils/routes.js");
+const makeRouteHandler = require("./utils/routes.js");
 const CustomRouter = require("./utils/custom-router.js");
 const setupConnectionHandler = require("./setup-connection-handler.js");
 const WebSocket = require("ws");
 
 module.exports = function createWebClient(factory, ClientClass, API) {
   // Prep: derive all client functions that we may need to proxy
-  const APInames = Object.keys(API).flatMap(namespace =>
-    API[namespace].client.map(fname => `${namespace}:${fname}`)
+  const APInames = Object.keys(API).flatMap((namespace) =>
+    API[namespace].client.map((fname) => `${namespace}:${fname}`)
   );
 
   /**
@@ -22,14 +22,14 @@ module.exports = function createWebClient(factory, ClientClass, API) {
 
     if (serverURL.includes(`?`)) {
       const query = new URLSearchParams(serverURL.split(/\\?\?/)[1]);
-      const entries = Array.from(query.keys()).map(k => {
+      const entries = Array.from(query.keys()).map((k) => {
         const items = query.getAll(k);
-        return [k, items.length > 1 ? items:items[0]];
+        return [k, items.length > 1 ? items : items[0]];
       });
       queryParameters = Object.fromEntries(entries);
     }
 
-    const { httpsOptions, directSync } = options;
+    const { httpsOptions, directSync, middleware } = options;
 
     const rootDir = `${__dirname}/../`;
 
@@ -45,7 +45,7 @@ module.exports = function createWebClient(factory, ClientClass, API) {
 
     // Proxy calls by first having the ClientClass deal with them,
     // and then forwarding them on to the browser.
-    Object.getOwnPropertyNames(ClientClass.prototype).forEach(name => {
+    Object.getOwnPropertyNames(ClientClass.prototype).forEach((name) => {
       const evtName = name.replace("$", ":");
 
       // Skip over any name not mentioned in the earlier-abstracted API,
@@ -85,14 +85,24 @@ module.exports = function createWebClient(factory, ClientClass, API) {
 
     // Set up the web+socket server for browser connections
     const router = new CustomRouter(sockets.client);
-    const routes = makeRoutes(
+    let routeHandling = makeRouteHandler(
       rootDir,
       publicDir,
       generateSocketless(API, directSync),
-      router,
+      router
     );
-    const serverArguments = httpsOptions ? [httpsOptions, routes] : [routes]
-    const webserver = require(httpsOptions ? "https" : "http").createServer(...serverArguments);
+
+    if (middleware) {
+      routeHandling = (q, r) => {
+        middleware.forEach(process => process(q, r));
+        routeHandling(q, r);
+      };
+    }
+
+    const serverArguments = httpsOptions ? [httpsOptions, routeHandling] : [routeHandling];
+    const webserver = require(httpsOptions ? "https" : "http").createServer(
+      ...serverArguments
+    );
     const ws = new WebSocket.Server({ server: webserver });
     const connectBrowser = setupConnectionHandler(sockets, API, directSync);
 

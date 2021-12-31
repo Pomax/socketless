@@ -5,7 +5,7 @@ const generate404 = require("./404.js");
 const nodeToESM = require("./node-to-esm.js");
 
 // Create a route handler for our local web server
-module.exports = function makeRoutes(rootDir, publicDir, socketlessjs, customRouter) {
+module.exports = function makeRouteHandler(rootDir, publicDir, socketlessjs, customRouter) {
   return (request, response) => {
     if (request.url.includes(`?`)) {
       const [url, params] = request.url.split(/\\?\?/);

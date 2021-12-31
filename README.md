@@ -219,9 +219,11 @@ Clients are created using `const client = factory.createClient(serverURL)`.
 
 Web clients are an extension of the standard client with built-in functionality for exposing the client through a web interface by connecting a browser to the web client's own http(s) server.
 
-Web clients are created with `const webclient = factory.createWebClient(serverURL, publicDir, options? = { httpsOptions?, directSync?})`
+Web clients are created with `const webclient = factory.createWebClient(serverURL, publicDir, options? = { httpsOptions?, directSync?, middleware?})`
 
-The `httpsOptions` are the same as those used by Node's `https` module, see https://nodejs.org/api/https.html#httpscreateserveroptions-requestlistener for more details, `directSync` takes a boolean value.
+- The `httpsOptions` are the same as those used by Node's `https` module, see https://nodejs.org/api/https.html#httpscreateserveroptions-requestlistener for more details.
+- The `directSync` property should be a boolean value, and if `true` turns of state tracking in a dedicated state property. 99.999% of the time this is an incredibly bad idea.
+- The` middleware` property should be an array of `function(req, res)`, which get run in order before the built-in route handler.
 
 ### Properties
 
