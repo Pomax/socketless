@@ -93,9 +93,10 @@ module.exports = function createWebClient(factory, ClientClass, API) {
     );
 
     if (middleware) {
+      const handle = routeHandling;
       routeHandling = (q, r) => {
         middleware.forEach(process => process(q, r));
-        routeHandling(q, r);
+        handle(q, r);
       };
     }
 
