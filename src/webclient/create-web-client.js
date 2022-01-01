@@ -94,9 +94,12 @@ module.exports = function createWebClient(factory, ClientClass, API) {
 
     if (middleware) {
       const handle = routeHandling;
-      routeHandling = (req, res) => {
-        for (process of middleware) {
-          process(req, res);
+      routeHandling = async(req, res) => {
+        for (fn of middleware) {
+          const result = fn(req, res);
+          if (typeof result !== `undefined` && typeof result.then === `function`) {
+            await result;
+          }
           if (res.finished) return;
         }
         handle(req, res);
