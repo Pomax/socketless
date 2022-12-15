@@ -26,7 +26,7 @@
   },
   "homepage": "https://github.com/Pomax/socketless#readme",
   "dependencies": {
-    "rfc6902": "^3.0.4",
+    "rfc6902": "^5.0.0",
     "ws": "^7.1.1"
   },
   "devDependencies": {
