@@ -1,6 +1,6 @@
-const GameManager = require(`./GameManager.js`);
+import { GameManager } from "./GameManager.js";
 
-class ServerClass {
+export class ServerClass {
   constructor() {
     log("created");
     this.gm = new GameManager();
@@ -25,10 +25,10 @@ class ServerClass {
   }
 
   notifyGameList() {
-    this.clients.forEach(client =>
+    this.clients.forEach((client) =>
       client.game.list({
-        games: this.gm.getList(client)
-      })
+        games: this.gm.getList(client),
+      }),
     );
   }
 
@@ -46,8 +46,6 @@ class ServerClass {
     this.gm.play(gameId, client.id, position);
   }
 }
-
-module.exports = ServerClass;
 
 function log(...data) {
   console.log("server>", ...data);

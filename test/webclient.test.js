@@ -1,21 +1,26 @@
-const path = require(`path`);
-const puppeteer = require("puppeteer");
+import url from "url";
+import path from "path";
+import puppeteer from "puppeteer";
+import { generateClientServer } from "../src/index.js";
 
-const { generateClientServer } = require(`../src/generate-client-server.js`);
+const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
 
 describe("web client tests", () => {
-  it("should support all publically documented properties and functions", async done => {
+  it("should support all publicly documented properties and functions", (done) => {
     const functionCalls = [];
-    let webclient;
+    let webclient, browser;
 
     /**
      * Puppeteer in place of a real user.
      */
     let runTests = async () => {
-      const browser = await puppeteer.launch({
+      browser = await puppeteer.launch({
+        headless: `new`,
         // devtools: true
       });
+
       const page = await browser.newPage();
+      page.on("console", (message) => console.log(`[LOG] ${message.text()}`));
       await page.goto(`http://localhost:${webclient.address().port}`);
       await page.waitForSelector(`#value`);
       await page.waitForSelector(`#quit`);
@@ -74,14 +79,23 @@ describe("web client tests", () => {
     const ClientServer = generateClientServer(WebClientClass, ServerClass);
     const server = ClientServer.createServer();
     server.listen(0, () => {
+      // console.log(
+      //   `creating web client against server at http://localhost:${
+      //     server.address().port
+      //   }`
+      // );
       webclient = ClientServer.createWebClient(
         `http://localhost:${server.address().port}`,
-        path.join(__dirname, `public-test`)
+        path.join(__dirname, `public-test`),
       );
-      webclient.addRoute(`/route-test`, function(client, request, response) {
+      webclient.addRoute(`/route-test`, function (client, request, response) {
         // we're not testing the handling, just the route adding.
       });
-      webclient.listen(0);
+      webclient.listen(50000, () => {
+        // console.log(
+        //   `web client running on http://localhost:${webclient.address().port}`
+        // );
+      });
     });
   });
 });

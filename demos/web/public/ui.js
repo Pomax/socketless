@@ -1,22 +1,16 @@
 class WebClient {
   constructor() {
     this.gameList = document.getElementById("gamelist");
-
-    let create = document.getElementById("create");
-    create.addEventListener(`click`, evt => {
-      this.server.game.create();
-    });
-
-    let quit = document.getElementById("quit");
-    quit.addEventListener(`click`, evt => {
-      this.quit();
-    });
+    const create = document.getElementById("create");
+    create.addEventListener(`click`, () => this.server.game.create());
+    const quit = document.getElementById("quit");
+    quit.addEventListener(`click`, () => this.quit());
   }
 
   update(state) {
-    let list = this.gameList;
+    const list = this.gameList;
     list.innerHTML = ``;
-    state.gameList.forEach(entry => {
+    state.gameList.forEach((entry) => {
       const { id, owner, waiting, started } = entry;
       const li = document.createElement(`li`);
       li.textContent = id;
@@ -26,7 +20,7 @@ class WebClient {
         if (!owner) {
           const join = document.createElement(`button`);
           join.textContent = `join`;
-          join.addEventListener(`click`, evt => {
+          join.addEventListener(`click`, (evt) => {
             this.server.game.join({ gameId: id });
           });
           li.appendChild(join);
@@ -36,7 +30,7 @@ class WebClient {
       } else if (owner && !started) {
         const start = document.createElement(`button`);
         start.textContent = `start`;
-        start.addEventListener(`click`, evt => {
+        start.addEventListener(`click`, (evt) => {
           this.server.game.start({ gameId: id });
         });
         li.appendChild(start);
@@ -53,35 +47,26 @@ class WebClient {
     const gameBoard = document.getElementById("board");
     gameBoard.innerHTML = ``;
 
-    if (ourTurn) {
-      gameBoard.classList.add("ourturn");
-    } else {
-      gameBoard.classList.remove("ourturn");
-    }
+    const classes = gameBoard.classList;
+
+    classes.toggle("ourturn", ourTurn);
 
     if (winner) {
-      gameBoard.classList.add(
-        "over",
-        this.state.id === winner ? "winner" : "loser"
-      );
+      classes.add("over", this.state.id === winner ? "winner" : "loser");
     } else if (draw) {
-      gameBoard.classList.add("over", "draw");
+      classes.add("over", "draw");
     } else {
-      gameBoard.classList.remove("over", "winner", "loser");
+      classes.remove("over", "winner", "loser");
     }
 
-    if (winner) {
-      gameBoard.classList.add("winner");
-    } else {
-      gameBoard.classList.remove("winner");
-    }
+    classes.toggle("winner", winner);
 
     board.split(`,`).forEach((value, position) => {
       const space = document.createElement("div");
       space.classList.add("space");
       space.textContent = value;
       if (!winner && !value && ourTurn) {
-        space.addEventListener("click", evt => {
+        space.addEventListener("click", (evt) => {
           this.server.game.play({ gameId, position });
         });
       }

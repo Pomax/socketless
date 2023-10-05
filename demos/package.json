@@ -1,6 +1,7 @@
 {
   "name": "demos",
   "version": "0.0.1",
+  "type": "module",
   "description": "Socketless demos",
   "main": "",
   "author": "Pomax",

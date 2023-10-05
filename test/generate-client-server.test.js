@@ -1,4 +1,4 @@
-const { generateClientServer } = require("../src/generate-client-server.js");
+import { generateClientServer } from "../src/index.js";
 
 test("can build clientserver", async () => {
   class ClientClass {
@@ -23,11 +23,11 @@ test("can build clientserver", async () => {
   const server = ClientServer.createServer();
   expect(server).toBeDefined();
 
-  await new Promise(resolve => {
+  await new Promise((resolve) => {
     server.__close = resolve;
     server.listen(0, () => {
       const client = ClientServer.createClient(
-        `http://localhost:${server.address().port}`
+        `http://localhost:${server.address().port}`,
       );
       expect(client).toBeDefined();
     });

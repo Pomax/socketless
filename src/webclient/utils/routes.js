@@ -1,11 +1,16 @@
-const fs = require(`fs`);
-const getContentType = require("./get-content-type.js");
-const sanitizeLocation = require("./sanitize-location.js");
-const generate404 = require("./404.js");
-const nodeToESM = require("./node-to-esm.js");
+// @ts-ignore: Node-specific import
+import fs from "fs";
+import { getContentType } from "./get-content-type.js";
+import { sanitizeLocation } from "./sanitize-location.js";
+import { generate404 } from "./404.js";
 
 // Create a route handler for our local web server
-module.exports = function makeRouteHandler(rootDir, publicDir, socketlessjs, customRouter) {
+export function makeRouteHandler(
+  rootDir,
+  publicDir,
+  socketlessjs,
+  customRouter,
+) {
   return (request, response) => {
     if (request.url.includes(`?`)) {
       const [url, params] = request.url.split(/\\?\?/);
@@ -36,9 +41,8 @@ module.exports = function makeRouteHandler(rootDir, publicDir, socketlessjs, cus
     // Serve file or send a 404
     fs.readFile(location, (error, content) => {
       if (error) return generate404(location, response);
-      content = nodeToESM(location, content);
       response.writeHead(200, { "Content-Type": getContentType(location) });
       response.end(content, `utf-8`);
     });
   };
-};
+}

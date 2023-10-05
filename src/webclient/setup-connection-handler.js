@@ -1,11 +1,7 @@
-const upgradeSocket = require("../upgrade-socket.js");
-const setupSyncFunctionality = require("./setup-sync-functionality.js");
+import { upgradeSocket } from "../util/upgrade-socket.js";
+import { setupSyncFunctionality } from "./setup-sync-functionality.js";
 
-module.exports = function setupConnectionHandler(
-  sockets,
-  API,
-  directSync = false
-) {
+export function setupConnectionHandler(sockets, API, directSync = false) {
   const namespaces = Object.keys(API);
 
   // Allow for socket binding and setting up call handling
@@ -14,7 +10,7 @@ module.exports = function setupConnectionHandler(
     let server = client.server;
 
     // record connection from browser and send a bootstrap instruction.
-    browser = sockets.browser = upgradeSocket(socket);
+    const browser = (sockets.browser = upgradeSocket(socket));
     client.browser_connected = true;
 
     if (client.onBrowserConnect) {
@@ -25,8 +21,8 @@ module.exports = function setupConnectionHandler(
     setupSyncFunctionality(sockets, socket, directSync);
 
     // Set up proxy functions for routing browser => server
-    namespaces.forEach(namespace => {
-      API[namespace].server.forEach(fname => {
+    namespaces.forEach((namespace) => {
+      API[namespace].server.forEach((fname) => {
         // event transport always uses `:` as namespace separator.
         socket.upgraded.on(`${namespace}:${fname}`, async (data, respond) => {
           respond(await server[namespace][fname](data));
@@ -38,9 +34,9 @@ module.exports = function setupConnectionHandler(
     const keepalive = setInterval(() => {
       const ack = browser.upgraded.send(`keepalive`);
       if (!ack) {
-        console.log('client seems to have gotten lost...');
+        console.log("client seems to have gotten lost...");
       }
-    }, 45000); 
+    }, 45000);
 
     // Add a quit() handler so the browser can "kill" the client:
     socket.upgraded.on("quit", async () => {
@@ -49,4 +45,4 @@ module.exports = function setupConnectionHandler(
       clearInterval(keepalive);
     });
   };
-};
+}

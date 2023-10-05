@@ -1,3 +1,5 @@
+import { ClientServer } from "./socketless.js";
+
 let eventCount = 0;
 
 class WebUI {
@@ -34,7 +36,7 @@ class WebUI {
 
 const ui = ClientServer.generateClientServer(WebUI);
 
-document.addEventListener("webclient:update", evt => {
-  let copied = {...evt.detail};
+document.addEventListener("webclient:update", (evt) => {
+  let copied = { ...evt.detail };
   ui.client.eventTest(copied);
 });

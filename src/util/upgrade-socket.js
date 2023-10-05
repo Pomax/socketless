@@ -40,14 +40,14 @@ function getResponseName(eventName) {
  *
  * And that's just so much nicer than plain websockets.
  */
-function upgradeSocket(socket) {
+export function upgradeSocket(socket) {
   // don't upgrade an already-upgraded socket
   if (socket[upgradeLabel]) return socket;
 
   socket.upgraded = {
     on: () => {},
     off: () => {},
-    send: async () => {}
+    send: async () => {},
   };
 
   // top level message handlers
@@ -55,7 +55,7 @@ function upgradeSocket(socket) {
 
   // top level message router specifically for the
   // message format used by the socketless code.
-  const router = data => {
+  const router = (data) => {
     if (data.srcElement) {
       // get data out of browser WebSocket
       data = data.data;
@@ -80,7 +80,7 @@ function upgradeSocket(socket) {
       return console.error(`no handlers for ${eventName}`);
     }
 
-    handlers[eventName].forEach(handler => {
+    handlers[eventName].forEach((handler) => {
       handler(payload, function respond(responseData) {
         socket.upgraded.send(getResponseName(eventName), responseData);
       });
@@ -119,7 +119,7 @@ function upgradeSocket(socket) {
   // the emit should wait before deciding there is no response forthcoming and
   // to clean up the event listener for that response.
   socket.upgraded.send = async (eventName, data = {}, timeout = 1000) => {
-    return await new Promise(resolve => {
+    return await new Promise((resolve) => {
       const responseName = getResponseName(eventName);
 
       // cleanup function for the event listener
@@ -135,7 +135,7 @@ function upgradeSocket(socket) {
       // for that eventName:response, and when we receive it,
       // we'll immediately STOP listening for similar responses
       // because we no longer care.
-      const handler = data => cleanup(data);
+      const handler = (data) => cleanup(data);
 
       // If no response has occurred within `timeout` milliseconds,
       // assume there will be no response and clean up the listener.
@@ -149,10 +149,10 @@ function upgradeSocket(socket) {
         socket.send(
           JSON.stringify({
             name: eventName,
-            payload: data
-          })
+            payload: data,
+          }),
         );
-      }
+      };
 
       if (socket.readyState === 1) sendEvent();
       else socket.onopen = sendEvent;
@@ -164,6 +164,3 @@ function upgradeSocket(socket) {
 
   return socket;
 }
-
-// this gets turned into "export default upgradeSocket;" by web serving
-module.exports = upgradeSocket;

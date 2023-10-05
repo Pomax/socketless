@@ -1,4 +1,4 @@
-module.exports = class CustomRouter {
+export class CustomRouter {
   /**
    * Bootstrap the custom router with a reference to the
    * webclient's underlying client instance, so that code
@@ -23,9 +23,9 @@ module.exports = class CustomRouter {
    * return true, to signal the route got handled.
    */
   handle(url, request, response) {
-    const route = this.routes[url]
+    const route = this.routes[url];
     if (!route) return false;
     route(this.client, request, response);
     return true;
   }
-};
+}

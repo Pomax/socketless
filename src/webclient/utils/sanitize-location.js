@@ -1,6 +1,6 @@
-const join = require(`path`).join;
+import { join } from "path";
 
-module.exports = function sanitizeLocation(location, projectDir, webRootDir) {
+export function sanitizeLocation(location, projectDir, webRootDir) {
   // special handling for /
   if (location === `/`) return join(webRootDir, `index.html`);
 
@@ -10,4 +10,4 @@ module.exports = function sanitizeLocation(location, projectDir, webRootDir) {
   location = join(webRootDir, location);
 
   return location;
-};
+}

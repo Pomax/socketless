@@ -1,13 +1,13 @@
-const getStateDiff = require("./utils/get-state-diff.js");
+import { getStateDiff } from "./utils/get-state-diff.js";
 
 /**
  * NOTE: this code currently does not verify that a sync instruction
  * was actually handled, and so it is possible for `prev` to get updated
  */
-module.exports = function setupSyncFunctionality(
+export function setupSyncFunctionality(
   sockets,
   socket,
-  directSync = false // pull straight from the client instance, rather than client.state
+  directSync = false, // pull straight from the client instance, rather than client.state
 ) {
   // sync lock mechanism
   let syncing = false;
@@ -29,12 +29,16 @@ module.exports = function setupSyncFunctionality(
    * state and the previous state. This function should only ever
    * be called in response to sync() calls.
    */
-   const getStateUpdate = () => {
+  const getStateUpdate = () => {
     const state = getState();
     const diff = getStateDiff(state, prevState);
     if (diff.length) {
       prevState = JSON.parse(JSON.stringify(state));
-      diff.push({ op: "replace", path: "/__time_stamp", value: `${Date.now()}` });
+      diff.push({
+        op: "replace",
+        path: "/__time_stamp",
+        value: `${Date.now()}`,
+      });
       diff.push({ op: "replace", path: "/__seq_num", value: getNextSeqNum() });
     }
     return diff;
@@ -80,4 +84,4 @@ module.exports = function setupSyncFunctionality(
 
   // and send an initial full sync instruction to the browser
   socket.fullsync();
-};
+}

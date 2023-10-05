@@ -1,6 +1,10 @@
-const upgradeSocket = require("../upgrade-socket");
+import { upgradeSocket } from "../util/upgrade-socket.js";
 
-module.exports = function(namespace, serverFn, resolveWithoutNamespace) {
+export function createClientCallHandler(
+  namespace,
+  serverFn,
+  resolveWithoutNamespace,
+) {
   // Define the handler object that the server can use to respond to
   // messages initiated by the client. (although responses may not be
   // required on a per-message basis).
@@ -12,7 +16,7 @@ module.exports = function(namespace, serverFn, resolveWithoutNamespace) {
     this.handler = handler;
     serverFn.forEach((name) => {
       socket.upgraded.on(`${namespace}:${name}`, (data, respond) =>
-        this[name](data, respond)
+        this[name](data, respond),
       );
     });
   }
@@ -21,7 +25,7 @@ module.exports = function(namespace, serverFn, resolveWithoutNamespace) {
 
   serverFn.forEach((name) => {
     // The initial binding has to "find" the function that needs to be used.
-    ClientCallHandler.prototype[name] = async function(data, respond) {
+    ClientCallHandler.prototype[name] = async function (data, respond) {
       // Determing whether we can use explicit namespacing:
       let process = this.handler[`${namespace}:${name}`];
       if (!process) process = this.handler[`${namespace}$${name}`];
@@ -30,7 +34,7 @@ module.exports = function(namespace, serverFn, resolveWithoutNamespace) {
       // Throw if there is no processing function at all:
       if (!process) {
         throw new Error(
-          `Missing handler.${namespace}:${name} in ClientCallHandler.${namespace}.${name}`
+          `Missing handler.${namespace}:${name} in ClientCallHandler.${namespace}.${name}`,
         );
       }
 
@@ -50,7 +54,7 @@ module.exports = function(namespace, serverFn, resolveWithoutNamespace) {
         if (response) respond(response);
       } catch (e) {
         console.error(
-          `An error was caught that would have crashed the system if allowed through`
+          `An error was caught that would have crashed the system if allowed through`,
         );
         console.error(`======`);
         console.error(e);
@@ -64,4 +68,4 @@ module.exports = function(namespace, serverFn, resolveWithoutNamespace) {
   ClientCallHandler.api = serverFn;
 
   return ClientCallHandler;
-};
+}

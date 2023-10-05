@@ -1,14 +1,22 @@
-const attach = require("../util/attach.js");
-const generateSocketless = require("./generate-socketless.js");
-const makeRouteHandler = require("./utils/routes.js");
-const CustomRouter = require("./utils/custom-router.js");
-const setupConnectionHandler = require("./setup-connection-handler.js");
-const WebSocket = require("ws");
+import { WebSocketServer } from "ws";
+import { attach } from "../util/attach.js";
+import { generateSocketless } from "./generate-socketless.js";
+import { makeRouteHandler } from "./utils/routes.js";
+import { CustomRouter } from "./utils/custom-router.js";
+import { setupConnectionHandler } from "./setup-connection-handler.js";
+// @ts-ignore: Node-specific import
+import url from "url";
+// @ts-ignore: Node-specific import
+import http from "http";
+// @ts-ignore: Node-specific import
+import https from "https";
 
-module.exports = function createWebClient(factory, ClientClass, API) {
+const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
+
+export function createWebClient(factory, ClientClass, API) {
   // Prep: derive all client functions that we may need to proxy
   const APInames = Object.keys(API).flatMap((namespace) =>
-    API[namespace].client.map((fname) => `${namespace}:${fname}`)
+    API[namespace].client.map((fname) => `${namespace}:${fname}`),
   );
 
   /**
@@ -17,7 +25,7 @@ module.exports = function createWebClient(factory, ClientClass, API) {
    * any socket code explicitly, with built-in server capabilities
    * so that it can act as proxy between the server, and a browser.
    */
-  return function(serverURL, publicDir, options = {}) {
+  return function (serverURL, publicDir, options = {}) {
     let queryParameters = {};
 
     if (serverURL.includes(`?`)) {
@@ -34,7 +42,7 @@ module.exports = function createWebClient(factory, ClientClass, API) {
     const rootDir = `${__dirname}/../`;
 
     // socket from this client to the server
-    const sockets = { client: false, browser: false };
+    const sockets = { client: undefined, browser: undefined };
 
     // Proxy class
     class WebClientClass extends ClientClass {
@@ -56,7 +64,7 @@ module.exports = function createWebClient(factory, ClientClass, API) {
       // TODO: document the fact that this means we MUST use namespacing
       //       for webclients, because otherwise proxying won't work.
 
-      WebClientClass.prototype[name] = async function(data) {
+      WebClientClass.prototype[name] = async function (data) {
         let response = await ClientClass.prototype[name].bind(this)(data);
         if (sockets.browser) {
           // always send a state diff to ensure client and browser have the same state.
@@ -75,29 +83,35 @@ module.exports = function createWebClient(factory, ClientClass, API) {
     });
 
     // bind a client socket to the server
-    sockets.client = factory.createClient(serverURL, WebClientClass);
+    const client = (sockets.client = factory.createClient(
+      serverURL,
+      WebClientClass,
+    ));
 
     // and set an immutable flag that marks this as a web client
-    attach(sockets.client, "is_web_client", true);
+    attach(client, "is_web_client", true);
 
     // then bind the client URL parameters?
-    attach(sockets.client, "params", queryParameters);
+    attach(client, "params", queryParameters);
 
     // Set up the web+socket server for browser connections
-    const router = new CustomRouter(sockets.client);
+    const router = new CustomRouter(client);
     let routeHandling = makeRouteHandler(
       rootDir,
       publicDir,
       generateSocketless(API, directSync),
-      router
+      router,
     );
 
     if (middleware) {
       const handle = routeHandling;
-      routeHandling = async(req, res) => {
-        for (fn of middleware) {
+      routeHandling = async (req, res) => {
+        for (let fn of middleware) {
           const result = fn(req, res);
-          if (typeof result !== `undefined` && typeof result.then === `function`) {
+          if (
+            typeof result !== `undefined` &&
+            typeof result.then === `function`
+          ) {
             await result;
           }
           if (res.finished) return;
@@ -106,26 +120,24 @@ module.exports = function createWebClient(factory, ClientClass, API) {
       };
     }
 
-    const serverArguments = httpsOptions
-      ? [httpsOptions, routeHandling]
-      : [routeHandling];
-    const webserver = require(httpsOptions ? "https" : "http").createServer(
-      ...serverArguments
-    );
-    const ws = new WebSocket.Server({ server: webserver });
+    const webserver = httpsOptions
+      ? https.createServer(httpsOptions, routeHandling)
+      : http.createServer(routeHandling);
+    const ws = new WebSocketServer({ server: webserver });
     const connectBrowser = setupConnectionHandler(sockets, API, directSync);
 
     ws.on(`connection`, connectBrowser);
     ws.on(`close`, () => {
-      sockets.client.browser_connected = sockets.browser = false;
+      client.browser_connected = sockets.browser = false;
       if (client.onBrowserDisconnect) {
         client.onBrowserDisconnect();
       }
     });
 
     // Rebind the function that allows users to specify custom route handling:
+    // @ts-ignore: we're adding a custom property to a Server instance, which TS doesn't like
     webserver.addRoute = router.addRouteHandler.bind(router);
 
     return webserver;
   };
-};
+}

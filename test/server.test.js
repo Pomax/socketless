@@ -1,7 +1,7 @@
-const { generateClientServer } = require("../src/generate-client-server.js");
+import { generateClientServer } from "../src/index.js";
 
 test("server supports all publically documented properties and functions", async () => {
-  await new Promise(resolve => {
+  await new Promise((resolve) => {
     class ClientClass {
       async "test:remote"() {}
     }

@@ -1,12 +1,10 @@
-const build = require("./build.js");
-const attach = require("./util/attach.js");
-
-// TODO it would be nice to make the factory client and server private fields.
+import * as build from "../build.js";
+import { attach } from "./attach.js";
 
 /**
  * ...docs go here
  */
-class ClientServerFactory {
+export class ClientServerFactory {
   constructor() {
     this.client = {};
     this.server = {};
@@ -20,11 +18,11 @@ class ClientServerFactory {
    * @param {*} resolveWithoutNamespace
    */
   setClientNamespace(namespace, clientAPI, serverAPI, resolveWithoutNamespace) {
-    const serverProxy = build.serverProxyAtClient(namespace, serverAPI);
-    const serverCallHandler = build.serverCallHandler(
+    const serverProxy = build.createServerProxyAtClient(namespace, serverAPI);
+    const serverCallHandler = build.createServerCallHandler(
       namespace,
       clientAPI,
-      resolveWithoutNamespace
+      resolveWithoutNamespace,
     );
     const namespaceObj = {};
     attach(namespaceObj, `server`, serverProxy);
@@ -40,11 +38,11 @@ class ClientServerFactory {
    * @param {*} resolveWithoutNamespace
    */
   setServerNamespace(namespace, clientAPI, serverAPI, resolveWithoutNamespace) {
-    const clientProxy = build.clientProxyAtServer(namespace, clientAPI);
-    const clientCallHandler = build.clientCallHandler(
+    const clientProxy = build.createClientProxyAtServer(namespace, clientAPI);
+    const clientCallHandler = build.createClientCallHandler(
       namespace,
       serverAPI,
-      resolveWithoutNamespace
+      resolveWithoutNamespace,
     );
     const namespaceObj = {};
     attach(namespaceObj, `client`, clientProxy);
@@ -63,7 +61,7 @@ class ClientServerFactory {
        * This function allows people to setup a web+socket server
        * without having to ever explicitly write websocket code.
        */
-      build.createServer(this, namespaces, ServerClass, API)
+      build.createServer(this, namespaces, ServerClass, API),
     );
 
     attach(
@@ -74,7 +72,7 @@ class ClientServerFactory {
        * can make direct calls against as if the server were a
        * locally accessible resource.
        */
-      build.createServerProxy(this, namespaces)
+      build.createServerProxy(this, namespaces),
     );
 
     attach(
@@ -84,7 +82,7 @@ class ClientServerFactory {
        * This allows people to setup a socket client without
        * having to ever explicitly write websocket code.
        */
-      build.createClient(this, ClientClass)
+      build.createClient(this, ClientClass),
     );
 
     attach(
@@ -95,7 +93,7 @@ class ClientServerFactory {
        * can make direct calls against as if the client were a
        * locally accessible resource.
        */
-      build.createClientProxy(this, namespaces)
+      build.createClientProxy(this, namespaces),
     );
 
     attach(
@@ -106,9 +104,7 @@ class ClientServerFactory {
        * its own web+socket server for attaching a browser to,
        * without having to ever explicitly write websocket code.
        */
-      build.createWebClient(this, ClientClass, API)
+      build.createWebClient(this, ClientClass, API),
     );
   }
 }
-
-module.exports = ClientServerFactory;

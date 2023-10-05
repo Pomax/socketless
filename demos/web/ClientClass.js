@@ -1,4 +1,4 @@
-class ClientClass {
+export class ClientClass {
   constructor() {
     log("created");
   }
@@ -20,7 +20,7 @@ class ClientClass {
     this.state.activeGame = {
       gameId,
       currentPlayer: startingPlayer,
-      board: board
+      board: board,
     };
   }
 
@@ -46,8 +46,6 @@ class ClientClass {
     }
   }
 }
-
-module.exports = ClientClass;
 
 function log(...data) {
   console.log("client>", ...data);

@@ -1,6 +1,13 @@
-const fs = require(`fs`);
-const path = require(`path`);
-const generateProxyClientServer = require(`./generate-proxy-client-server.js`);
+// @ts-ignore: Node-specific import
+import fs from "fs";
+// @ts-ignore: Node-specific import
+import path from "path";
+// @ts-ignore: Node-specific import
+import url from "url";
+
+import { generateProxyClientServer } from "./generate-proxy-client-server.js";
+
+const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
 
 /**
  * create a "bundle" consisting of:
@@ -16,34 +23,43 @@ const generateProxyClientServer = require(`./generate-proxy-client-server.js`);
  * on style points (plus, have you ever tried reading a webpack bundle?).
  * Would it take a build step and tens of megabytes of dependencies? Yep.
  */
-module.exports = function generateSocketless(API, directSync) {
+export function generateSocketless(API, directSync) {
   const namespaces = Object.keys(API);
-  return [
+  const code = [
     // Include a full copy of the rfc6902 patch/diff/apply library. This
     // is non-optional and not so much "a build step" as simply "we know
     // where it lives, add it".
     fs
-      .readFileSync(require.resolve(`rfc6902/dist/rfc6902.min.js`))
+      .readFileSync(
+        path.join(__dirname, `../../node_modules/rfc6902/dist/rfc6902.min.js`),
+      )
       .toString(`utf-8`),
 
     // We then build our builder:
     `
-    const ClientServer = {
+    export const ClientServer = {
       generateClientServer: function(WebClientClass) {
+
         const exports = {};`,
 
     // Which should include our socket upgrade code...
     fs
-      .readFileSync(path.join(__dirname, `../upgrade-socket.js`))
+      .readFileSync(path.join(__dirname, `../util/upgrade-socket.js`))
       .toString(`utf-8`)
-      .replace(`module.exports = upgradeSocket;`, ``),
+      .replace(
+        `export function upgradeSocket`,
+        `window.upgradeSocket = function`,
+      ),
 
     // and the rest of the library code.
     `
         const namespaces = ${JSON.stringify(namespaces)};
         const API = ${JSON.stringify(API)};
+
         return ${generateProxyClientServer.toString()}(WebClientClass, ${directSync});
       }
-    };`
+    };`,
   ].join(`\n`);
-};
+
+  return code;
+}

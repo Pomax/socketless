@@ -22,7 +22,6 @@ With these two classes defined, you can generate client and server instances usi
  - [Webclient API](#webclient-api)
    - [Browser interface](#creating-a-client-interface-for-the-browser)
 
-&nbsp;
 
 # Installation
 
@@ -30,7 +29,6 @@ Socketless can be installed using `npm`/`yarn`.
 
 Note that because `socketless` is code that by definition needs to run server-side, it does not provide a precompiled single-file library in a `dist` directory, nor should it ever (need to) be part of a bundling task.
 
-&nbsp;
 
 # Implementation and use example
 

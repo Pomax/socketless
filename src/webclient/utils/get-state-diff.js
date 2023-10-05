@@ -1,5 +1,5 @@
-const { createPatch } = require("rfc6902");
+import { createPatch } from "rfc6902";
 
-module.exports = function getStateDiff(newState, oldState) {
+export function getStateDiff(newState, oldState) {
   return createPatch(oldState, newState);
-};
+}

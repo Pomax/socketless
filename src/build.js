@@ -2,22 +2,20 @@
  * This module is a convenience module for accessing all
  * the various build functions under a single namespace.
  */
-module.exports = {
-  // generators for call routing at the client and server.
-  clientCallHandler: require("./server/client-call-handler.js"),
-  serverCallHandler: require("./client/server-call-handler.js"),
 
-  // generators for the proxy represenations of the client at the
-  // server, and the server at the client.
-  clientProxyAtServer: require("./server/client-proxy-at-server.js"),
-  serverProxyAtClient: require("./client/server-proxy-at-client.js"),
+// generators for call routing at the client and server.
+export { createClientCallHandler } from "./server/client-call-handler.js";
+export { createServerCallHandler } from "./client/server-call-handler.js";
 
-  // factory functions for the client and server proxies.
-  createClientProxy: require("./server/create-client-proxy.js"),
-  createServerProxy: require("./client/create-server-proxy.js"),
+// generators for the proxy represenations of the client at the server, and the server at the client.
+export { createClientProxyAtServer } from "./server/client-proxy-at-server.js";
+export { createServerProxyAtClient } from "./client/server-proxy-at-client.js";
 
-  // factory functions for the actual websocket client/server.
-  createClient: require("./client/create-client.js"),
-  createWebClient: require("./webclient/create-web-client.js"),
-  createServer: require("./server/create-server.js")
-};
+// factory functions for the client and server proxies.
+export { createClientProxy } from "./server/create-client-proxy.js";
+export { createServerProxy } from "./client/create-server-proxy.js";
+
+// factory functions for the actual websocket client/server.
+export { createClient } from "./client/create-client.js";
+export { createWebClient } from "./webclient/create-web-client.js";
+export { createServer } from "./server/create-server.js";

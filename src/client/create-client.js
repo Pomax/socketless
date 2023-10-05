@@ -1,7 +1,8 @@
-const addStateManagement = require("../util/add-state-management.js");
-const WebSocket = require("ws");
+import { addStateManagement } from "../util/add-state-management.js";
+// @ts-ignore: Node-specific import
+import { WebSocket } from "ws";
 
-module.exports = function(clientServer, DefaultClientClass) {
+export function createClient(clientServer, DefaultClientClass) {
   /**
    * This function creates a websocket client with all the bells and
    * whistles taken care of so the user doesn't ever need to write
@@ -31,7 +32,7 @@ module.exports = function(clientServer, DefaultClientClass) {
     socketToServer.on(`open`, (...data) => {
       instance.server = clientServer.client.createServer(
         socketToServer,
-        instance
+        instance,
       );
 
       if (instance.onConnect) {
@@ -41,4 +42,4 @@ module.exports = function(clientServer, DefaultClientClass) {
 
     return instance;
   };
-};
+}

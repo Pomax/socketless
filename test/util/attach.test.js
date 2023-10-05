@@ -1,4 +1,4 @@
-const attach = require("../../src/util/attach.js");
+import { attach } from "../../src/util/attach.js";
 
 test("attach creates immutable bindings", () => {
   const obj = {};
@@ -7,6 +7,7 @@ test("attach creates immutable bindings", () => {
   expect(obj.test).toBeDefined();
   expect(obj.test).toBe("test");
 
-  obj.test = "new";
-  expect(obj.test).toBe("test");
+  expect(() => {
+    obj.test = "new";
+  }).toThrow();
 });

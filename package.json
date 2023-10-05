@@ -1,12 +1,14 @@
 {
   "name": "socketless",
   "version": "0.13.12",
+  "type": "module",
   "description": "A framework and methodology for writing web socket client/server code, without writing any socket code.",
-  "main": "src/generate-client-server.js",
+  "main": "src/index.js",
   "scripts": {
-    "demo": "node demo/index.js",
     "prettier": "prettier --write ./**/*.js",
-    "test": "jest"
+    "test": "npm run test:ast && npm run test:jest",
+    "test:ast": "tsc ./src/build.js --checkJs --noEmit --module nodenext",
+    "test:jest": "node --experimental-vm-modules node_modules/jest/bin/jest.js --verbose=true --silent=false"
   },
   "repository": {
     "type": "git",
@@ -26,13 +28,13 @@
   },
   "homepage": "https://github.com/Pomax/socketless#readme",
   "dependencies": {
-    "rfc6902": "^3.0.4",
-    "ws": "^7.1.1"
+    "puppeteer": "^21.3.6",
+    "rfc6902": "^5.0.1",
+    "ws": "^8.14.2"
   },
   "devDependencies": {
-    "jest": "^25.1.0",
-    "node-fetch": "^2.6.0",
-    "prettier": "^1.19.1",
-    "puppeteer": "^2.1.1"
+    "jest": "^29.7.0",
+    "prettier": "^3.0.3",
+    "typescript": "^5.2.2"
   }
 }

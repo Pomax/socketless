@@ -1,4 +1,4 @@
-class ServerClass {
+export class ServerClass {
   /**
    * ...
    */
@@ -11,7 +11,7 @@ class ServerClass {
    */
   onConnect(client) {
     console.log(
-      `server> new connection, ${this.clients.length} clients connected`
+      `server> new connection, ${this.clients.length} clients connected`,
     );
     client.startup.register();
   }
@@ -36,5 +36,3 @@ class ServerClass {
     return true;
   }
 }
-
-module.exports = ServerClass;

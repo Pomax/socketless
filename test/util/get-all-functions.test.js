@@ -1,4 +1,4 @@
-const getAllFunctions = require("../../src/util/get-all-functions.js");
+import { getAllFunctions } from "../../src/util/get-all-functions.js";
 
 test("getAllFunctions should only get async API functions", () => {
   class TestClass {

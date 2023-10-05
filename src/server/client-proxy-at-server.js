@@ -1,6 +1,6 @@
-const upgradeSocket = require("../upgrade-socket");
+import { upgradeSocket } from "../util/upgrade-socket.js";
 
-module.exports = function(namespace, clientFn) {
+export function createClientProxyAtServer(namespace, clientFn) {
   // Define the client representation that the server can
   // use to talk to a client as if it was a local object.
 
@@ -10,8 +10,8 @@ module.exports = function(namespace, clientFn) {
 
   ClientProxyAtServer.prototype = {};
 
-  clientFn.forEach(name => {
-    ClientProxyAtServer.prototype[name] = async function(data) {
+  clientFn.forEach((name) => {
+    ClientProxyAtServer.prototype[name] = async function (data) {
       return await this.socket.upgraded.send(`${namespace}:${name}`, data);
     };
   });
@@ -19,4 +19,4 @@ module.exports = function(namespace, clientFn) {
   ClientProxyAtServer.api = clientFn;
 
   return ClientProxyAtServer;
-};
+}

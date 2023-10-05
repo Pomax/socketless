@@ -7,9 +7,11 @@
  * This code does _not_ run anywhere except in the browser,
  * as part of a webclient `createClientServer()` call.
  */
-function generateClientServer(WebClientClass, directSync) {
+export function generateProxyClientServer(WebClientClass, directSync) {
   const url = window.location.toString().replace("http", "ws");
   const socketToClient = new WebSocket(url);
+
+  // @ts-ignore: upgradeSocket is a global when this file runs in the browser
   const socket = upgradeSocket(socketToClient);
   const proxyServer = {};
 
@@ -19,18 +21,20 @@ function generateClientServer(WebClientClass, directSync) {
   if (!directSync) {
     Object.defineProperty(webclient, `state`, {
       writable: false,
-      value: {}
+      value: {},
     });
   }
 
   const update_target = directSync ? webclient : webclient.state;
 
-  // Add the browser => client => server forwarding
-  namespaces.forEach(namespace => {
+  // Add the browser => client => server forwarding.
+  // @ts-ignore: "namespaces" exists as global in the browser
+  namespaces.forEach((namespace) => {
     proxyServer[namespace] = {};
-    API[namespace].server.forEach(fname => {
+    // @ts-ignore: "API" exists as global in the browser
+    API[namespace].server.forEach((fname) => {
       let evt = namespace + ":" + fname;
-      proxyServer[namespace][fname] = async function(data) {
+      proxyServer[namespace][fname] = async function (data) {
         return await socket.upgraded.send(evt, data);
       };
     });
@@ -46,20 +50,18 @@ function generateClientServer(WebClientClass, directSync) {
       document.dispatchEvent(
         new CustomEvent("webclient:update", {
           detail: {
-            update: newstate
-          }
-        })
+            update: newstate,
+          },
+        }),
       );
     }
 
     // call setState, if it exists, otherwise just perform the updates
     if (webclient.setState) {
       webclient.setState(newstate);
-    }
-
-    else {
+    } else {
       Object.keys(newstate).forEach(
-        key => (update_target[key] = newstate[key])
+        (key) => (update_target[key] = newstate[key]),
       );
     }
 
@@ -76,6 +78,7 @@ function generateClientServer(WebClientClass, directSync) {
     // verify we're still in sync by comparing messaging sequence numbers
     const seq_num = patch.slice(-1)[0].value;
     if (seq_num === update_target.__seq_num + 1) {
+      // @ts-ignore: "rfc6902" exists as global in the browser
       rfc6902.applyPatch(update_target, patch); // Note: this call updates in-place
       return updateState(update_target);
     }
@@ -83,7 +86,7 @@ function generateClientServer(WebClientClass, directSync) {
     // if we get here, wee're not in sync and need to request a full
     // state object instead of trying to apply differential states.
     const state = await socket.upgraded.send(`sync:full`, {
-      last_seq_num: update_target.__seq_num
+      last_seq_num: update_target.__seq_num,
     });
 
     updateState(state);
@@ -110,8 +113,10 @@ function generateClientServer(WebClientClass, directSync) {
   };
 
   // Then: add the server => client => browser forwarding
-  namespaces.forEach(namespace => {
-    API[namespace].client.forEach(fname => {
+  // @ts-ignore: "namespaces" exists as global in the browser
+  namespaces.forEach((namespace) => {
+    // @ts-ignore: "API" exists as global in the browser
+    API[namespace].client.forEach((fname) => {
       let evt = namespace + ":" + fname;
       let process = webclient[evt];
       if (!process) process = webclient[evt.replace(":", "$")];
@@ -138,8 +143,6 @@ function generateClientServer(WebClientClass, directSync) {
   // And we're done building this object
   return {
     client: webclient,
-    server: proxyServer
+    server: proxyServer,
   };
 }
-
-module.exports = generateClientServer;

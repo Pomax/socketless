@@ -1,12 +1,12 @@
 // helper function to find all declared class functions
 // all the way up to the Object chain.
-module.exports = function getAllFunctions(objectClass) {
+export function getAllFunctions(objectClass) {
   const functions = [];
 
   while (objectClass.prototype) {
     const proto = objectClass.prototype;
 
-    const verify = v => {
+    const verify = (v) => {
       let fn = proto[v];
       if (typeof fn !== `function`) return false;
       if (fn.toString().indexOf(`async`) !== 0) return false;
@@ -17,7 +17,7 @@ module.exports = function getAllFunctions(objectClass) {
 
     Object.getOwnPropertyNames(proto)
       .filter(verify)
-      .forEach(name => {
+      .forEach((name) => {
         if (functions.indexOf(name) > -1) {
           // If we've already seen a binding for this function name, then that
           // binding was for a subclass overriding a superclass function, and
@@ -29,4 +29,4 @@ module.exports = function getAllFunctions(objectClass) {
   }
 
   return functions;
-};
+}
