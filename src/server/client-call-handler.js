@@ -26,7 +26,7 @@ export function createClientCallHandler(
   serverFn.forEach((name) => {
     // The initial binding has to "find" the function that needs to be used.
     ClientCallHandler.prototype[name] = async function (data, respond) {
-      // Determing whether we can use explicit namespacing:
+      // Determine whether we can use explicit namespacing:
       let process = this.handler[`${namespace}:${name}`];
       if (!process) process = this.handler[`${namespace}$${name}`];
       if (!process && resolveWithoutNamespace) process = this.handler[name];
