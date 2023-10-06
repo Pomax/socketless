@@ -1,9 +1,9 @@
-import { upgradeSocket } from "../util/upgrade-socket.js";
+import { upgradeSocket } from "../util/upgraded-socket.js";
 
 export function createClientCallHandler(
   namespace,
   serverFn,
-  resolveWithoutNamespace,
+  resolveWithoutNamespace
 ) {
   // Define the handler object that the server can use to respond to
   // messages initiated by the client. (although responses may not be
@@ -11,15 +11,15 @@ export function createClientCallHandler(
   //
   // This is effectively the "true callable server API".
 
-  function ClientCallHandler(socketFromClient, handler) {
+  const ClientCallHandler = function(socketFromClient, handler) {
     let socket = (this.socket = upgradeSocket(socketFromClient));
     this.handler = handler;
     serverFn.forEach((name) => {
       socket.upgraded.on(`${namespace}:${name}`, (data, respond) =>
-        this[name](data, respond),
+        this[name](data, respond)
       );
     });
-  }
+  };
 
   ClientCallHandler.prototype = {};
 
@@ -34,7 +34,7 @@ export function createClientCallHandler(
       // Throw if there is no processing function at all:
       if (!process) {
         throw new Error(
-          `Missing handler.${namespace}:${name} in ClientCallHandler.${namespace}.${name}`,
+          `Missing handler.${namespace}:${name} in ClientCallHandler.${namespace}.${name}`
         );
       }
 
@@ -54,7 +54,7 @@ export function createClientCallHandler(
         if (response) respond(response);
       } catch (e) {
         console.error(
-          `An error was caught that would have crashed the system if allowed through`,
+          `An error was caught that would have crashed the system if allowed through`
         );
         console.error(`======`);
         console.error(e);

@@ -1,4 +1,4 @@
-import { upgradeSocket } from "../util/upgrade-socket.js";
+import { upgradeSocket } from "../util/upgraded-socket.js";
 import { setupSyncFunctionality } from "./setup-sync-functionality.js";
 
 export function setupConnectionHandler(sockets, API, directSync = false) {

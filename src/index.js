@@ -8,7 +8,7 @@ import { ClientServerFactory } from "./util/client-server-factory.js";
  * @param {class} ClientClass    a class definition with namespaces functions.
  * @param {class} ServerClass    a class definition with namespaces functions.
  */
-export function generateClientServer(ClientClass, ServerClass, API = false) {
+export function generateClientServer(ClientClass, ServerClass, API) {
   // If we're given an API object, resolve down to bare
   // functions in client/server call handling.
   const resolveWithoutNamespace = !!API;
@@ -31,14 +31,14 @@ export function generateClientServer(ClientClass, ServerClass, API = false) {
       namespace,
       clientAPI,
       serverAPI,
-      resolveWithoutNamespace,
+      resolveWithoutNamespace
     );
 
     factory.setServerNamespace(
       namespace,
       clientAPI,
       serverAPI,
-      resolveWithoutNamespace,
+      resolveWithoutNamespace
     );
   });
 

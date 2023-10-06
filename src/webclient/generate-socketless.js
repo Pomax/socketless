@@ -31,7 +31,7 @@ export function generateSocketless(API, directSync) {
     // where it lives, add it".
     fs
       .readFileSync(
-        path.join(__dirname, `../../node_modules/rfc6902/dist/rfc6902.min.js`),
+        path.join(__dirname, `../../node_modules/rfc6902/dist/rfc6902.min.js`)
       )
       .toString(`utf-8`),
 
@@ -44,11 +44,14 @@ export function generateSocketless(API, directSync) {
 
     // Which should include our socket upgrade code...
     fs
-      .readFileSync(path.join(__dirname, `../util/upgrade-socket.js`))
+      .readFileSync(path.join(__dirname, `../util/upgraded-socket.js`))
       .toString(`utf-8`)
+      // browsers have WebSocket built in
+      .replace(`import { WebSocket } from "ws";`, ``)
+      // And we can't export inside an export of course.
       .replace(
         `export function upgradeSocket`,
-        `window.upgradeSocket = function`,
+        `window.upgradeSocket = function`
       ),
 
     // and the rest of the library code.

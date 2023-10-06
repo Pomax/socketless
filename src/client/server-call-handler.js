@@ -1,4 +1,4 @@
-import { upgradeSocket } from "../util/upgrade-socket.js";
+import { upgradeSocket } from "../util/upgraded-socket.js";
 
 export function createServerCallHandler(
   namespace,

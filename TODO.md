@@ -1,0 +1,1 @@
+- refactor the code from bare functions to classes
