@@ -1,8 +1,11 @@
-export class ServerClass {
+import { ServerBase } from "socketless";
+
+export class ServerClass extends ServerBase {
   /**
    * ...
    */
-  constructor() {
+  constructor(...args) {
+    super(...args);
     console.log("server> created");
   }
 
@@ -11,7 +14,7 @@ export class ServerClass {
    */
   onConnect(client) {
     console.log(
-      `server> new connection, ${this.clients.length} clients connected`,
+      `server> new connection, ${this.clients.length} clients connected`
     );
     client.startup.register();
   }

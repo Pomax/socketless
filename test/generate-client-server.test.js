@@ -1,19 +1,22 @@
-import { generateClientServer } from "../src/index.js";
+import { generateClientServer, ClientBase, ServerBase } from "../src/index.js";
 
-test("can build clientserver", async () => {
-  class ClientClass {
+test("can build clientserver", (done) => {
+  class ClientClass extends ClientBase {
     async "admin:register"(id) {
       this.id = id;
       this.server.disconnect();
     }
   }
 
-  class ServerClass {
+  class ServerClass extends ServerBase {
     onConnect(client) {
       client.admin.register(client.id);
     }
-    onDisconnect() {
-      this.__webserver.close(this.__webserver.__close);
+    onDisconnect(client) {
+      this.quit();
+    }
+    onQuit() {
+      done();
     }
   }
 
@@ -23,13 +26,10 @@ test("can build clientserver", async () => {
   const server = ClientServer.createServer();
   expect(server).toBeDefined();
 
-  await new Promise((resolve) => {
-    server.__close = resolve;
-    server.listen(0, () => {
-      const client = ClientServer.createClient(
-        `http://localhost:${server.address().port}`,
-      );
-      expect(client).toBeDefined();
-    });
+  server.listen(0, () => {
+    const client = ClientServer.createClient(
+      `http://localhost:${server.address().port}`
+    );
+    expect(client).toBeDefined();
   });
 });

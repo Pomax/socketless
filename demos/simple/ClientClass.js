@@ -1,8 +1,11 @@
-export class ClientClass {
+import { ClientBase } from "socketless";
+
+export class ClientClass extends ClientBase {
   /**
    * ...
    */
-  constructor() {
+  constructor(...args) {
+    super(...args);
     console.log("client> created");
   }
 
@@ -22,7 +25,9 @@ export class ClientClass {
    * ...
    */
   async "startup:register"() {
-    this.name = `user-${Date.now()}-${Math.random().toString().substring(2,8)}}`;
+    this.name = `user-${Date.now()}-${Math.random()
+      .toString()
+      .substring(2, 8)}}`;
     this.registered = await this.server.user.setName(this.name);
     console.log(`client> registered as ${this.name}: ${this.registered}`);
   }

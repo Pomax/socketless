@@ -1,5 +1,34 @@
 import { generateAPIfromClasses } from "./util/generate-api-from-classes.js";
 import { ClientServerFactory } from "./util/client-server-factory.js";
+import { ClientBase, ServerBase } from "./util/classes.js";
+
+export { ClientBase, ServerBase };
+
+// There is no loose `extends` keyword, akin to `instanceof` unfortunately,
+// so we have to check our class hierarchy using a while loop
+function ensureClassHierarchy(ClientClass, ServerClass) {
+  let X = ClientClass;
+  let clientPasses = false;
+  while (X.prototype) {
+    if (X === ClientBase) {
+      clientPasses = true;
+      break;
+    }
+    X = X.__proto__;
+  }
+  if (!clientPasses) throw new Error("Client class must extend ClientBase ");
+
+  X = ServerClass;
+  let serverPasses = false;
+  while (X.prototype) {
+    if (X === ServerBase) {
+      serverPasses = true;
+      break;
+    }
+    X = X.__proto__;
+  }
+  if (!serverPasses) throw new Error("Server class must extend ServerBase");
+}
 
 /**
  * Generate a factory object for building clients and servers that know how
@@ -9,6 +38,9 @@ import { ClientServerFactory } from "./util/client-server-factory.js";
  * @param {class} ServerClass    a class definition with namespaces functions.
  */
 export function generateClientServer(ClientClass, ServerClass, API) {
+  // Make sure the client and server implement the base classes
+  ensureClassHierarchy(ClientClass, ServerClass);
+
   // If we're given an API object, resolve down to bare
   // functions in client/server call handling.
   const resolveWithoutNamespace = !!API;

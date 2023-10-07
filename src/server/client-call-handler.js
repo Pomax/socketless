@@ -11,7 +11,7 @@ export function createClientCallHandler(
   //
   // This is effectively the "true callable server API".
 
-  const ClientCallHandler = function(socketFromClient, handler) {
+  const ClientCallHandler = function (socketFromClient, handler) {
     let socket = (this.socket = upgradeSocket(socketFromClient));
     this.handler = handler;
     serverFn.forEach((name) => {
@@ -47,7 +47,7 @@ export function createClientCallHandler(
 
       // As we now know which function to actually route through, rebind
       // the servercallhandler function so that it immediately uses that.
-      const client = this.socket.clientServer.client.instance;
+      const { client } = this.socket.clientServer;
 
       try {
         const response = await process(client, data);

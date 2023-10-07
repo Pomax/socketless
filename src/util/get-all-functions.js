@@ -1,9 +1,15 @@
+import { ClientBase, ServerBase } from "./classes.js";
+
 // helper function to find all declared class functions
 // all the way up to the Object chain.
 export function getAllFunctions(objectClass) {
   const functions = [];
 
-  while (objectClass.prototype) {
+  while (
+    objectClass.prototype &&
+    objectClass !== ServerBase &&
+    objectClass !== ClientBase
+  ) {
     const proto = objectClass.prototype;
 
     // This filter function determines whether a function signature
