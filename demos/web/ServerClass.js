@@ -1,7 +1,9 @@
+import { ServerBase } from "socketless";
 import { GameManager } from "./GameManager.js";
 
-export class ServerClass {
-  constructor() {
+export class ServerClass extends ServerBase {
+  constructor(...args) {
+    super(...args);
     log("created");
     this.gm = new GameManager();
   }
@@ -28,7 +30,7 @@ export class ServerClass {
     this.clients.forEach((client) =>
       client.game.list({
         games: this.gm.getList(client),
-      }),
+      })
     );
   }
 

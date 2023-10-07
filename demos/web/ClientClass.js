@@ -1,5 +1,8 @@
-export class ClientClass {
-  constructor() {
+import { ClientBase } from "socketless";
+
+export class ClientClass extends ClientBase {
+  constructor(...args) {
+    super(...args);
     log("created");
   }
 
