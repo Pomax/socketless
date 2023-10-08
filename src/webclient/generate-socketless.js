@@ -48,11 +48,12 @@ export function generateSocketless(API, directSync) {
       .toString(`utf-8`)
       // browsers have WebSocket built in
       .replace(`import { WebSocket } from "ws";`, ``)
-      // And we can't export inside an export of course.
+      // And we can't export inside of another export of course.
       .replace(
         `export function upgradeSocket`,
         `window.upgradeSocket = function`
-      ),
+      )
+      .replace(`export function proxySocket`, `window.proxySocket = function`),
 
     // and the rest of the library code.
     `

@@ -198,3 +198,37 @@ class UpgradedSocket extends WebSocket {
 export function upgradeSocket(socket) {
   return UpgradedSocket.upgrade(socket);
 }
+
+// importing uuid is way too expensive.
+function uuid() {
+  const now = Date.now().toString(16);
+  const rdm = ((1e6 * Math.random()) | 0).toString(16);
+  return `${now}-${rdm}`;
+}
+
+/**
+ * A socket proxy for RPC
+ */
+class SocketProxy extends Function {
+  constructor(socket, path = ``) {
+    super();
+    this.id = uuid();
+    this.path = path;
+    this.socket = socket;
+    return new Proxy(this, {
+      get: (_, prop) => {
+        if (prop === "id") return this.id;
+        if (prop === "socket") return this.socket;
+        if (prop === "__socket") return this.socket;
+        // @ts-ignore: we're never invoking this with Symbols
+        return new SocketProxy(socket, `${path}:${prop}`);
+      },
+      apply: (_, __, args) =>
+        this.socket.upgraded.send(this.path.substring(1), args),
+    });
+  }
+}
+
+export function proxySocket(socket) {
+  return new SocketProxy(UpgradedSocket.upgrade(socket));
+}

@@ -14,16 +14,25 @@ describe("web client tests", () => {
      * Puppeteer in place of a real user.
      */
     let runTests = async () => {
+      // console.log(`running tests: creating browser`);
       browser = await puppeteer.launch({
         headless: `new`,
-        // devtools: true
+        devtools: true,
       });
 
+      // console.log(`setting up console interception`);
       const page = await browser.newPage();
-      page.on("console", (message) => console.log(`[LOG] ${message.text()}`));
+
+      // page.on("console", (message) => console.log(`[LOG] ${message.text()}`));
+
+      // console.log(`navigating to page...`);
       await page.goto(`http://localhost:${webclient.address().port}`);
+
+      // console.log(`waiting for elements...`);
       await page.waitForSelector(`#value`);
       await page.waitForSelector(`#quit`);
+
+      // console.log(`puppeteer done.`);
       await page.click(`#quit`);
     };
 
@@ -32,12 +41,15 @@ describe("web client tests", () => {
      */
     class WebClientClass extends ClientBase {
       onConnect() {
+        // console.log(`client connected`);
         expect(this.is_web_client).toBe(true);
       }
       onBrowserConnect() {
+        // console.log(`browser connected`);
         expect(this.browser_connected).toBe(true);
       }
       onBrowserDisconnect() {
+        // console.log(`browser disconnected`);
         expect(this.browser_connected).toBe(false);
       }
       async "test:set"(value) {
@@ -51,12 +63,15 @@ describe("web client tests", () => {
      */
     class ServerClass extends ServerBase {
       onConnect(client) {
+        // console.log(`connection`);
         runTests();
       }
       onDisconnect(client) {
+        // console.log(`disconnection`);
         this.quit();
       }
       async onQuit() {
+        // console.log(`received quit`);
         await browser.close();
         expect(functionCalls).toStrictEqual([
           "test:events", // initial seq_num=0 event
@@ -70,8 +85,8 @@ describe("web client tests", () => {
       async "test:events"(client) {
         functionCalls.push("test:events");
       }
-
-      teardown() {
+      async teardown() {
+        // console.log(`tearing down`);
         webclient.close(() => done());
       }
     }
