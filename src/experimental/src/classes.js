@@ -7,8 +7,24 @@ export class ClientBase {
   // - state = {}
 
   setState(newState) {
+    console.log(`setState called`);
     const { state } = this;
     Object.entries(newState).forEach(([key, value]) => (state[key] = value));
+    // TODO: make syncing to the browser more efficient through the use of diff/patch
+    console.log(`[setstate] client has browser?`, !!this.browser);
+    if (this.browser) this.browser.socket.send(JSON.stringify({ state }));
+  }
+
+  connectBrowserSocket(browserSocket) {
+    if (!this.browser) {
+      // note that there is no auth here (yet)
+      this.browser = proxySocket(`browser`, this, browserSocket);
+      this.setState(this.state);
+    }
+  }
+
+  disconnectBrowserSocket() {
+    this.browser = undefined;
   }
 
   connectServerSocket(serverSocket) {

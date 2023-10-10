@@ -81,9 +81,9 @@ export function generateClientServer(ClientClass, ServerClass) {
      * @param {*} serverURL
      * @returns
      */
-    createClient: function createClient(serverURL, ClassOverride) {
+    createClient: function createClient(serverURL) {
       const socketToServer = new WebSocket(serverURL);
-      const client = instantiateClient(ClassOverride);
+      const client = instantiateClient(ClientClass);
       socketToServer.on(`close`, (...data) => client.onDisconnect(...data));
       function registerForId(data) {
         try {
@@ -113,7 +113,7 @@ export function generateClientServer(ClientClass, ServerClass) {
       publicDir,
       httpsOptions
     ) {
-      const client = factory.createClient(serverUrl, ClientClass);
+      const client = factory.createClient(serverUrl);
 
       // the client connects to the real server,
       // and the browser connects to the web
@@ -136,7 +136,10 @@ export function generateClientServer(ClientClass, ServerClass) {
       ws.on(`connection`, (socket) => {
         console.log(`client's web server got a connection from the browser`);
 
-        // Set up browser-to-server (and response) data routing
+        // bind the socket to the browser
+        client.connectBrowserSocket(socket);
+
+        // Set up browser-to-server (and response) data proxying
         socket.on(`message`, async (message) => {
           message = message.toString();
           const { name: eventName, payload } = JSON.parse(message);
@@ -145,7 +148,7 @@ export function generateClientServer(ClientClass, ServerClass) {
           const steps = eventName.split(`:`);
           while (steps.length) target = target[steps.shift()];
           const result = await target(...payload);
-          // and then proxy the response back to the browswer
+          // and then proxy the response back to the browser
           socket.send(
             JSON.stringify({
               name: `${eventName}:response`,
@@ -154,6 +157,8 @@ export function generateClientServer(ClientClass, ServerClass) {
           );
         });
       });
+
+      ws.on(`close`, () => client.disconnectBrowserSocket());
 
       // Rebind the function that allows users to specify custom route handling:
       // @ts-ignore: we're adding a custom property to a Server instance, which TS doesn't like

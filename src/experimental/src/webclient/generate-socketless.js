@@ -27,9 +27,14 @@ export function generateSocketless() {
 
     `
 export const Socketless = {
-  createWebClient: () => {
+  createWebClient: (WebClientClass) => {
     const socket = new WebSocket(window.location.toString().replace("http:", "ws:"));
-    return proxySocket("webclient", {}, socket);
+    const webclient = new WebClientClass();
+    webclient.socket = socket;
+    webclient.server = proxySocket("webclient", webclient, socket);
+    webclient.state = {};
+    webclient.init();
+    return webclient;
   }
 };`,
 

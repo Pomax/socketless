@@ -27,6 +27,7 @@ class UpgradedSocket extends WebSocket {
     socket.origin = origin;
     origin.__name = name;
     socket.handlers = {};
+    console.log(`socket.router:`, socket.router);
     const messageRouter = socket.router.bind(socket);
     if (socket.on) {
       socket.on(`message`, messageRouter);
@@ -65,24 +66,31 @@ class UpgradedSocket extends WebSocket {
     }
 
     const { origin } = this;
-    const { name: eventName, payload, error: errorMsg } = data;
+    const { name: eventName, payload, error: errorMsg, state } = data;
 
     console.log(`debugdebug`, origin.__name, eventName, payload, errorMsg);
 
+    // browser-only state synchronization
+    if (state && origin.__name === `webclient`) {
+      origin.update(state);
+    }
+
     // If this is a response message, run the `on` handler for that.
-    if (eventName.includes(`:response`)) {
+    else if (eventName.includes(`:response`)) {
       const { handlers } = this;
       log(`[${origin.__name}] response message received`);
       if (!handlers[eventName]) throw new Error(`no handlers for ${eventName}`);
       handlers[eventName].forEach((handler) => {
-        if (errorMsg) handler(new Error(errorMsg));
-        else handler(payload);
+        if (errorMsg) {
+          console.log(`what?`, eventName, errorMsg);
+          handler(new Error(errorMsg));
+        } else handler(payload);
       });
     }
 
     // If it's a request message, resolve it to a function call and "return"
     // the value by sending a :response message over the websocket instead.
-    else {
+    else if (origin.__name !== `browser`) {
       const stages = eventName.split(`:`);
       log(`[${origin.__name}] router: stages:`, stages);
 
@@ -162,7 +170,7 @@ class UpgradedSocket extends WebSocket {
         log(`[${originName}] cleanup`);
         // clean up and become a noop so we can't be retriggered.
         this.__off(responseName, handler);
-        cleanup = () => { };
+        cleanup = () => {};
         // then route data forward
         resolve(data);
       };
@@ -231,7 +239,8 @@ class SocketProxy extends Function {
       },
       apply: async (_, __, args) => {
         console.log(
-          `sending ${this.path.substring(1)} from ${this.socket.origin.__name
+          `sending ${this.path.substring(1)} from ${
+            this.socket.origin.__name
           } to destination`
         );
         const result = await this.socket.upgraded.send(

@@ -5,11 +5,16 @@ import url from "url";
 const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
 
 class ClientClass {
-  // ...
+  testStateUpdate(value) {
+    this.setState({ testValue: value });
+  }
 }
 
 class ServerClass {
-  // ...
+  async onConnect(client) {
+    client.testStateUpdate(888);
+  }
+
   async test(client, a, b, c) {
     console.log(`test at server:`, a, b, c);
     return `${c}${b}${a}`;
