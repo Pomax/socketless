@@ -1,43 +1,50 @@
 import { proxySocket } from "./upgraded-socket.js";
+import { log } from "./logger.js";
 
 export class ClientBase {
-  state = {};
+  // The socketless factory will inject:
+  //
+  // - state = {}
 
   setState(newState) {
     const { state } = this;
     Object.entries(newState).forEach(([key, value]) => (state[key] = value));
   }
 
-  connectServerSocket(serverSocket, ...data) {
+  connectServerSocket(serverSocket) {
     this.server = proxySocket(`client`, this, serverSocket);
-    this.onConnect(data);
+    this.onConnect();
   }
 
   disconnect() {
     this.server.socket.close();
   }
 
-  async onConnect(data) {
-    // ...
+  async onConnect() {
+    log(`[ClientBase] client ${this.state.id} connected.`);
   }
 
   async onDisconnect() {
-    // ...
+    log(`[ClientBase] client ${this.state.id} disconnected.`);
   }
 }
 
 export class ServerBase {
-  clients = [];
-
-  constructor({ webserver, ws }) {
-    this.ws = ws;
-    this.webserver = webserver;
-  }
+  // The socketless factory will inject:
+  //
+  // - clients = [],
+  // - ws = websocket server, and
+  // - webserver = http(s) server;
 
   // When a client connects to the server, route it to
   // the server.addClient(client) function for handling.
-  connectClientSocket(socket) {
+  async connectClientSocket(socket) {
     const client = proxySocket(`server`, this, socket);
+
+    // send the client its server id
+    client.socket.send(
+      JSON.stringify({ name: `handshake:setid`, payload: { id: client.id } })
+    );
 
     // add this client to the list
     this.clients.push({ client, socket });
@@ -51,11 +58,11 @@ export class ServerBase {
   }
 
   // Add client-removal handling when the socket closes:
-  addDisconnectHandling(client, socket) {
+  async addDisconnectHandling(client, socket) {
     const { clients } = this;
 
     socket.on(`close`, () => {
-      let pos = clients.findIndex(e => e.client === client);
+      let pos = clients.findIndex((e) => e.client === client);
       if (pos !== -1) {
         clients.splice(pos, 1)[0];
         this.onDisconnect(client);
@@ -64,24 +71,24 @@ export class ServerBase {
   }
 
   async onConnect(client) {
-    console.log(`[SererBase] client ${client.id} connected.`);
+    log(`[ServerBase] client ${client.id} connected.`);
   }
 
   async onDisconnect(client) {
-    console.log(`[SererBase] client ${client.id} disconnected.`);
+    log(`[ServerBase] client ${client.id} disconnected.`);
   }
 
-  quit() {
-    this.onQuit();
+  async quit() {
+    await this.onQuit();
     this.clients.forEach((client) => client.disconnect());
     this.webserver.close(() => this.ws.close(() => this.teardown()));
   }
 
   async onQuit() {
-    console.log(`[ServerBase] told to quit.`);
+    log(`[ServerBase] told to quit.`);
   }
 
-  async teardown() {
-    console.log(`[ServerBase] post-quit teardown.`);
+  teardown() {
+    log(`[ServerBase] post-quit teardown.`);
   }
 }
