@@ -10,6 +10,7 @@ import { makeRouteHandler } from "./webclient/routes.js";
 import { generateSocketless } from "./webclient/generate-socketless.js";
 
 import { log } from "./logger.js";
+import { proxySocket } from "./upgraded-socket.js";
 
 // Check the class hierarchy: if Base is in there, we're done. If
 // it's not, we rewrite the hierarchy so that it's in there.
@@ -112,15 +113,7 @@ export function generateClientServer(ClientClass, ServerClass) {
       publicDir,
       httpsOptions
     ) {
-      class ProxyClass extends ClientClass {
-        // this class has the same API as the client class
-        // but proxies server calls to the browser, and
-        // browser calls to the server.
-        test() {
-          console.log(`test made it in?`);
-        }
-      }
-      const client = factory.createClient(serverUrl, ProxyClass);
+      const client = factory.createClient(serverUrl, ClientClass);
 
       // the client connects to the real server,
       // and the browser connects to the web
@@ -140,20 +133,26 @@ export function generateClientServer(ClientClass, ServerClass) {
         : http.createServer(routeHandling);
       const ws = new WebSocketServer({ server: webserver });
 
-      ws.on(`connection`, () => {
+      ws.on(`connection`, (socket) => {
         console.log(`client's web server got a connection from the browser`);
-        // const connectBrowser = setupConnectionHandler(sockets, API, directSync);
-        //  connectBrowser();
-      });
 
-      ws.on(`close`, () => {
-        // if (client.onBrowserDisconnect) {
-        //   client.onBrowserDisconnect();
-        // }
-      });
-
-      ws.on(`message`, (data) => {
-        console.log(`got data:`, data);
+        // Set up browser-to-server (and response) data routing
+        socket.on(`message`, async (message) => {
+          message = message.toString();
+          const { name: eventName, payload } = JSON.parse(message);
+          // proxy the call from the browser to the server
+          let target = client.server;
+          const steps = eventName.split(`:`);
+          while (steps.length) target = target[steps.shift()];
+          const result = await target(...payload);
+          // and then proxy the response back to the browswer
+          socket.send(
+            JSON.stringify({
+              name: `${eventName}:response`,
+              payload: result,
+            })
+          );
+        });
       });
 
       // Rebind the function that allows users to specify custom route handling:

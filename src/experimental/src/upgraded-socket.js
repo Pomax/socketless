@@ -51,7 +51,13 @@ class UpgradedSocket extends WebSocket {
 
   // message router specifically for the message format used by the socketless code.
   async router(message) {
+    // browser websocket? If so, unwrap the data
+    if (message.srcElement) {
+      message = message.data;
+    }
+
     let data;
+
     try {
       data = JSON.parse(message);
     } catch (e) {
@@ -60,6 +66,8 @@ class UpgradedSocket extends WebSocket {
 
     const { origin } = this;
     const { name: eventName, payload, error: errorMsg } = data;
+
+    console.log(`debugdebug`, origin.__name, eventName, payload, errorMsg);
 
     // If this is a response message, run the `on` handler for that.
     if (eventName.includes(`:response`)) {
@@ -154,7 +162,7 @@ class UpgradedSocket extends WebSocket {
         log(`[${originName}] cleanup`);
         // clean up and become a noop so we can't be retriggered.
         this.__off(responseName, handler);
-        cleanup = () => {};
+        cleanup = () => { };
         // then route data forward
         resolve(data);
       };
@@ -222,9 +230,8 @@ class SocketProxy extends Function {
         return new SocketProxy(socket, `${path}:${prop}`);
       },
       apply: async (_, __, args) => {
-        log(
-          `sending ${this.path.substring(1)} from ${
-            this.socket.origin.__name
+        console.log(
+          `sending ${this.path.substring(1)} from ${this.socket.origin.__name
           } to destination`
         );
         const result = await this.socket.upgraded.send(

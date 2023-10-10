@@ -4,7 +4,18 @@ setDEBUG(false);
 import url from "url";
 const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
 
-import { ClientClass, ServerClass } from "./custom-classes.js";
+class ClientClass {
+  // ...
+}
+
+class ServerClass {
+  // ...
+  async test(client, a, b, c) {
+    console.log(`test at server:`, a, b, c);
+    return `${c}${b}${a}`;
+  }
+}
+
 import { generateClientServer } from "./src/factory.js";
 const factory = generateClientServer(ClientClass, ServerClass);
 const server = factory.createServer();
