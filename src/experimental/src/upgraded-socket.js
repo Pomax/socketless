@@ -27,7 +27,6 @@ class UpgradedSocket extends WebSocket {
     socket.origin = origin;
     origin.__name = name;
     socket.handlers = {};
-    console.log(`socket.router:`, socket.router);
     const messageRouter = socket.router.bind(socket);
     if (socket.on) {
       socket.on(`message`, messageRouter);
@@ -66,23 +65,45 @@ class UpgradedSocket extends WebSocket {
     }
 
     const { origin } = this;
-    const { name: eventName, payload, error: errorMsg, state } = data;
+    const originName = origin.__name;
 
-    console.log(`debugdebug`, origin.__name, eventName, payload, errorMsg);
+    console.log(originName, data);
 
-    // browser-only state synchronization
-    if (state && origin.__name === `webclient`) {
+    const { name: eventName, payload, error: errorMsg, state, diff } = data;
+
+    console.log(`debugdebug`, originName, eventName, payload, errorMsg);
+
+    // Client-state synchronization mechanism for the browser:
+    if (state && originName === `webclient`) {
+      if (diff) {
+        console.log(`received diff`, state);
+        const patch = state;
+        let target;
+        // verify we're still in sync by comparing messaging sequence numbers
+        const seq_num = patch.slice(-1)[0].value;
+        if (seq_num === origin.__seq_num + 1) {
+          origin.__seq_num = seq_num;
+          target = JSON.parse(JSON.stringify(origin.state));
+          rfc6902.applyPatch(target, patch);
+        } else {
+          // if we get here, we're not in sync, and we need to request a full
+          // state object instead of trying to apply differential updates.
+          const fullState = await this.__send(`syncState`);
+          origin.__seq_num = 0;
+          target = fullState;
+        }
+        return origin.update(target);
+      }
       origin.update(state);
     }
 
     // If this is a response message, run the `on` handler for that.
     else if (eventName.includes(`:response`)) {
       const { handlers } = this;
-      log(`[${origin.__name}] response message received`);
+      log(`[${originName}] response message received`);
       if (!handlers[eventName]) throw new Error(`no handlers for ${eventName}`);
       handlers[eventName].forEach((handler) => {
         if (errorMsg) {
-          console.log(`what?`, eventName, errorMsg);
           handler(new Error(errorMsg));
         } else handler(payload);
       });
@@ -90,9 +111,9 @@ class UpgradedSocket extends WebSocket {
 
     // If it's a request message, resolve it to a function call and "return"
     // the value by sending a :response message over the websocket instead.
-    else if (origin.__name !== `browser`) {
+    else if (originName !== `browser`) {
       const stages = eventName.split(`:`);
-      log(`[${origin.__name}] router: stages:`, stages);
+      log(`[${originName}] router: stages:`, stages);
 
       let callable = origin;
       let error = undefined;
@@ -107,7 +128,7 @@ class UpgradedSocket extends WebSocket {
 
         // If this code runs on the server, the function needs to be called
         // with the reply-socket as first argument:
-        if (origin.__name === `server`) {
+        if (originName === `server`) {
           const other = new SocketProxy(this); // not a fan of this, can we get this from somewhere "once"?
           payload.unshift(other);
         }

@@ -11,9 +11,11 @@ const create = (tag, parent) => {
 class WebClient {
   async init() {
     this.idField = create(`p`, document.body);
+    this.testField = create(`p`, document.body);
     console.log(`running init`);
     const result = await this.server.test(1, 2, 3);
     console.log(`result=${result}`);
+    window.test = this;
   }
 
   async update(newState) {
@@ -23,7 +25,9 @@ class WebClient {
   }
 
   render() {
-    this.idField.textContent = this.state.id;
+    const { id, randomValue } = this.state;
+    this.idField.textContent = id;
+    this.testField.textContent = randomValue;
   }
 }
 

@@ -88,8 +88,11 @@ export function generateClientServer(ClientClass, ServerClass) {
         try {
           const { name, payload } = JSON.parse(data);
           if (name === `handshake:setid`) {
+            console.log(`client: received handshake:setid`);
             socketToServer.off(`message`, registerForId);
+            console.log(`setting state:`, payload);
             client.setState(payload);
+            console.log(`calling connectServerSocket`);
             client.connectServerSocket(socketToServer);
           }
         } catch (e) {
@@ -135,7 +138,16 @@ export function generateClientServer(ClientClass, ServerClass) {
         socket.on(`message`, async (message) => {
           message = message.toString();
           const { name: eventName, payload } = JSON.parse(message);
-          // proxy the call from the browser to the server
+          // is this one of the special client/browser calls?
+          if ([`syncState`, `quit`].includes(eventName)) {
+            return socket.send(
+              JSON.stringify({
+                name: `${eventName}:response`,
+                payload: client[eventName](),
+              })
+            );
+          }
+          // If it's none of these, proxy the call from the browser to the server
           let target = client.server;
           const steps = eventName.split(`:`);
           while (steps.length) target = target[steps.shift()];

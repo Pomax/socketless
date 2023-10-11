@@ -8,8 +8,14 @@ setDEBUG(false);
  * ...
  */
 class ClientClass {
-  testStateUpdate(value) {
-    this.setState({ testValue: value });
+  onConnect() {
+    setInterval(
+      () =>
+        this.setState({
+          randomValue: Math.random(),
+        }),
+      3000
+    );
   }
 }
 
@@ -18,7 +24,7 @@ class ClientClass {
  */
 class ServerClass {
   async onConnect(client) {
-    client.testStateUpdate(888);
+    console.log(`client registered at server`);
   }
   async onDisconnect(client) {
     if (this.clients.length === 0) {
