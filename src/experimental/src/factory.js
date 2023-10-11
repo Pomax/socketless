@@ -7,18 +7,17 @@ import { WebSocket, WebSocketServer } from "ws";
 import { ClientBase, ServerBase } from "./classes.js";
 import { CustomRouter } from "./webclient/custom-router.js";
 import { makeRouteHandler } from "./webclient/routes.js";
-import { generateSocketless } from "./webclient/generate-socketless.js";
 
 import { log } from "./logger.js";
-import { proxySocket } from "./upgraded-socket.js";
 
 // Check the class hierarchy: if Base is in there, we're done. If
 // it's not, we rewrite the hierarchy so that it's in there.
 function ensureBaseExtension(Class, Base) {
   let prototype = Class.prototype;
   while (prototype.__proto__) {
-    if (prototype.__proto__.constructor.name === Base.name) return;
-    if (prototype.__proto__.constructor.name === `Object`) break;
+    const cname = prototype.__proto__.constructor.name;
+    if (cname === Base.name) return;
+    if (cname === `Object`) break;
     prototype = prototype.__proto__;
   }
   Object.setPrototypeOf(prototype, Base.prototype);
@@ -122,11 +121,7 @@ export function generateClientServer(ClientClass, ServerClass) {
       // real server, and the browser.
 
       const router = new CustomRouter(client);
-      let routeHandling = makeRouteHandler(
-        publicDir,
-        generateSocketless(),
-        router
-      );
+      let routeHandling = makeRouteHandler(publicDir, router);
 
       const webserver = httpsOptions
         ? https.createServer(httpsOptions, routeHandling)
@@ -134,11 +129,8 @@ export function generateClientServer(ClientClass, ServerClass) {
       const ws = new WebSocketServer({ server: webserver });
 
       ws.on(`connection`, (socket) => {
-        console.log(`client's web server got a connection from the browser`);
-
         // bind the socket to the browser
         client.connectBrowserSocket(socket);
-
         // Set up browser-to-server (and response) data proxying
         socket.on(`message`, async (message) => {
           message = message.toString();

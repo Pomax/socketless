@@ -3,13 +3,12 @@ import fs from "fs";
 import { getContentType } from "./get-content-type.js";
 import { sanitizeLocation } from "./sanitize-location.js";
 import { generate404 } from "./404.js";
+import { generateSocketless } from "./generate-socketless.js";
 
 // Create a route handler for our local web server
-export function makeRouteHandler(
-  publicDir,
-  socketlessCode, // this is a string-generation function
-  customRouter
-) {
+export function makeRouteHandler(publicDir, customRouter) {
+  const socketlessjs = generateSocketless();
+
   return (request, response) => {
     if (request.url.includes(`?`)) {
       const [url, params] = request.url.split(/\\?\?/);
@@ -28,7 +27,7 @@ export function makeRouteHandler(
     // special handling for socketless.js
     if (url === `/socketless.js`) {
       response.writeHead(200, { "Content-Type": getContentType(`.js`) });
-      return response.end(socketlessCode, `utf-8`);
+      return response.end(socketlessjs, `utf-8`);
     }
 
     // custom route handing
