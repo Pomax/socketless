@@ -1,17 +1,18 @@
-import { Socketless } from "./socketless.js";
+import { createWebClient } from "./socketless.js";
 
-console.log("script running", Socketless);
+console.log("script running");
 
-const create = (tag, parent) => {
+const create = (tag, classString, parent) => {
   const e = document.createElement(tag);
+  e.setAttribute(`class`, classString);
   parent.appendChild(e);
   return e;
 };
 
 class WebClient {
   async init() {
-    this.idField = create(`p`, document.body);
-    this.testField = create(`p`, document.body);
+    this.idField = create(`p`, `idfield`, document.body);
+    this.testField = create(`p`, `testfield`, document.body);
     console.log(`running init`);
     const result = await this.server.test(1, 2, 3);
     console.log(`result=${result}`);
@@ -31,4 +32,4 @@ class WebClient {
   }
 }
 
-Socketless.createWebClient(WebClient);
+createWebClient(WebClient);

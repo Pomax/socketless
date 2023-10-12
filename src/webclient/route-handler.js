@@ -1,11 +1,51 @@
 // @ts-ignore: Node-specific import
 import fs from "fs";
-import { getContentType } from "./get-content-type.js";
-import { sanitizeLocation } from "./sanitize-location.js";
-import { generate404 } from "./404.js";
+// @ts-ignore: Node-specific import
+import { join } from "path";
 import { generateSocketless } from "./generate-socketless.js";
 
-// Create a route handler for our local web server
+const CONTENT_TYPES = {
+  ".html": `text/html`,
+  ".css": `text/css`,
+  ".js": `application/javascript`,
+  ".jpg": `image/jpeg`,
+  ".png": `image/png`,
+};
+
+const DEFAULT_CONTENT_TYPE = `text/plain`;
+
+// ...docs go here...
+function getContentType(location) {
+  let key = Object.keys(CONTENT_TYPES).find(
+    (key) => location.slice(-key.length) === key,
+  );
+  let contentType = CONTENT_TYPES[key] || DEFAULT_CONTENT_TYPE;
+  return contentType;
+}
+
+// ...docs go here...
+function sanitizeLocation(location, publicDir) {
+  // special handling for /
+  if (location === `/`) return join(publicDir, `index.html`);
+
+  // everything else is a static asset and we sanitize it.
+  location = location.substring(1);
+  location = location.replace(/\.\./g, ``).replace(/\/\//g, `/`);
+  location = join(publicDir, location);
+  return location;
+}
+
+// ...docs go here...
+function generate404(location, response) {
+  // We're going to assume any bad URL is a 404. Even if it's an attempt at "h4x0r3s"
+  console.error(`Can't serve ${location}, so it probably doesn't exist`);
+  response.writeHead(404, { "Content-Type": `text/html` });
+  response.end(`<doctype html><html><body>resource not found</html>`);
+}
+
+/**
+ * Create a route handler for our local web server
+ */
 export function makeRouteHandler(publicDir, customRouter) {
   const socketlessjs = generateSocketless();
 

@@ -18,6 +18,6 @@ const NUMBER_OF_CLIENTS = 4;
 const server = factory.createServer();
 server.listen(8000, () => {
   [...new Array(NUMBER_OF_CLIENTS)].forEach(() =>
-    factory.createClient("http://localhost:8000")
+    factory.createClient("http://localhost:8000"),
   );
 });

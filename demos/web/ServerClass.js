@@ -30,7 +30,7 @@ export class ServerClass extends ServerBase {
     this.clients.forEach((client) =>
       client.game.list({
         games: this.gm.getList(client),
-      })
+      }),
     );
   }
 

@@ -6,8 +6,8 @@
   "main": "src/index.js",
   "scripts": {
     "prettier": "prettier --write ./**/*.js",
-    "test": "npm run test:ast && npm run test:jest",
-    "test:ast": "tsc ./src/build.js --checkJs --noEmit --module nodenext",
+    "test": "npm run test:ast && npm run prettier && npm run test:jest",
+    "test:ast": "tsc ./src/index.js --checkJs --noEmit --module nodenext",
     "test:jest": "node --experimental-vm-modules node_modules/jest/bin/jest.js --verbose=true --silent=false"
   },
   "repository": {

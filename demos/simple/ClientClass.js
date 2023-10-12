@@ -16,7 +16,7 @@ export class ClientClass extends ClientBase {
     console.log("client> connected to server");
     setTimeout(
       () => this.server.disconnect(),
-      3000 + (Math.random() < 0.5 ? -1 : 1) * (Math.random() * 1000)
+      3000 + (Math.random() < 0.5 ? -1 : 1) * (Math.random() * 1000),
     );
     console.log("client> disconnecting in 3 +/- 1 seconds");
   }

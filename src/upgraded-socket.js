@@ -1,5 +1,4 @@
 import { WebSocket } from "ws";
-import { log } from "./logger.js";
 
 // responses should always be "the event name, with :response added"
 function getResponseName(eventName) {
@@ -10,11 +9,14 @@ function getResponseName(eventName) {
  * ...
  */
 class UpgradedSocket extends WebSocket {
+  origin = undefined; // the socket owner who invoked the upgrade. See upgrade()
+  handlers = {}; // the list of event handlers. See upgrade()
+
   // explicitly forbid the constructor from being used.
   // @ts-ignore: we don't need to call super() if we error out.
   constructor() {
     throw new Error(
-      "Cannot create UpgradedSocket instances. Use UpgradedSocket.upgrade(socket) instead."
+      "Cannot create UpgradedSocket instances. Use UpgradedSocket.upgrade(name, origin, socket) instead.",
     );
   }
 
@@ -69,7 +71,14 @@ class UpgradedSocket extends WebSocket {
 
     console.log(originName, data);
 
-    const { name: eventName, payload, error: errorMsg, state, diff } = data;
+    const {
+      name: eventName,
+      payload,
+      error: errorMsg,
+      state,
+      diff,
+      seq_num,
+    } = data;
 
     console.log(`debugdebug`, originName, eventName, payload, errorMsg);
 
@@ -80,10 +89,10 @@ class UpgradedSocket extends WebSocket {
         const patch = state;
         let target;
         // verify we're still in sync by comparing messaging sequence numbers
-        const seq_num = patch.slice(-1)[0].value;
         if (seq_num === origin.__seq_num + 1) {
           origin.__seq_num = seq_num;
           target = JSON.parse(JSON.stringify(origin.state));
+          // @ts-ignore: this only runs in the browser, where rfc6902 is a global.
           rfc6902.applyPatch(target, patch);
         } else {
           // if we get here, we're not in sync, and we need to request a full
@@ -100,7 +109,7 @@ class UpgradedSocket extends WebSocket {
     // If this is a response message, run the `on` handler for that.
     else if (eventName.includes(`:response`)) {
       const { handlers } = this;
-      log(`[${originName}] response message received`);
+      console.log(`[${originName}] response message received`);
       if (!handlers[eventName]) throw new Error(`no handlers for ${eventName}`);
       handlers[eventName].forEach((handler) => {
         if (errorMsg) {
@@ -113,7 +122,7 @@ class UpgradedSocket extends WebSocket {
     // the value by sending a :response message over the websocket instead.
     else if (originName !== `browser`) {
       const stages = eventName.split(`:`);
-      log(`[${originName}] router: stages:`, stages);
+      console.log(`[${originName}] router: stages:`, stages);
 
       let callable = origin;
       let error = undefined;
@@ -122,7 +131,7 @@ class UpgradedSocket extends WebSocket {
       try {
         while (stages.length) {
           const stage = stages.shift();
-          log(`checking ${stage}`);
+          console.log(`checking ${stage}`);
           callable = callable[stage];
         }
 
@@ -152,7 +161,7 @@ class UpgradedSocket extends WebSocket {
           name: getResponseName(eventName),
           payload: response,
           error,
-        })
+        }),
       );
     }
   }
@@ -180,7 +189,7 @@ class UpgradedSocket extends WebSocket {
   // deciding there is no response forthcoming and to clean up the event
   // listener for that response.
   async __send(eventName, data = {}, timeout = 1000) {
-    log(`[upgraded send]`, eventName, data);
+    console.log(`[upgraded send]`, eventName, data);
     const originName = this.origin.__name;
 
     return await new Promise((resolve) => {
@@ -188,7 +197,7 @@ class UpgradedSocket extends WebSocket {
 
       // cleanup function for the event listener
       let cleanup = (data = undefined) => {
-        log(`[${originName}] cleanup`);
+        console.log(`[${originName}] cleanup`);
         // clean up and become a noop so we can't be retriggered.
         this.__off(responseName, handler);
         cleanup = () => {};
@@ -204,18 +213,20 @@ class UpgradedSocket extends WebSocket {
 
       // First, make sure we're ready to receive the response...
       this.__on(responseName, (data) => {
-        log(`[${originName}] handling response...`);
+        console.log(`[${originName}] handling response...`);
         handler(data);
       });
 
       // And then, send the event off to the client.
       const sendEvent = () => {
-        log(`(raw) sending ${eventName} from ${originName} to other party`);
+        console.log(
+          `(raw) sending ${eventName} from ${originName} to other party`,
+        );
         super.send(
           JSON.stringify({
             name: eventName,
             payload: data,
-          })
+          }),
         );
       };
 
@@ -262,11 +273,11 @@ class SocketProxy extends Function {
         console.log(
           `sending ${this.path.substring(1)} from ${
             this.socket.origin.__name
-          } to destination`
+          } to destination`,
         );
         const result = await this.socket.upgraded.send(
           this.path.substring(1),
-          args
+          args,
         );
         if (result instanceof Error) throw result;
         return result;

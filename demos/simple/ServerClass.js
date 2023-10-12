@@ -14,7 +14,7 @@ export class ServerClass extends ServerBase {
    */
   onConnect(client) {
     console.log(
-      `server> new connection, ${this.clients.length} clients connected`
+      `server> new connection, ${this.clients.length} clients connected`,
     );
     client.startup.register();
   }

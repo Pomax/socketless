@@ -1,3 +1,12 @@
+# v1.0.0
+
+Full rewrite
+- code is now ESM
+- transport mechanism based on the Proxy object
+- fewer files
+- less code
+- easier to maintain
+
 # v0.12.7
 
 Added automatic client id generation at the server, so that the server has a keyable value, and can communicate that back to the client if necessary.

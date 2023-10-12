@@ -1,30 +1,33 @@
 import { proxySocket } from "./upgraded-socket.js";
-import { log } from "./logger.js";
+
+// @ts-ignore: Node-specific import
 import { createPatch } from "rfc6902";
 
+/**
+ * ...docs go here...
+ */
 export class ClientBase {
-  // The socketless factory will inject:
-  //
-  // - state = {}
+  // The socketless factory will also inject this
+  state = {};
 
   setState(stateUpdates) {
     console.log(`updating state`);
     const { state } = this;
     const oldState = JSON.parse(JSON.stringify(state));
     Object.entries(stateUpdates).forEach(
-      ([key, value]) => (state[key] = value)
+      ([key, value]) => (state[key] = value),
     );
     console.log(`[setstate] client has browser?`, !!this.browser);
     if (this.browser) {
       console.log(`creating diff`);
       const diff = createPatch(oldState, state);
       console.log(`sending diff`);
-      diff.push({ value: ++this.browser.socket.__seq_num });
       this.browser.socket.send(
         JSON.stringify({
           state: diff,
+          seq_num: ++this.browser.socket.__seq_num,
           diff: true,
-        })
+        }),
       );
     }
   }
@@ -62,21 +65,36 @@ export class ClientBase {
     this.server.socket.close();
   }
 
+  quit() {
+    if (this.browser) {
+      this.browser.socket.close();
+      this.disconnectBrowserSocket();
+    }
+    this.disconnect();
+    this.onQuit();
+  }
+
   async onConnect() {
-    log(`[ClientBase] client ${this.state.id} connected.`);
+    console.log(`[ClientBase] client ${this.state.id} connected.`);
   }
 
   async onDisconnect() {
-    log(`[ClientBase] client ${this.state.id} disconnected.`);
+    console.log(`[ClientBase] client ${this.state.id} disconnected.`);
+  }
+
+  async onQuit() {
+    console.log(`[ClientBase] client ${this.state.id} quitting.`);
   }
 }
 
+/**
+ * ...docs go here...
+ */
 export class ServerBase {
-  // The socketless factory will inject:
-  //
-  // - clients = [],
-  // - ws = websocket server, and
-  // - webserver = http(s) server;
+  // The socketless factory will also inject these:
+  clients = [];
+  ws = undefined; // websocket server instance
+  webserver = undefined; // http(s) server instance
 
   // When a client connects to the server, route it to
   // the server.addClient(client) function for handling.
@@ -91,7 +109,7 @@ export class ServerBase {
       JSON.stringify({
         name: `handshake:setid`,
         payload: { id: client.id },
-      })
+      }),
     );
 
     console.log(`server: adding client to list of known clients`);
@@ -114,18 +132,18 @@ export class ServerBase {
     socket.on(`close`, () => {
       let pos = clients.findIndex((e) => e.client === client);
       if (pos !== -1) {
-        clients.splice(pos, 1)[0];
+        let e = clients.splice(pos, 1)[0];
         this.onDisconnect(client);
       }
     });
   }
 
   async onConnect(client) {
-    log(`[ServerBase] client ${client.id} connected.`);
+    console.log(`[ServerBase] client ${client.id} connected.`);
   }
 
   async onDisconnect(client) {
-    log(`[ServerBase] client ${client.id} disconnected.`);
+    console.log(`[ServerBase] client ${client.id} disconnected.`);
   }
 
   async quit() {
@@ -135,10 +153,10 @@ export class ServerBase {
   }
 
   async onQuit() {
-    log(`[ServerBase] told to quit.`);
+    console.log(`[ServerBase] told to quit.`);
   }
 
   teardown() {
-    log(`[ServerBase] post-quit teardown.`);
+    console.log(`[ServerBase] post-quit teardown.`);
   }
 }

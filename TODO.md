@@ -1,1 +1,16 @@
-- refactor the code from bare functions to classes
+- [x] refactor the code from bare functions to classes
+- [x] implement diff-based state update for web client
+  - [x] state messaging sequence numbers
+  - [x] full vs. diffed state transmission
+  - [ ] call .update with both the full state and the changeset wrt the previous state
+- [ ] prune the browser-copy of rfc6902 to only include the applyPatch() function
+- [ ] document the diagram of how things work
+- [ ] create several new demos
+  - [ ] simple client/server demo
+  - [ ] terminal based BBS
+  - [ ] multiplayer game: mahjong
+    - [ ] terminal client
+    - [ ] web client
+
+
+- how to make the browser call client functions, rather than proxy to server? (only one socket)
