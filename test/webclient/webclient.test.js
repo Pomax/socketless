@@ -4,6 +4,8 @@ const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
 
 import { generateClientServer } from "../../src/index.js";
 
+const DEBUG = false;
+
 describe("web client tests", () => {
   it("should run", (done) => {
     let server, clientWebServer, browser;
@@ -12,7 +14,7 @@ describe("web client tests", () => {
      * ...
      */
     class ClientClass {
-      onConnect() {
+      async onConnect() {
         this.int = setInterval(
           () =>
             this.setState({
@@ -32,12 +34,12 @@ describe("web client tests", () => {
      */
     class ServerClass {
       async onConnect(client) {
-        console.log(`client registered at server`);
+        if (DEBUG) console.log(`client registered at server`);
       }
       async onDisconnect(client) {
-        console.log(`server: client ${client.id} disconnected`);
+        if (DEBUG) console.log(`server: client ${client.id} disconnected`);
         if (this.clients.length === 0) {
-          console.log(`no clients left, quitting`);
+          if (DEBUG) console.log(`no clients left, quitting`);
           this.quit();
         }
       }
@@ -55,18 +57,18 @@ describe("web client tests", () => {
      * Puppeteer in place of a real user.
      */
     let runTests = async () => {
-      console.log(`running tests: creating browser`);
+      if (DEBUG) console.log(`running tests: creating browser`);
       browser = await puppeteer.launch({ headless: `new` });
-      console.log(`setting up console interception`);
+      if (DEBUG) console.log(`setting up console interception`);
       const page = await browser.newPage();
       page.on("console", (message) =>
-        console.log(`[BROWSER] ${message.text()}`),
+        DEBUG ? console.log(`[BROWSER] ${message.text()}`) : null,
       );
-      console.log(`navigating to page...`);
+      if (DEBUG) console.log(`navigating to page...`);
       await page.goto(`http://localhost:${clientWebServer.address().port}`);
-      console.log(`waiting for elements...`);
+      if (DEBUG) console.log(`waiting for elements...`);
       await page.waitForSelector(`.testfield`);
-      console.log(`puppeteer done.`);
+      if (DEBUG) console.log(`puppeteer done.`);
       await page.click(`#quit`);
       await browser.close();
     };
@@ -77,27 +79,28 @@ describe("web client tests", () => {
     server.listen(0, () => {
       const PORT = server.address().port;
       const url = `http://localhost:${PORT}`;
-      console.log(`test server running on ${url}`);
+      if (DEBUG) console.log(`test server running on ${url}`);
 
       // Create a webclient, which creates a real client as well as
       // a web server so your browser can connect to something.
       clientWebServer = factory.createWebClient(url, `${__dirname}/public`);
 
       clientWebServer.addRoute(`/quit`, function (client, request, response) {
-        console.log(
-          `web client called /quit on client, calling client.disconnect() to disconnect from server.`,
-        );
+        if (DEBUG)
+          console.log(
+            `web client called /quit on client, calling client.disconnect() to disconnect from server.`,
+          );
         client.quit();
         response.write("client disconnected");
         response.end();
-        console.log(`shutting down client web server`);
+        if (DEBUG) console.log(`shutting down client web server`);
         clientWebServer.close();
       });
 
       clientWebServer.listen(0, () => {
         const PORT = clientWebServer.address().port;
         const url = `http://localhost:${PORT}`;
-        console.log(`web client running on ${url}`);
+        if (DEBUG) console.log(`web client running on ${url}`);
       });
 
       runTests();

@@ -4,28 +4,16 @@ import http from "http";
 import https from "https";
 
 import { WebSocket, WebSocketServer } from "ws";
-import { ClientBase, ServerBase } from "./classes.js";
+import {
+  formClientClass,
+  formServerClass,
+  formWebClientClass,
+} from "./classes.js";
 import { CustomRouter } from "./webclient/custom-router.js";
 import { makeRouteHandler } from "./webclient/route-handler.js";
+import { getResponseName } from "./upgraded-socket.js";
 
-// Check the class hierarchy: if Base is in there, we're done. If
-// it's not, we rewrite the hierarchy so that it's in there.
-function ensureBaseExtension(Class, Base) {
-  let prototype = Class.prototype;
-  while (prototype.__proto__) {
-    const cname = prototype.__proto__.constructor.name;
-    if (cname === Base.name) return;
-    if (cname === `Object`) break;
-    prototype = prototype.__proto__;
-  }
-  Object.setPrototypeOf(prototype, Base.prototype);
-}
-
-// Ensure that both the client and server classes extend our base classes.
-function ensureBaseExtensions(ClientClass, ServerClass) {
-  ensureBaseExtension(ClientClass, ClientBase);
-  ensureBaseExtension(ServerClass, ServerBase);
-}
+const DEBUG = false;
 
 /**
  * Create a client/server factory, given the client and server classes.
@@ -34,40 +22,38 @@ function ensureBaseExtensions(ClientClass, ServerClass) {
  * @returns
  */
 export function generateClientServer(ClientClass, ServerClass) {
-  ensureBaseExtensions(ClientClass, ServerClass);
+  ClientClass = formClientClass(ClientClass);
+  ServerClass = formServerClass(ServerClass);
 
-  function instantiateServer(ws, webserver, TargetClass = ServerClass) {
-    const instance = new TargetClass();
-    // We assign these outside of the constructor, because of
-    // the potential class hierarchy rewrite, above.
-    instance.ws = ws;
-    instance.webserver = webserver;
-    instance.clients = [];
-    return instance;
-  }
-
-  function instantiateClient(TargetClass = ClientClass) {
-    const instance = new TargetClass();
-    // We assign these outside of the constructor, because of
-    // the potential class hierarchy rewrite, above.
-    instance.state = {};
-    return instance;
-  }
+  const WebClientClass = formWebClientClass(ClientClass);
 
   const factory = {
     /**
      * Create a server instance for this client/server API.
-     * @param {*} httpsOptions
+     * @param {*} serverOrHttpsOptions either an http(s) server instance,
+     *            or an https options object for Node's built-in http(s)
+     *            createServer functions. Or nothing, to create a plain
+     *            http server rather than an https server.
      * @returns
      */
-    createServer: function createServer(httpsOptions = false) {
-      const webserver = httpsOptions
-        ? https.createServer(httpsOptions)
-        : http.createServer();
+    createServer: function createServer(serverOrHttpsOptions) {
+      let httpServer;
+      let httpsOptions;
+      if (serverOrHttpsOptions?.constructor === Object) {
+        httpsOptions = serverOrHttpsOptions;
+      } else {
+        httpServer = serverOrHttpsOptions;
+      }
+      let webserver = httpServer;
+      if (!webserver) {
+        webserver = httpsOptions
+          ? https.createServer(httpsOptions)
+          : http.createServer();
+      }
       const ws = new WebSocketServer({ server: webserver });
-      const server = instantiateServer(ws, webserver);
+      const server = new ServerClass(ws, webserver);
       ws.on(`connection`, function (socket) {
-        console.log(`client.connectClientSocket`);
+        if (DEBUG) console.log(`client.connectClientSocket`);
         server.connectClientSocket(socket);
       });
       return webserver;
@@ -76,21 +62,25 @@ export function generateClientServer(ClientClass, ServerClass) {
     /**
      * Create a client instance for this client/server API.
      * @param {*} serverURL
+     * @param {*} TargetClientClass optional, defaults to ClientClass
      * @returns
      */
-    createClient: function createClient(serverURL) {
+    createClient: function createClient(
+      serverURL,
+      TargetClientClass = ClientClass,
+    ) {
       const socketToServer = new WebSocket(serverURL);
-      const client = instantiateClient(ClientClass);
+      const client = new TargetClientClass();
       socketToServer.on(`close`, (...data) => client.onDisconnect(...data));
       function registerForId(data) {
         try {
           const { name, payload } = JSON.parse(data);
           if (name === `handshake:setid`) {
-            console.log(`client: received handshake:setid`);
+            if (DEBUG) console.log(`client: received handshake:setid`);
             socketToServer.off(`message`, registerForId);
-            console.log(`setting state:`, payload);
+            if (DEBUG) console.log(`setting state:`, payload);
             client.setState(payload);
-            console.log(`calling connectServerSocket`);
+            if (DEBUG) console.log(`calling connectServerSocket`);
             client.connectServerSocket(socketToServer);
           }
         } catch (e) {
@@ -113,17 +103,10 @@ export function generateClientServer(ClientClass, ServerClass) {
       publicDir,
       httpsOptions,
     ) {
-      const client = factory.createClient(serverUrl);
-
-      // the client connects to the real server,
-      // and the browser connects to the web
-      // server that wraps the client, turning
-      // the client into a gateway between the
-      // real server, and the browser.
+      const client = factory.createClient(serverUrl, WebClientClass);
 
       const router = new CustomRouter(client);
       let routeHandling = makeRouteHandler(publicDir, router);
-
       const webserver = httpsOptions
         ? https.createServer(httpsOptions, routeHandling)
         : http.createServer(routeHandling);
@@ -140,11 +123,11 @@ export function generateClientServer(ClientClass, ServerClass) {
           const { name: eventName, payload } = JSON.parse(message);
 
           // Is this a special client/browser call?
-          if ([`syncState`].includes(eventName)) {
+          if (eventName === `syncState`) {
             return socket.send(
               JSON.stringify({
-                name: `${eventName}:response`,
-                payload: await client[eventName](),
+                name: getResponseName(eventName),
+                payload: await client.syncState(),
               }),
             );
           }
@@ -157,14 +140,14 @@ export function generateClientServer(ClientClass, ServerClass) {
           // and then proxy the response back to the browser
           socket.send(
             JSON.stringify({
-              name: `${eventName}:response`,
+              name: getResponseName(eventName),
               payload: result,
             }),
           );
         });
 
         socket.on(`close`, () => {
-          console.log(`browser disconnected`);
+          if (DEBUG) console.log(`browser disconnected`);
           client.disconnectBrowserSocket();
         });
       });

@@ -1,162 +1,234 @@
 import { proxySocket } from "./upgraded-socket.js";
-
 // @ts-ignore: Node-specific import
 import { createPatch } from "rfc6902";
+
+const DEBUG = false;
 
 /**
  * ...docs go here...
  */
-export class ClientBase {
-  // The socketless factory will also inject this
-  state = {};
+export function formClientClass(ClientClass) {
+  return class ClientBase extends ClientClass {
+    state = {};
 
-  setState(stateUpdates) {
-    console.log(`updating state`);
-    const { state } = this;
-    const oldState = JSON.parse(JSON.stringify(state));
-    Object.entries(stateUpdates).forEach(
-      ([key, value]) => (state[key] = value),
-    );
-    console.log(`[setstate] client has browser?`, !!this.browser);
-    if (this.browser) {
-      console.log(`creating diff`);
-      const diff = createPatch(oldState, state);
-      console.log(`sending diff`);
-      this.browser.socket.send(
-        JSON.stringify({
-          state: diff,
-          seq_num: ++this.browser.socket.__seq_num,
-          diff: true,
-        }),
+    // No functions except `disconnect` may be proxy-invoked
+    static get disallowedCalls() {
+      const names = Object.getOwnPropertyNames(ClientBase.prototype);
+      [`constructor`, `disconnect`].forEach((name) =>
+        names.splice(names.indexOf(name), 1),
+      );
+      return names;
+    }
+
+    constructor() {
+      super();
+
+      if (!this.onConnect) {
+        this.onConnect = async () => {
+          if (DEBUG)
+            console.log(`[ClientBase] client ${this.state.id} connected.`);
+        };
+      }
+
+      if (!this.onDisconnect) {
+        this.onDisconnect = async () => {
+          if (DEBUG)
+            console.log(`[ClientBase] client ${this.state.id} disconnected.`);
+        };
+      }
+
+      if (!this.onQuit) {
+        this.onQuit = async () => {
+          if (DEBUG)
+            console.log(`[ClientBase] client ${this.state.id} quitting.`);
+        };
+      }
+    }
+
+    setState(stateUpdates) {
+      if (DEBUG) console.log(`[ClientBase] updating state`);
+      const { state } = this;
+      Object.entries(stateUpdates).forEach(
+        ([key, value]) => (state[key] = value),
       );
     }
-  }
 
-  connectBrowserSocket(browserSocket) {
-    if (!this.browser) {
-      // note that there is no auth here (yet)
-      this.browser = proxySocket(`browser`, this, browserSocket);
-      this.browser.socket.__seq_num = 0;
-      this.setState(this.state);
+    connectServerSocket(serverSocket) {
+      if (DEBUG) console.log(`[ClientBase]  connected to server`);
+      this.server = proxySocket(`client`, this, serverSocket);
+      this.onConnect();
     }
-  }
 
-  syncState() {
-    if (this.browser) {
-      const fullState = JSON.parse(JSON.stringify(this.state));
-      console.log(this.state);
-      this.browser.socket.__seq_num = 0;
-      return fullState;
+    disconnect() {
+      this.server.socket.close();
     }
-    throw new Error("Cannot sync state: no browser attached to client.");
-  }
+  };
+}
 
-  disconnectBrowserSocket() {
-    this.browser = undefined;
-  }
+/**
+ * In order to create an appropriate webclient class, we need to extend
+ * off of "whatever the user's client class is".
+ * @param {*} ClientClass
+ * @returns
+ */
+export function formWebClientClass(ClientClass) {
+  return class WebClient extends ClientClass {
+    browser = undefined;
 
-  connectServerSocket(serverSocket) {
-    console.log(`client: connected to server`);
-    this.server = proxySocket(`client`, this, serverSocket);
-    this.onConnect();
-  }
-
-  disconnect() {
-    this.server.socket.close();
-  }
-
-  quit() {
-    if (this.browser) {
-      this.browser.socket.close();
-      this.disconnectBrowserSocket();
+    // No functions except `quit` and `syncState` may be proxy-invoked
+    static get disallowedCalls() {
+      const names = Object.getOwnPropertyNames(WebClient.prototype).concat(
+        ClientClass.disallowedCalls,
+      );
+      [`constructor`, `quit`, `syncState`].forEach((name) =>
+        names.splice(names.indexOf(name), 1),
+      );
+      return names;
     }
-    this.disconnect();
-    this.onQuit();
-  }
 
-  async onConnect() {
-    console.log(`[ClientBase] client ${this.state.id} connected.`);
-  }
+    connectBrowserSocket(browserSocket) {
+      if (!this.browser) {
+        // note that there is no auth here (yet)
+        this.browser = proxySocket(`browser`, this, browserSocket);
+        this.browser.socket.__seq_num = 0;
+        this.setState(this.state);
+      }
+    }
 
-  async onDisconnect() {
-    console.log(`[ClientBase] client ${this.state.id} disconnected.`);
-  }
+    disconnectBrowserSocket() {
+      this.browser = undefined;
+    }
 
-  async onQuit() {
-    console.log(`[ClientBase] client ${this.state.id} quitting.`);
-  }
+    setState(stateUpdates) {
+      const oldState = JSON.parse(JSON.stringify(this.state));
+      super.setState(stateUpdates);
+      if (DEBUG)
+        console.log(`[WebClientBase] client has browser?`, !!this.browser);
+      if (this.browser) {
+        if (DEBUG) console.log(`[WebClientBase] creating diff`);
+        const diff = createPatch(oldState, this.state);
+        if (DEBUG) console.log(`[WebClientBase] sending diff`);
+        this.browser.socket.send(
+          JSON.stringify({
+            state: diff,
+            seq_num: ++this.browser.socket.__seq_num,
+            diff: true,
+          }),
+        );
+      }
+    }
+
+    syncState() {
+      if (this.browser) {
+        const fullState = JSON.parse(JSON.stringify(this.state));
+        if (DEBUG) console.log(this.state);
+        this.browser.socket.__seq_num = 0;
+        return fullState;
+      }
+      throw new Error(
+        "[WebClientBase] Cannot sync state: no browser attached to client.",
+      );
+    }
+
+    quit() {
+      if (this.browser) {
+        this.browser.socket.close();
+        this.disconnectBrowserSocket();
+      }
+      this.disconnect();
+      this.onQuit();
+    }
+  };
 }
 
 /**
  * ...docs go here...
  */
-export class ServerBase {
-  // The socketless factory will also inject these:
-  clients = [];
-  ws = undefined; // websocket server instance
-  webserver = undefined; // http(s) server instance
+export function formServerClass(ServerClass) {
+  return class ServerBase extends ServerClass {
+    clients = [];
+    ws = undefined; // websocket server instance
+    webserver = undefined; // http(s) server instance
 
-  // When a client connects to the server, route it to
-  // the server.addClient(client) function for handling.
-  async connectClientSocket(socket) {
-    console.log(`server: client connecting to server...`);
-    const client = proxySocket(`server`, this, socket);
+    // No functions in this class may be proxy-invoked
+    static get disallowedCalls() {
+      const names = Object.getOwnPropertyNames(ServerBase.prototype);
+      names.splice(names.indexOf(`constructor`), 1);
+      return names;
+    }
 
-    // send the client its server id
-    console.log(`server: sending connection id`);
+    constructor(ws, webserver) {
+      super();
+      this.ws = ws;
+      this.webserver = webserver;
+    }
 
-    client.socket.send(
-      JSON.stringify({
-        name: `handshake:setid`,
-        payload: { id: client.id },
-      }),
-    );
+    async onConnect(client) {
+      if (super.onConnect) return super.onConnect(client);
+      if (DEBUG) console.log(`[ServerBase] client ${client.id} connected.`);
+    }
 
-    console.log(`server: adding client to list of known clients`);
+    async onDisconnect(client) {
+      if (super.onDisconnect) return super.onDisconnect(client);
+      if (DEBUG) console.log(`[ServerBase] client ${client.id} disconnected.`);
+    }
 
-    // add this client to the list
-    this.clients.push({ client, socket });
+    async onQuit() {
+      if (super.onQuit) return super.onQuit();
+      if (DEBUG) console.log(`[ServerBase] told to quit.`);
+    }
 
-    // Add client-removal handling for when the socket closes:
-    this.addDisconnectHandling(client, socket);
+    async teardown() {
+      if (super.teardown) return super.teardown();
+      if (DEBUG) console.log(`[ServerBase] post-quit teardown.`);
+    }
 
-    // And then trigger the onConnect function for subclasses to do
-    // whatever they want to do when a client connects to the server.
-    this.onConnect(client);
-  }
+    // When a client connects to the server, route it to
+    // the server.addClient(client) function for handling.
+    async connectClientSocket(socket) {
+      if (DEBUG) console.log(`[ServerBase] client connecting to server...`);
+      const client = proxySocket(`server`, this, socket);
 
-  // Add client-removal handling when the socket closes:
-  async addDisconnectHandling(client, socket) {
-    const { clients } = this;
+      // send the client its server id
+      if (DEBUG) console.log(`[ServerBase] sending connection id`);
 
-    socket.on(`close`, () => {
-      let pos = clients.findIndex((e) => e.client === client);
-      if (pos !== -1) {
-        let e = clients.splice(pos, 1)[0];
-        this.onDisconnect(client);
-      }
-    });
-  }
+      client.socket.send(
+        JSON.stringify({
+          name: `handshake:setid`,
+          payload: { id: client.id },
+        }),
+      );
 
-  async onConnect(client) {
-    console.log(`[ServerBase] client ${client.id} connected.`);
-  }
+      if (DEBUG)
+        console.log(`[ServerBase] adding client to list of known clients`);
 
-  async onDisconnect(client) {
-    console.log(`[ServerBase] client ${client.id} disconnected.`);
-  }
+      // add this client to the list
+      this.clients.push({ client, socket });
 
-  async quit() {
-    await this.onQuit();
-    this.clients.forEach((client) => client.disconnect());
-    this.webserver.close(() => this.ws.close(() => this.teardown()));
-  }
+      // Add client-removal handling for when the socket closes:
+      this.addDisconnectHandling(client, socket);
 
-  async onQuit() {
-    console.log(`[ServerBase] told to quit.`);
-  }
+      // And then trigger the onConnect function for subclasses to do
+      // whatever they want to do when a client connects to the server.
+      this.onConnect(client);
+    }
 
-  teardown() {
-    console.log(`[ServerBase] post-quit teardown.`);
-  }
+    // Add client-removal handling when the socket closes:
+    async addDisconnectHandling(client, socket) {
+      const { clients } = this;
+      socket.on(`close`, () => {
+        let pos = clients.findIndex((e) => e.client === client);
+        if (pos !== -1) {
+          let e = clients.splice(pos, 1)[0];
+          this.onDisconnect(client);
+        }
+      });
+    }
+
+    async quit() {
+      await this.onQuit();
+      this.clients.forEach((client) => client.disconnect());
+      this.webserver.close(() => this.ws.close(() => this.teardown()));
+    }
+  };
 }
