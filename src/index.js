@@ -44,32 +44,54 @@ export function generateClientServer(ClientClass, ServerClass) {
       } else {
         httpServer = serverOrHttpsOptions;
       }
+
+      // create a webserver, if we don't already have one.
       let webserver = httpServer;
       if (!webserver) {
         webserver = httpsOptions
           ? https.createServer(httpsOptions)
           : http.createServer();
       }
-      const ws = new WebSocketServer({ server: webserver });
+
+      // create a websocket server, so we can handle websocket upgrade calls.
+      const ws = new WebSocketServer({ noServer: true });
+      webserver.on(`upgrade`, (req, socket, head) => {
+        if (DEBUG) console.log(`http->ws upgrade call`);
+        ws.handleUpgrade(req, socket, head, (websocket) => {
+          if (DEBUG) console.log(`upgraded http->ws`);
+          ws.emit(`connection`, websocket, req);
+        });
+      });
+
+      // create our actual RPC server object.
       const server = new ServerClass(ws, webserver);
+
+      // And of course, when we receive a websocket connection, add that socket as a client.
       ws.on(`connection`, function (socket) {
         if (DEBUG) console.log(`client.connectClientSocket`);
         server.connectClientSocket(socket);
       });
+
+      // and then return the web server for folks to .listen() etc.
       return webserver;
     },
 
     /**
      * Create a client instance for this client/server API.
      * @param {*} serverURL
+     * @param {*} ALLOW_SELF_SIGNED_CERTS
      * @param {*} TargetClientClass optional, defaults to ClientClass
      * @returns
      */
     createClient: function createClient(
       serverURL,
+      ALLOW_SELF_SIGNED_CERTS,
       TargetClientClass = ClientClass,
     ) {
-      const socketToServer = new WebSocket(serverURL);
+      serverURL = serverURL.replace(`http`, `ws`);
+      const socketToServer = new WebSocket(serverURL, {
+        rejectUnauthorized: !ALLOW_SELF_SIGNED_CERTS,
+      });
       const client = new TargetClientClass();
       socketToServer.on(`close`, (...data) => client.onDisconnect(...data));
       function registerForId(data) {
@@ -96,21 +118,35 @@ export function generateClientServer(ClientClass, ServerClass) {
      * @param {*} serverUrl
      * @param {*} publicDir
      * @param {*} httpsOptions
+     * @param {*} ALLOW_SELF_SIGNED_CERTS
      * @returns
      */
     createWebClient: function createWebClient(
       serverUrl,
       publicDir,
       httpsOptions,
+      ALLOW_SELF_SIGNED_CERTS,
     ) {
-      const client = factory.createClient(serverUrl, WebClientClass);
+      const client = factory.createClient(
+        serverUrl,
+        ALLOW_SELF_SIGNED_CERTS,
+        WebClientClass,
+      );
 
       const router = new CustomRouter(client);
       let routeHandling = makeRouteHandler(publicDir, router);
       const webserver = httpsOptions
         ? https.createServer(httpsOptions, routeHandling)
         : http.createServer(routeHandling);
-      const ws = new WebSocketServer({ server: webserver });
+
+      const ws = new WebSocketServer({ noServer: true });
+      webserver.on(`upgrade`, (req, socket, head) => {
+        if (DEBUG) console.log(`http->ws upgrade call`);
+        ws.handleUpgrade(req, socket, head, (websocket) => {
+          if (DEBUG) console.log(`upgraded http->ws`);
+          ws.emit(`connection`, websocket, req);
+        });
+      });
 
       client.ws = ws;
       client.webserver = webserver;

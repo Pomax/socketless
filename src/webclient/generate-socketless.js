@@ -25,7 +25,7 @@ export function generateSocketless() {
   // Then inject the actual "socketless" export...
   const socketless = `
     export function createWebClient(WebClientClass) {
-      const socket = new WebSocket(window.location.toString().replace("http:", "ws:"));
+      const socket = new WebSocket(window.location.toString().replace("http", "ws"));
       const webclient = new WebClientClass();
       webclient.socket = socket;
       webclient.server = proxySocket("webclient", webclient, socket);
