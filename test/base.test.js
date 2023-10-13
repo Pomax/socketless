@@ -29,19 +29,22 @@ describe("web client tests", () => {
   it("disallows calling protected functions", (done) => {
     class ClientClass {
       async onConnect() {
-        // try to call protected server functions
-        try {
-          await this.server.teardown();
-        } catch (e) {
-          console.log(`definitely throws`);
-          expect(e).toBeDefined();
-        }
+        expect(async () => await this.server.onConnect()).rejects.toThrow();
+        expect(async () => await this.server.onDisconnect()).rejects.toThrow();
+        expect(async () => await this.server.onQuit()).rejects.toThrow();
+        expect(async () => await this.server.teardown()).rejects.toThrow();
+        expect(
+          async () => await this.server.connectClientSocket(),
+        ).rejects.toThrow();
+        expect(
+          async () => await this.server.addDisconnectHandling(),
+        ).rejects.toThrow();
+        expect(async () => await this.server.quit()).rejects.toThrow();
 
-        expect(async () => {
-          console.log(`this, Jest claims, does not`);
-          await this.server.teardown();
-        }).toThrow();
+        this.server.runServerTests();
+      }
 
+      async finish() {
         this.disconnect();
       }
     }
@@ -51,6 +54,14 @@ describe("web client tests", () => {
         if (!this.clients.length) {
           this.quit();
         }
+      }
+
+      async runServerTests(client) {
+        expect(async () => await client.setState("test")).rejects.toThrow();
+        expect(
+          async () => await client.connectServerSocket(),
+        ).rejects.toThrow();
+        client.finish();
       }
 
       async teardown() {
