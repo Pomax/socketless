@@ -1,23 +1,15 @@
-/**
- * ...
- */
+const NUMBER_OF_CLIENTS = 4;
+
+import { generateClientServer } from "socketless";
 import { ClientClass } from "./ClientClass.js";
 import { ServerClass } from "./ServerClass.js";
 
-/**
- * ...
- */
-import { generateClientServer } from "socketless";
 const factory = generateClientServer(ClientClass, ServerClass);
-
-const NUMBER_OF_CLIENTS = 4;
-
-/**
- * ...
- */
 const server = factory.createServer();
-server.listen(8000, () => {
+
+server.listen(0, () => {
+  const serverURL = `http://localhost:${server.address().port}`;
   [...new Array(NUMBER_OF_CLIENTS)].forEach(() =>
-    factory.createClient("http://localhost:8000"),
+    factory.createClient(serverURL)
   );
 });
