@@ -7,7 +7,8 @@
   - [ ] call .update with both the full state and the changeset wrt the previous state
 - [x] disallow calling Base functions over RPC, except for the client's `syncState` and `quit`,
       by the browser, and `disconnect`, by the server (i.e. a server kick).
-- [ ] create new tests
+- [x] create new tests
+- [ ] "get user input from browser" mechanism for client code when this.browser===true
 
 # Documentation
 

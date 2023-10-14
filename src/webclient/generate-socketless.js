@@ -15,31 +15,37 @@ export function generateSocketless() {
     // browsers have WebSocket built in
     .replace(`import { WebSocket } from "ws";`, ``)
     // And we can't export inside of another export of course.
-    .replaceAll(`export function`, `function`)
-    // rewrite logger
-    .replace(
-      `import { log } from "./logger.js";`,
-      `const log = (...args) => console.log(...args);`,
-    );
+    .replaceAll(`export function`, `function`);
 
   // Then inject the actual "socketless" export...
   const socketless = `
     export function createWebClient(WebClientClass) {
       const socket = new WebSocket(window.location.toString().replace("http", "ws"));
       const webclient = new WebClientClass();
-      webclient.socket = socket;
-      webclient.server = proxySocket("webclient", webclient, socket);
+      Object.defineProperty(webclient, "socket", {
+        value: socket,
+        writable: false,
+        configurable: false,
+        enumerable: false
+      });
+      Object.defineProperty(webclient, "server", {
+        value: proxySocket("webclient", webclient, socket),
+        writable: false,
+        configurable: false,
+        enumerable: false
+      });
       webclient.state = {};
       webclient.init();
       return webclient;
-    };`;
+    };
+  `;
 
   // And include a full copy of the rfc6902 patch/diff/apply library.
   // This is non-optional and not so much "a build step" as simply
   // "we know where it lives, add it".
   const rfc6902 = fs
     .readFileSync(
-      path.join(__dirname, `../../node_modules/rfc6902/dist/rfc6902.min.js`),
+      path.join(__dirname, `../../node_modules/rfc6902/dist/rfc6902.min.js`)
     )
     .toString(`utf-8`);
 

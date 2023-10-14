@@ -181,7 +181,7 @@ class UpgradedSocket extends WebSocket {
   }
 
   /**
-   * Redefine .on() so that it works like .addEventListener()
+   * this.upgraded.on() made to work like .addEventListener()
    */
   __on(eventName, handler) {
     const { handlers } = this;
@@ -192,7 +192,7 @@ class UpgradedSocket extends WebSocket {
   }
 
   /**
-   * Redefine .off() so that it  works like .removeEventListener()
+   * this.upgraded.off() made to work like .removeEventListener()
    */
   __off(eventName, handler) {
     const { handlers } = this;
@@ -202,11 +202,11 @@ class UpgradedSocket extends WebSocket {
   }
 
   /**
-   * Add a promise-based emit/receive to the socket, so that calling code can  `await` the response.
+   * Add a promise-based emit/receive to the socket, so that calling code can `await` the response.
    *
    * Note that there is an optional third argument `timeout` that can be used to say how long the
    * emit should wait before deciding there is no response forthcoming and to clean up the event
-   * listener for that response.
+   * listener for that response. The default timeout is 1000ms.
    */
   async __send(eventName, data = {}, timeout = 1000) {
     if (DEBUG) console.log(`[upgraded send]`, eventName, data);
@@ -275,7 +275,7 @@ export function upgradeSocket(origin, socket) {
 }
 
 /**
- * A socket proxy for RPC
+ * A socket proxy for RPC purposes.
  */
 class SocketProxy extends Function {
   constructor(socket, path = ``) {
@@ -287,7 +287,7 @@ class SocketProxy extends Function {
       get: (_, prop) => {
         if (prop === "id") return this.id;
         if (prop === "socket") return this.socket;
-        // @ts-ignore: we're never invoking this with Symbols
+        // @ts-ignore: we're never invoking this with Symbol as second argument
         return new SocketProxy(socket, `${path}:${prop}`);
       },
       apply: async (_, __, args) => {

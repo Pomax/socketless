@@ -6,10 +6,16 @@ import { generateClientServer } from "../../src/index.js";
 
 const ALLOW_SELF_SIGNED_CERTS = true;
 
-const httpsOptions = {
-  key: fs.readFileSync(`${__dirname}/../localhost/localhost-key.pem`),
-  cert: fs.readFileSync(`${__dirname}/../localhost/localhost.pem`),
-};
+import pem from "pem";
+const httpsOptions = await new Promise((resolve, reject) => {
+  pem.createCertificate(
+    { days: 1, selfSigned: true },
+    function (e, { clientKey: key, certificate: cert }) {
+      if (e) return reject(e);
+      resolve({ key, cert });
+    },
+  );
+});
 
 const DEBUG = false;
 
@@ -106,7 +112,7 @@ describe("web client tests", () => {
     });
   });
 
-  it("should run on a basic https setup for the server only", (done) => {
+  it("should run on a https for the server, but basic http for the web client", (done) => {
     let server, clientWebServer, browser;
 
     /**
@@ -203,7 +209,7 @@ describe("web client tests", () => {
     });
   });
 
-  it("should run on https for both the server and the webclient server", (done) => {
+  it("should run on https for both the server and the webclient", (done) => {
     let server, clientWebServer, browser;
 
     /**
@@ -240,9 +246,7 @@ describe("web client tests", () => {
         }
       }
       async teardown() {
-        // Fun bit of Jest nonsense, it'll complain that the server is still running,
-        // which it isn't, Jest just tries to exit before the socket's fully closed.
-        setTimeout(() => done(), 1000);
+        done()
       }
       test(client, a, b, c) {
         return [c, b, a].join(``);

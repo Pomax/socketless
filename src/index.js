@@ -4,11 +4,8 @@ import http from "http";
 import https from "https";
 
 import { WebSocket, WebSocketServer } from "ws";
-import {
-  formClientClass,
-  formServerClass,
-  formWebClientClass,
-} from "./classes.js";
+import { formClientClass, formServerClass } from "./classes.js";
+import { formWebClientClass } from "./webclient/classes.js";
 import { CustomRouter } from "./webclient/custom-router.js";
 import { makeRouteHandler } from "./webclient/route-handler.js";
 import { getResponseName } from "./upgraded-socket.js";
@@ -24,7 +21,6 @@ const DEBUG = false;
 export function generateClientServer(ClientClass, ServerClass) {
   ClientClass = formClientClass(ClientClass);
   ServerClass = formServerClass(ServerClass);
-
   const WebClientClass = formWebClientClass(ClientClass);
 
   const factory = {

@@ -7,10 +7,7 @@ import { exec } from "child_process";
 
 function execute(command) {
   return new Promise((resolve, reject) => {
-    exec(command, function (error, stdout, stderr) {
-      if (error) return reject(stderr);
-      resolve(stdout);
-    });
+    exec(command, (e, out, err) => (e ? reject(err) : resolve(out)));
   });
 }
 
@@ -19,10 +16,8 @@ const ALLOW_SELF_SIGNED_CERTS = true;
 const httpsOptions = await new Promise((resolve, reject) => {
   pem.createCertificate(
     { days: 1, selfSigned: true },
-    function (e, { clientKey: key, certificate: cert }) {
-      if (e) return reject(e);
-      resolve({ key, cert });
-    },
+    (err, { clientKey: key, certificate: cert }) =>
+      err ? reject(err) : resolve({ key, cert }),
   );
 });
 
@@ -114,7 +109,9 @@ describe("server tests", () => {
   it("can run with user-provided plain http Express server", (done) => {
     class ServerClass {
       onDisconnect = () => (this.clients.length ? null : this.quit());
-      teardown = () => done();
+      teardown = () => {
+        done();
+      };
     }
 
     class ClientClass {
@@ -164,8 +161,8 @@ describe("server tests", () => {
     const server = https.createServer(httpsOptions, app);
     server.listen(0, async () => {
       // verify the server works. Unfortunately, when we add express
-      // the combination of fetch and Just runs into cert problems,
-      // so we outsource this one to curl:
+      // the combination of https + fetch + Jest runs into problems
+      // over the self-signed cert, so we outsource this one to curl:
       const serverURL = `https://localhost:${server.address().port}/`;
       const result = await execute(`curl --insecure ${serverURL}`);
       expect(result).toBe(ROUTE_TEXT);
