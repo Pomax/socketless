@@ -246,7 +246,7 @@ describe("web client tests", () => {
         }
       }
       async teardown() {
-        done()
+        done();
       }
       test(client, a, b, c) {
         return [c, b, a].join(``);

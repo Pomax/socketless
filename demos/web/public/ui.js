@@ -1,13 +1,18 @@
 class WebClient {
-  constructor() {
+  init() {
     this.gameList = document.getElementById("gamelist");
     const create = document.getElementById("create");
     create.addEventListener(`click`, () => this.server.game.create());
     const quit = document.getElementById("quit");
-    quit.addEventListener(`click`, () => this.quit());
+    quit.addEventListener(`click`, () => {
+      this.quit();
+      document.body.textContent = `You can safely close this tab now.`;
+    });
   }
 
-  update(state) {
+  update(prevState) {
+    const { state } = this;
+    console.log(`update:`, prevState, state);
     const list = this.gameList;
     list.innerHTML = ``;
     state.gameList.forEach((entry) => {
@@ -38,6 +43,7 @@ class WebClient {
     });
 
     const game = state.activeGame;
+    console.log(`game:`, game);
     if (game) this.drawBoard(game);
   }
 
@@ -58,8 +64,6 @@ class WebClient {
     } else {
       classes.remove("over", "winner", "loser");
     }
-
-    classes.toggle("winner", winner);
 
     board.split(`,`).forEach((value, position) => {
       const space = document.createElement("div");

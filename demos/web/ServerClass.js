@@ -1,54 +1,59 @@
-import { ServerBase } from "socketless";
 import { GameManager } from "./GameManager.js";
 
-export class ServerClass extends ServerBase {
-  constructor(...args) {
-    super(...args);
-    log("created");
+export class ServerClass {
+  constructor() {
+    console.log("created");
     this.gm = new GameManager();
+
+    this.game = {
+      getList: (client) => {
+        console.log(`server: getList`);
+        return this.gm.getList();
+      },
+      create: (client) => {
+        console.log(`server: create`);
+        this.gm.create(client);
+        this.notifyGameList();
+      },
+      join: (client, { gameId }) => {
+        console.log(`server: join`);
+        this.gm.join(gameId, client);
+        this.notifyGameList();
+      },
+      play: (client, { gameId, position }) => {
+        console.log(`server: play`);
+        this.gm.play(gameId, client.id, position);
+      },
+    };
   }
 
-  onConnect(client) {
-    log(`new connection, ${this.clients.length} clients connected`);
-    client.admin.setId(client.id);
-    client.game.list({ games: this.gm.getList() });
+  async onConnect(client) {
+    console.log(`new connection, ${this.clients.length} clients connected`);
+    await client.admin.setId(client.id);
+    await client.game.list({ games: this.gm.getList() });
   }
 
   onDisconnect(client) {
-    log(`client ${client.id} disconnected`);
+    console.log(`client ${client.id} disconnected`);
     if (this.clients.length === 0) {
-      log(`no clients connected, shutting down.`);
+      console.log(`no clients connected, shutting down.`);
       this.quit();
     }
   }
 
-  async "game:getList"(client) {
-    return this.gm.getList();
+  teardown() {
+    // I don't like this...
+    process.exit(0);
   }
 
   notifyGameList() {
-    this.clients.forEach((client) =>
-      client.game.list({
-        games: this.gm.getList(client),
-      }),
-    );
+    this.clients.forEach((client) => {
+      const games = this.gm.getList(client);
+      console.log(
+        `calling client(${client.id}).game.list() from server`,
+        games,
+      );
+      client.game.list({ games });
+    });
   }
-
-  async "game:create"(client) {
-    this.gm.create(client);
-    this.notifyGameList();
-  }
-
-  async "game:join"(client, { gameId }) {
-    this.gm.join(gameId, client);
-    this.notifyGameList();
-  }
-
-  async "game:play"(client, { gameId, position }) {
-    this.gm.play(gameId, client.id, position);
-  }
-}
-
-function log(...data) {
-  console.log("server>", ...data);
 }

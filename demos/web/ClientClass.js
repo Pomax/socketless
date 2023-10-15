@@ -1,55 +1,53 @@
-import { ClientBase } from "socketless";
-
-export class ClientClass extends ClientBase {
-  constructor(...args) {
-    super(...args);
-    log("created");
-  }
-
-  onConnect() {
-    log("connected to server");
-  }
-
-  async "admin:setId"(id) {
-    this.state.id = id;
-    log(`setting id to ${id}`);
-  }
-
-  async "game:list"({ games }) {
-    this.state.gameList = games;
-  }
-
-  async "game:start"({ startingPlayer, gameId, board }) {
-    this.state.activeGame = {
-      gameId,
-      currentPlayer: startingPlayer,
-      board: board,
+export class ClientClass {
+  constructor() {
+    console.log(`created`);
+    this.admin = {
+      setId: (id) => {
+        this.setState({ id });
+        console.log(`setting id to ${id}`);
+      },
+    };
+    this.game = {
+      list: ({ games }) => {
+        console.log(`ui: list`);
+        this.setState({ gameList: games });
+      },
+      start: (gameId, startingPlayer, board) => {
+        console.log(`ui: start`);
+        this.setState({
+          activeGame: {
+            gameId,
+            currentPlayer: startingPlayer,
+            board: board,
+          },
+        });
+      },
+      played: (gameId, currentPlayer, board) => {
+        console.log(`ui: played`);
+        const game = this.state.activeGame;
+        if (game.gameId === gameId) {
+          game.currentPlayer = currentPlayer;
+          game.board = board;
+        }
+      },
+      draw: (gameId) => {
+        console.log(`ui: draw`);
+        const game = this.state.activeGame;
+        if (game.gameId === gameId) {
+          game.draw = true;
+        }
+      },
+      won: (gameId, winner) => {
+        console.log(`ui: won`);
+        const game = this.state.activeGame;
+        if (game.gameId === gameId) {
+          game.winner = winner;
+        }
+      },
     };
   }
 
-  async "game:played"({ gameId, currentPlayer, board }) {
-    const game = this.state.activeGame;
-    if (game.gameId === gameId) {
-      game.currentPlayer = currentPlayer;
-      game.board = board;
-    }
+  onConnect() {
+    console.log(`connected to server`);
   }
-
-  async "game:won"({ gameId, winner }) {
-    const game = this.state.activeGame;
-    if (game.gameId === gameId) {
-      game.winner = winner;
-    }
-  }
-
-  async "game:draw"({ gameId }) {
-    const game = this.state.activeGame;
-    if (game.gameId === gameId) {
-      game.draw = true;
-    }
-  }
-}
-
-function log(...data) {
-  console.log("client>", ...data);
 }

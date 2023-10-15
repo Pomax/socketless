@@ -1,3 +1,5 @@
+import { CLIENT, WEBCLIENT, BROWSER } from "../sources.js";
+
 // @ts-ignore: Node-specific import
 import fs from "fs";
 // @ts-ignore: Node-specific import
@@ -14,6 +16,11 @@ export function generateSocketless() {
     .toString(`utf-8`)
     // browsers have WebSocket built in
     .replace(`import { WebSocket } from "ws";`, ``)
+    // and we don't need this import:
+    .replace(
+      `import { CLIENT, BROWSER } from "./sources.js";`,
+      `const BROWSER = "${BROWSER}";\nconst CLIENT = "${CLIENT}";`,
+    )
     // And we can't export inside of another export of course.
     .replaceAll(`export function`, `function`);
 
@@ -21,22 +28,25 @@ export function generateSocketless() {
   const socketless = `
     export function createWebClient(WebClientClass) {
       const socket = new WebSocket(window.location.toString().replace("http", "ws"));
-      const webclient = new WebClientClass();
-      Object.defineProperty(webclient, "socket", {
+      const browserClient = new WebClientClass();
+      Object.defineProperty(browserClient, "socket", {
         value: socket,
         writable: false,
         configurable: false,
         enumerable: false
       });
-      Object.defineProperty(webclient, "server", {
-        value: proxySocket("webclient", webclient, socket),
+      Object.defineProperty(browserClient, "server", {
+        value: proxySocket("${BROWSER}", "${WEBCLIENT}", browserClient, socket),
         writable: false,
         configurable: false,
         enumerable: false
       });
-      webclient.state = {};
-      webclient.init();
-      return webclient;
+      Object.defineProperty(browserClient, "quit", {
+        value: () => browserClient.server.disconnect()
+      });
+      browserClient.state = {};
+      browserClient.init();
+      return browserClient;
     };
   `;
 
@@ -45,7 +55,7 @@ export function generateSocketless() {
   // "we know where it lives, add it".
   const rfc6902 = fs
     .readFileSync(
-      path.join(__dirname, `../../node_modules/rfc6902/dist/rfc6902.min.js`)
+      path.join(__dirname, `../../node_modules/rfc6902/dist/rfc6902.min.js`),
     )
     .toString(`utf-8`);
 

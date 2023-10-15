@@ -1,14 +1,15 @@
 import { proxySocket } from "./upgraded-socket.js";
+import { CLIENT, SERVER } from "./sources.js";
 
 const DEBUG = false;
+
+const STATE_SYMBOL = Symbol();
 
 /**
  * ...docs go here...
  */
 export function formClientClass(ClientClass) {
   return class ClientBase extends ClientClass {
-    state = {};
-
     // No functions except `disconnect` may be proxy-invoked
     static get disallowedCalls() {
       const names = Object.getOwnPropertyNames(ClientBase.prototype);
@@ -20,6 +21,23 @@ export function formClientClass(ClientClass) {
 
     constructor() {
       super();
+
+      // unlike React, we don't even let you assign to state.
+      const state = (this[STATE_SYMBOL] = {});
+      const readOnlyState = new Proxy(state, {
+        get: (_, prop) => state[prop],
+        set: () => {
+          throw new Error(
+            `cannot directly assign to state, use setState(update)`,
+          );
+        },
+      });
+
+      Object.defineProperty(this, `state`, {
+        value: readOnlyState,
+        writable: false,
+        configurable: false,
+      });
 
       if (!this.onConnect) {
         this.onConnect = async () => {
@@ -44,8 +62,9 @@ export function formClientClass(ClientClass) {
     }
 
     setState(stateUpdates) {
-      if (DEBUG) console.log(`[ClientBase] updating state`);
-      const { state } = this;
+      // if (DEBUG)
+      console.log(`[ClientBase] updating state`);
+      const state = this[STATE_SYMBOL];
       Object.entries(stateUpdates).forEach(
         ([key, value]) => (state[key] = value),
       );
@@ -53,7 +72,7 @@ export function formClientClass(ClientClass) {
 
     connectServerSocket(serverSocket) {
       if (DEBUG) console.log(`[ClientBase]  connected to server`);
-      this.server = proxySocket(`client`, this, serverSocket);
+      this.server = proxySocket(CLIENT, SERVER, this, serverSocket);
       this.onConnect();
     }
 
@@ -85,21 +104,11 @@ export function formServerClass(ServerClass) {
       this.webserver = webserver;
     }
 
-    async onConnect(client) {
-      if (super.onConnect) return super.onConnect(client);
-      if (DEBUG) console.log(`[ServerBase] client ${client.id} connected.`);
-    }
-
-    async onDisconnect(client) {
-      if (super.onDisconnect) return super.onDisconnect(client);
-      if (DEBUG) console.log(`[ServerBase] client ${client.id} disconnected.`);
-    }
-
     // When a client connects to the server, route it to
     // the server.addClient(client) function for handling.
     async connectClientSocket(socket) {
       if (DEBUG) console.log(`[ServerBase] client connecting to server...`);
-      const client = proxySocket(`server`, this, socket);
+      const client = proxySocket(SERVER, CLIENT, this, socket);
 
       // send the client its server id
       if (DEBUG) console.log(`[ServerBase] sending connection id`);
@@ -115,7 +124,7 @@ export function formServerClass(ServerClass) {
         console.log(`[ServerBase] adding client to list of known clients`);
 
       // add this client to the list
-      this.clients.push({ client, socket });
+      this.clients.push(client);
 
       // Add client-removal handling for when the socket closes:
       this.addDisconnectHandling(client, socket);
@@ -129,12 +138,22 @@ export function formServerClass(ServerClass) {
     async addDisconnectHandling(client, socket) {
       const { clients } = this;
       socket.on(`close`, () => {
-        let pos = clients.findIndex((e) => e.client === client);
+        let pos = clients.findIndex((e) => e === client);
         if (pos !== -1) {
           let e = clients.splice(pos, 1)[0];
           this.onDisconnect(client);
         }
       });
+    }
+
+    async onDisconnect(client) {
+      if (super.onDisconnect) return super.onDisconnect(client);
+      if (DEBUG) console.log(`[ServerBase] client ${client.id} disconnected.`);
+    }
+
+    async onConnect(client) {
+      if (super.onConnect) return super.onConnect(client);
+      if (DEBUG) console.log(`[ServerBase] client ${client.id} connected.`);
     }
 
     async quit() {

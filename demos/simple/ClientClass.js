@@ -10,7 +10,7 @@ export class ClientClass {
         console.log("client> disconnecting");
         this.disconnect();
       },
-      3000 + (2 * Math.random() - 1) * 1000
+      3000 + (2 * Math.random() - 1) * 1000,
     );
     console.log("client> disconnecting in 3 +/- 1 seconds");
 

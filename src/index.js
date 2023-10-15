@@ -153,15 +153,24 @@ export function generateClientServer(ClientClass, ServerClass) {
         socket.on(`message`, async (message) => {
           message = message.toString();
           const { name: eventName, payload } = JSON.parse(message);
+          const responseName = getResponseName(eventName);
 
           // Is this a special client/browser call?
           if (eventName === `syncState`) {
+            const fullState = await client.syncState();
+            console.log(
+              `Webclient received syncState from browser, sending [${responseName}]`,
+            );
             return socket.send(
               JSON.stringify({
-                name: getResponseName(eventName),
-                payload: await client.syncState(),
+                name: responseName,
+                payload: fullState,
               }),
             );
+          }
+
+          if (eventName === `disconnect`) {
+            return client.disconnect();
           }
 
           // If it's not, proxy the call from the browser to the server
@@ -172,7 +181,7 @@ export function generateClientServer(ClientClass, ServerClass) {
           // and then proxy the response back to the browser
           socket.send(
             JSON.stringify({
-              name: getResponseName(eventName),
+              name: responseName,
               payload: result,
             }),
           );

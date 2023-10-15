@@ -16,11 +16,7 @@ export class Game {
   start() {
     this.activePlayer = this.players[(Math.random() * 2) | 0].id;
     this.players.forEach((client) =>
-      client.game.start({
-        gameId: this.id,
-        startingPlayer: this.activePlayer,
-        board: this.board.join(`,`),
-      }),
+      client.game.start(this.id, this.activePlayer, this.board.join(`,`)),
     );
   }
 
@@ -42,11 +38,7 @@ export class Game {
     const board = this.board.join(`,`);
     const currentPlayer = (this.activePlayer = this.players[pid ^ 1].id); // flip between player 0 and 1 using xor
     this.players.forEach((client) =>
-      client.game.played({
-        gameId: this.id,
-        currentPlayer,
-        board,
-      }),
+      client.game.played(this.id, currentPlayer, board),
     );
 
     this.checkGameOver(pid, position);
@@ -58,23 +50,14 @@ export class Game {
 
     // Do we have a draw?
     if (this.movesLeft === 0) {
-      return this.players.forEach((client) =>
-        client.game.draw({
-          gameId: this.id,
-        }),
-      );
+      return this.players.forEach((client) => client.game.draw(this.id));
     }
 
     // If not, do we have a winner?
     const gameWon = this.checkWinner(this.board, position);
     if (gameWon) {
       const winner = this.players[pid].id;
-      this.players.forEach((client) =>
-        client.game.won({
-          gameId: this.id,
-          winner,
-        }),
-      );
+      this.players.forEach((client) => client.game.won(this.id, winner));
     }
   }
 
