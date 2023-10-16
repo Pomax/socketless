@@ -1,10 +1,10 @@
 /**
  * This script creates a browser library that gets served up
- * by the webclient's route-handler when the browser runs a
- * <script src="socketless.js">.
+ * by the webclient's route-handler when the browser asks for
+ * <script src="socketless.js" type="module" async>
  *
  * The "npm run compile" job runs this code and pipes it into
- * src/webclient/socketless.js, as a module that exports a
+ * ./src/webclient/socketless.js, as a module that exports a
  * string constant.
  *
  * Which is base64 encoded because quoting a string with
@@ -32,35 +32,10 @@ function generateSocketless() {
     .replace(
       `import { CLIENT, BROWSER } from "./sources.js";`,
       `const BROWSER = "${BROWSER}";\nconst CLIENT = "${CLIENT}";`,
-    )
-    // And we can't export inside of another export of course.
-    .replaceAll(`export function`, `function`);
+    );
 
   // Then inject the actual "socketless" export...
-  const socketless = `
-    export function createWebClient(WebClientClass) {
-      const socket = new WebSocket(window.location.toString().replace("http", "ws"));
-      const browserClient = new WebClientClass();
-      Object.defineProperty(browserClient, "socket", {
-        value: socket,
-        writable: false,
-        configurable: false,
-        enumerable: false
-      });
-      Object.defineProperty(browserClient, "server", {
-        value: proxySocket("${BROWSER}", "${WEBCLIENT}", browserClient, socket),
-        writable: false,
-        configurable: false,
-        enumerable: false
-      });
-      Object.defineProperty(browserClient, "quit", {
-        value: () => browserClient.server.disconnect()
-      });
-      browserClient.state = {};
-      browserClient.init();
-      return browserClient;
-    };
-  `;
+  const socketless = `export function createWebClient(WebClientClass) { const socket = new WebSocket(window.location.toString().replace("http", "ws")); const browserClient = new WebClientClass(); Object.defineProperty(browserClient, "socket", { value: socket, writable: false, configurable: false, enumerable: false }); Object.defineProperty(browserClient, "server", { value: proxySocket("${BROWSER}", "${WEBCLIENT}", browserClient, socket), writable: false, configurable: false, enumerable: false }); Object.defineProperty(browserClient, "quit", { value: () => browserClient.server.disconnect() }); browserClient.state = {}; browserClient.init(); return browserClient; };`;
 
   // And include a full copy of the rfc6902 patch/diff/apply library.
   // This is non-optional and not so much "a build step" as simply
@@ -74,7 +49,8 @@ function generateSocketless() {
   return [upgradeSocket, socketless, rfc6902].join(`\n`);
 }
 
-// Expoer the library as a string constant
+// Export the "compiled" library as a string constant so it can be
+// bundled into the final library.js file without quote conflicts.
 if (typeof process !== `undefined`) {
   const socketlessjs = generateSocketless();
   const base64Encoded = Buffer.from(socketlessjs).toString("base64");

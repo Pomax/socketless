@@ -31,7 +31,7 @@ function sanitizeLocation(location, publicDir) {
 
   // everything else is a static asset and we sanitize it.
   location = location.substring(1);
-  location = location.replace(/\.\./g, ``).replace(/\/\//g, `/`);
+  location = location.replaceAll(`../`, `/`).replace(/\/+/g, `/`);
   location = join(publicDir, location);
   return location;
 }
