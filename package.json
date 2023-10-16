@@ -2,16 +2,17 @@
   "name": "socketless",
   "version": "0.13.12",
   "type": "module",
-  "description": "A framework and methodology for writing web socket client/server code, without writing any socket code.",
-  "main": "src/index.js",
+  "description": "A framework and methodology for writing web socket RPC programs, without writing a single line of web socket or RPC code.",
+  "main": "library.js",
   "scripts": {
     "prettier": "prettier --write ./**/*.js",
-    "test": "npm run test:ast && npm run prettier && npm run bundle && npm run test:jest",
+    "test": "npm run test:ast && npm run prettier && npm run compile && npm run test:jest",
     "test:ast": "tsc ./src/index.js --checkJs --noEmit --module nodenext",
     "test:jest": "node --experimental-vm-modules node_modules/jest/bin/jest.js --verbose=true --silent=false",
     "demo:simple": "cd demos && npm run simple",
     "demo:web": "cd demos && npm run web",
-    "bundle": "esbuild ./src/index.js --bundle --platform=node --target=node20 --packages=external --format=esm --minify > bundle.js"
+    "compile": "node src/generate-socketless.js > src/webclient/socketless.js && npm run build",
+    "build": "esbuild ./src/index.js --bundle --platform=node --target=node20 --packages=external --format=esm --minify > library.js"
   },
   "repository": {
     "type": "git",

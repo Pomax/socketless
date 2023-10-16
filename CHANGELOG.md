@@ -6,6 +6,7 @@ Full rewrite
 - fewer files
 - less code
 - easier to maintain
+- everything gets compiled into a single library.js file now
 
 # v0.12.7
 

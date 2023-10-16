@@ -1,7 +1,8 @@
+import { generateClientServer } from "../../library.js";
+
 import puppeteer from "puppeteer";
 import url from "url";
 const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
-import { generateClientServer } from "../../src/index.js";
 
 const ALLOW_SELF_SIGNED_CERTS = true;
 

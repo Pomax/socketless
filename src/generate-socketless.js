@@ -1,4 +1,15 @@
-import { CLIENT, WEBCLIENT, BROWSER } from "../sources.js";
+/**
+ * This script creates a browser library that gets served up
+ * by the webclient's route-handler when the browser runs a
+ * <script src="socketless.js">.
+ *
+ * The "npm run compile" job runs this code and pipes it into
+ * src/webclient/socketless.js, as a module that exports a
+ * string constant.
+ *
+ * Which is base64 encoded because quoting a string with
+ * quotes is a very special kind of headache.
+ */
 
 // @ts-ignore: Node-specific import
 import fs from "fs";
@@ -6,13 +17,14 @@ import fs from "fs";
 import path from "path";
 // @ts-ignore: Node-specific import
 import url from "url";
-
 const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
 
-export function generateSocketless() {
+import { CLIENT, WEBCLIENT, BROWSER } from "./sources.js";
+
+function generateSocketless() {
   // Loop in the socket upgrade code, with tactical ESM replacements
   const upgradeSocket = fs
-    .readFileSync(path.join(__dirname, `../upgraded-socket.js`))
+    .readFileSync(path.join(__dirname, `./upgraded-socket.js`))
     .toString(`utf-8`)
     // browsers have WebSocket built in
     .replace(`import { WebSocket } from "ws";`, ``)
@@ -55,9 +67,16 @@ export function generateSocketless() {
   // "we know where it lives, add it".
   const rfc6902 = fs
     .readFileSync(
-      path.join(__dirname, `../../node_modules/rfc6902/dist/rfc6902.min.js`),
+      path.join(__dirname, `../node_modules/rfc6902/dist/rfc6902.min.js`),
     )
     .toString(`utf-8`);
 
   return [upgradeSocket, socketless, rfc6902].join(`\n`);
+}
+
+// Expoer the library as a string constant
+if (typeof process !== `undefined`) {
+  const socketlessjs = generateSocketless();
+  const base64Encoded = Buffer.from(socketlessjs).toString("base64");
+  console.log(`export const socketlessjs = atob("${base64Encoded}");`);
 }

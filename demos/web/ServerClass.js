@@ -7,21 +7,17 @@ export class ServerClass {
 
     this.game = {
       getList: (client) => {
-        console.log(`server: getList`);
         return this.gm.getList();
       },
       create: (client) => {
-        console.log(`server: create`);
         this.gm.create(client);
         this.notifyGameList();
       },
       join: (client, { gameId }) => {
-        console.log(`server: join`);
         this.gm.join(gameId, client);
         this.notifyGameList();
       },
       play: (client, { gameId, position }) => {
-        console.log(`server: play`);
         this.gm.play(gameId, client.id, position);
       },
     };
@@ -42,17 +38,13 @@ export class ServerClass {
   }
 
   teardown() {
-    // I don't like this...
+    // FIXME: I don't like this...
     process.exit(0);
   }
 
   notifyGameList() {
     this.clients.forEach((client) => {
       const games = this.gm.getList(client);
-      console.log(
-        `calling client(${client.id}).game.list() from server`,
-        games,
-      );
       client.game.list({ games });
     });
   }

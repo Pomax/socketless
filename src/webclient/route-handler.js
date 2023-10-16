@@ -2,7 +2,8 @@
 import fs from "fs";
 // @ts-ignore: Node-specific import
 import { join } from "path";
-import { generateSocketless } from "./generate-socketless.js";
+
+import { socketlessjs } from "./socketless.js";
 
 const CONTENT_TYPES = {
   ".html": `text/html`,
@@ -47,8 +48,6 @@ function generate404(location, response) {
  * Create a route handler for our local web server
  */
 export function makeRouteHandler(publicDir, customRouter) {
-  const socketlessjs = generateSocketless();
-
   return (request, response) => {
     if (request.url.includes(`?`)) {
       const [url, params] = request.url.split(/\\?\?/);
