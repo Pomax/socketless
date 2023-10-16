@@ -62,8 +62,7 @@ export function formClientClass(ClientClass) {
     }
 
     setState(stateUpdates) {
-      // if (DEBUG)
-      console.log(`[ClientBase] updating state`);
+      if (DEBUG) console.log(`[ClientBase] updating state`);
       const state = this[STATE_SYMBOL];
       Object.entries(stateUpdates).forEach(
         ([key, value]) => (state[key] = value),

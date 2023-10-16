@@ -1,5 +1,4 @@
 import puppeteer from "puppeteer";
-import fs from "fs";
 import url from "url";
 const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
 import { generateClientServer } from "../../src/index.js";

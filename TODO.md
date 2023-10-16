@@ -29,5 +29,8 @@
 - how to make the browser call client functions, rather than proxy to server? (only one socket)
 
 webclient:
+
 - server to client should always first go to client, then to browser?
 - browser to server should "bypass" client
+
+- [ ] figure out a way to turn "generateSocketless" into something that can be bundled.

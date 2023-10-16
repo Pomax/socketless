@@ -1,4 +1,4 @@
-import { generateClientServer } from "../src/index.js";
+import { generateClientServer } from "../bundle.js";
 
 describe("basic tests", () => {
   it("can run a basic client/server setup", (done) => {

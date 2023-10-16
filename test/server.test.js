@@ -1,4 +1,4 @@
-import { generateClientServer } from "../src/index.js";
+import { generateClientServer } from "../bundle.js";
 import express from "express";
 import http from "http";
 import https from "https";

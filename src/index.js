@@ -52,9 +52,9 @@ export function generateClientServer(ClientClass, ServerClass) {
       // create a websocket server, so we can handle websocket upgrade calls.
       const ws = new WebSocketServer({ noServer: true });
       webserver.on(`upgrade`, (req, socket, head) => {
-        if (DEBUG) console.log(`http->ws upgrade call`);
+        // console.log(`http->ws upgrade call`);
         ws.handleUpgrade(req, socket, head, (websocket) => {
-          if (DEBUG) console.log(`upgraded http->ws`);
+          // console.log(`upgraded http->ws`);
           ws.emit(`connection`, websocket, req);
         });
       });
@@ -64,7 +64,7 @@ export function generateClientServer(ClientClass, ServerClass) {
 
       // And of course, when we receive a websocket connection, add that socket as a client.
       ws.on(`connection`, function (socket) {
-        if (DEBUG) console.log(`client.connectClientSocket`);
+        // console.log(`client.connectClientSocket`);
         server.connectClientSocket(socket);
       });
 
@@ -94,11 +94,11 @@ export function generateClientServer(ClientClass, ServerClass) {
         try {
           const { name, payload } = JSON.parse(data);
           if (name === `handshake:setid`) {
-            if (DEBUG) console.log(`client: received handshake:setid`);
+            // console.log(`client: received handshake:setid`);
             socketToServer.off(`message`, registerForId);
-            if (DEBUG) console.log(`setting state:`, payload);
+            // console.log(`setting state:`, payload);
             client.setState(payload);
-            if (DEBUG) console.log(`calling connectServerSocket`);
+            // console.log(`calling connectServerSocket`);
             client.connectServerSocket(socketToServer);
           }
         } catch (e) {
@@ -137,9 +137,9 @@ export function generateClientServer(ClientClass, ServerClass) {
 
       const ws = new WebSocketServer({ noServer: true });
       webserver.on(`upgrade`, (req, socket, head) => {
-        if (DEBUG) console.log(`http->ws upgrade call`);
+        // console.log(`http->ws upgrade call`);
         ws.handleUpgrade(req, socket, head, (websocket) => {
-          if (DEBUG) console.log(`upgraded http->ws`);
+          // console.log(`upgraded http->ws`);
           ws.emit(`connection`, websocket, req);
         });
       });
@@ -158,9 +158,7 @@ export function generateClientServer(ClientClass, ServerClass) {
           // Is this a special client/browser call?
           if (eventName === `syncState`) {
             const fullState = await client.syncState();
-            console.log(
-              `Webclient received syncState from browser, sending [${responseName}]`,
-            );
+            // console.log(`Webclient received syncState from browser, sending [${responseName}]`);
             return socket.send(
               JSON.stringify({
                 name: responseName,
@@ -188,7 +186,7 @@ export function generateClientServer(ClientClass, ServerClass) {
         });
 
         socket.on(`close`, () => {
-          if (DEBUG) console.log(`browser disconnected`);
+          // console.log(`browser disconnected`);
           client.disconnectBrowserSocket();
         });
       });

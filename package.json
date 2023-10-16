@@ -6,11 +6,12 @@
   "main": "src/index.js",
   "scripts": {
     "prettier": "prettier --write ./**/*.js",
-    "test": "npm run test:ast && npm run prettier && npm run test:jest",
+    "test": "npm run test:ast && npm run prettier && npm run bundle && npm run test:jest",
     "test:ast": "tsc ./src/index.js --checkJs --noEmit --module nodenext",
     "test:jest": "node --experimental-vm-modules node_modules/jest/bin/jest.js --verbose=true --silent=false",
     "demo:simple": "cd demos && npm run simple",
-    "demo:web": "cd demos && npm run web"
+    "demo:web": "cd demos && npm run web",
+    "bundle": "esbuild ./src/index.js --bundle --platform=node --target=node20 --packages=external --format=esm --minify > bundle.js"
   },
   "repository": {
     "type": "git",
@@ -34,6 +35,7 @@
     "ws": "^8.14.2"
   },
   "devDependencies": {
+    "esbuild": "^0.19.4",
     "express": "^4.18.2",
     "jest": "^29.7.0",
     "pem": "^1.14.8",

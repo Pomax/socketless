@@ -3,6 +3,8 @@ import { WEBCLIENT, BROWSER } from "../sources.js";
 // @ts-ignore: Node-specific import
 import { createPatch } from "rfc6902";
 
+const DEBUG = false;
+
 /**
  * In order to create an appropriate webclient class, we need to extend
  * off of "whatever the user's client class is".
@@ -38,34 +40,43 @@ export function formWebClientClass(ClientClass) {
     }
 
     setState(stateUpdates) {
-      console.log(`[WebClientBase] setState`);
+      if (DEBUG) console.log(`[WebClientBase] setState`);
       super.setState(stateUpdates);
-      console.log(`[WebClientBase] client has browser?`, !!this.browser);
+      if (DEBUG)
+        console.log(`[WebClientBase] client has browser?`, !!this.browser);
       if (this.browser) {
-        console.log(`[WebClientBase] creating diff as part of setState`);
+        if (DEBUG)
+          console.log(`[WebClientBase] creating diff as part of setState`);
         const diff = createPatch(this.__oldState ?? {}, this.state);
-        const payload = {
-          state: diff,
-          seq_num: ++this.browser.socket.__seq_num,
-          diff: true,
-        };
-        console.log(
-          `[WebClientBase] sending diff as part of setState:`,
-          payload,
-        );
-        this.browser.socket.send(JSON.stringify(payload));
+        if (diff.length > 0) {
+          const payload = {
+            state: diff,
+            seq_num: ++this.browser.socket.__seq_num,
+            diff: true,
+          };
+          if (DEBUG)
+            console.log(
+              `[WebClientBase] sending diff as part of setState:`,
+              payload,
+            );
+          this.browser.socket.send(JSON.stringify(payload));
+        } else {
+          if (DEBUG) console.log(`no difference, skipping state sync.`);
+        }
       }
       this.__oldState = JSON.parse(JSON.stringify(this.state));
     }
 
     syncState() {
       if (this.browser) {
-        console.log(
-          `[WebClientBase] running syncState (will respond with full state)`,
-        );
+        if (DEBUG)
+          console.log(
+            `[WebClientBase] running syncState (will respond with full state)`,
+          );
         const fullState = JSON.parse(JSON.stringify(this.state));
         this.browser.socket.__seq_num = 0;
-        console.log(`[WebClientBase] responding with full state:`, fullState);
+        if (DEBUG)
+          console.log(`[WebClientBase] responding with full state:`, fullState);
         return fullState;
       }
       throw new Error(
