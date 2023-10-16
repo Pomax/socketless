@@ -22,7 +22,9 @@ const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
 import { CLIENT, WEBCLIENT, BROWSER } from "./sources.js";
 
 function generateSocketless() {
+  // ===============================================================
   // Loop in the socket upgrade code, with tactical ESM replacements
+  // ===============================================================
   const upgradeSocket = fs
     .readFileSync(path.join(__dirname, `./upgraded-socket.js`))
     .toString(`utf-8`)
@@ -34,12 +36,15 @@ function generateSocketless() {
       `const BROWSER = "${BROWSER}";\nconst CLIENT = "${CLIENT}";`,
     );
 
+  // ===============================================================
   // Then inject the actual "socketless" export...
   const socketless = `export function createWebClient(WebClientClass) { const socket = new WebSocket(window.location.toString().replace("http", "ws")); const browserClient = new WebClientClass(); Object.defineProperty(browserClient, "socket", { value: socket, writable: false, configurable: false, enumerable: false }); Object.defineProperty(browserClient, "server", { value: proxySocket("${BROWSER}", "${WEBCLIENT}", browserClient, socket), writable: false, configurable: false, enumerable: false }); Object.defineProperty(browserClient, "quit", { value: () => browserClient.server.disconnect() }); browserClient.state = {}; browserClient.init(); return browserClient; };`;
 
+  // ===============================================================
   // And include a full copy of the rfc6902 patch/diff/apply library.
   // This is non-optional and not so much "a build step" as simply
   // "we know where it lives, add it".
+  // ===============================================================
   const rfc6902 = fs
     .readFileSync(
       path.join(__dirname, `../node_modules/rfc6902/dist/rfc6902.min.js`),
