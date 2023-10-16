@@ -1,3 +1,28 @@
+/**
+ * This file houses the core of the RPC functionality.
+ *
+ * The `UpgradedSocket` class is an extension on the WebSocket class that adds
+ * custom on/off/send methods (exposed through a socket.upgraded object), set
+ * up to handle automatic responses to calls. Incoming WebSocket messages are
+ * routed into the `router` function, which has behaviour tailored to specific
+ * origins, and makes sure that messages are always responded to.
+ *
+ * The `__send` function, in turn, doesn't just send data over to a remote, but
+ * also waits for that remote's :response message, using Promises to make
+ * sure that anyone can `await socket.upgraded.send(...)` and get a response
+ * once that response has been sent back. As far as calling code is concerned,
+ * this is a normal async call, and the fact that network transport happened
+ * is entirely irrelevant. Callers should not care.
+ *
+ * The `SocketProxy` is a clever little Proxy object that extends the Function
+ * built-in, which allows us to create a recursive object where any property
+ * on it is a valid function to call, and doing so will send the corresponding
+ * call chain over to the remote for execution and response messaging. This way,
+ * we don't need to perform any "which functions are supported", we can just proxy
+ * the call over the network, if it exists, it runs, if it doesn't, then we'll
+ * get a result back with an `error` message that we can turn into a local throw.
+ */
+
 import { WebSocket } from "ws";
 import { CLIENT, BROWSER } from "./sources.js";
 
@@ -29,7 +54,7 @@ const REMOTE = Symbol(`remote`);
 const HANDLERS = Symbol(`handlers`);
 
 /**
- * ...
+ * ...do docs go here?
  */
 class UpgradedSocket extends WebSocket {
   [ORIGIN] = undefined; // the socket owner who invoked the upgrade. See upgrade()
@@ -42,7 +67,7 @@ class UpgradedSocket extends WebSocket {
   // @ts-ignore: we don't need to call super() if we error out.
   constructor() {
     throw new Error(
-      "Cannot create UpgradedSocket instances. Use UpgradedSocket.upgrade(name, origin, socket) instead.",
+      "Cannot create UpgradedSocket instances. Use UpgradedSocket.upgrade(name, origin, socket) instead."
     );
   }
 
@@ -167,8 +192,8 @@ class UpgradedSocket extends WebSocket {
         `[${receiver}] received payload for ${eventName} from [${remote}] but it was not an array? ${JSON.stringify(
           payload,
           null,
-          2,
-        )}`,
+          2
+        )}`
       );
     }
 
@@ -218,12 +243,12 @@ class UpgradedSocket extends WebSocket {
         if (DEBUG)
           console.error(
             `function invocation for ${eventName} failed on ${receiver}, payload:`,
-            payload,
+            payload
           );
         if (DEBUG) console.error(e);
         error = `Cannot call [[${receiver}]].${eventName.replaceAll(
           `:`,
-          `.`,
+          `.`
         )}, function is not defined.`;
       }
     }
@@ -236,7 +261,7 @@ class UpgradedSocket extends WebSocket {
         error,
       });
     super.send(
-      JSON.stringify({ name: responseName, payload: response, error }),
+      JSON.stringify({ name: responseName, payload: response, error })
     );
   }
 
@@ -294,7 +319,7 @@ class UpgradedSocket extends WebSocket {
       this.__on(responseName, (data) => {
         if (DEBUG)
           console.log(
-            `[${receiver}] handling response for ${eventName} from [${remote}]:`,
+            `[${receiver}] handling response for ${eventName} from [${remote}]:`
           );
         handler(data);
       });
@@ -303,13 +328,13 @@ class UpgradedSocket extends WebSocket {
       const sendEvent = () => {
         if (DEBUG)
           console.log(
-            `(raw) sending ${eventName} from ${receiver} to ${remote}`,
+            `(raw) sending ${eventName} from ${receiver} to ${remote}`
           );
         super.send(
           JSON.stringify({
             name: eventName,
             payload: data,
-          }),
+          })
         );
       };
 
@@ -350,13 +375,13 @@ class SocketProxy extends Function {
           console.log(
             `[SPapply] sending ${this.path.substring(1)} receiver ${
               this[RECEIVER]
-            } to ${this[REMOTE]}`,
+            } to ${this[REMOTE]}`
           );
 
         const data = await this.socket.upgraded.send(
           this.path.substring(1),
           args,
-          this[REMOTE] === BROWSER ? Infinity : undefined,
+          this[REMOTE] === BROWSER ? Infinity : undefined
         );
 
         if (data instanceof RPCError) {
@@ -368,7 +393,7 @@ class SocketProxy extends Function {
             console.error(
               `ERROR calling [[${data.originName}]].${this.path
                 .substring(1)
-                .replaceAll(`:`, `.`)}(${argstr}): ${data.message}`,
+                .replaceAll(`:`, `.`)}(${argstr}): ${data.message}`
             );
 
           throw new Error(data.message);
@@ -381,11 +406,13 @@ class SocketProxy extends Function {
 }
 
 /**
- * ..docs go here...
- * @param {string} receiver
- * @param {string} remote
- * @param {*} origin
- * @param {*} socket
+ * Create a proxied socket where the caller literally doesn't need
+ * to care, they just need to call functions as if they're locals.
+ *
+ * @param {string} receiver The name of the receiver for this socket
+ * @param {string} remote The name of the remote for this socket
+ * @param {*} origin The calling object, used for things like "illegal fnames", state management, etc.
+ * @param {*} socket The socket we're wrapping.
  * @returns
  */
 export function proxySocket(receiver, remote, origin, socket) {

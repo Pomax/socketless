@@ -22,7 +22,9 @@ const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
 import { CLIENT, WEBCLIENT, BROWSER } from "./sources.js";
 
 function generateSocketless() {
+  // ===============================================================
   // Loop in the socket upgrade code, with tactical ESM replacements
+  // ===============================================================
   const upgradeSocket = fs
     .readFileSync(path.join(__dirname, `./upgraded-socket.js`))
     .toString(`utf-8`)
@@ -31,12 +33,14 @@ function generateSocketless() {
     // and we don't need this import:
     .replace(
       `import { CLIENT, BROWSER } from "./sources.js";`,
-      `const BROWSER = "${BROWSER}";\nconst CLIENT = "${CLIENT}";`,
+      `const BROWSER = "${BROWSER}";\nconst CLIENT = "${CLIENT}";`
     )
     // And we can't export inside of another export of course.
     .replaceAll(`export function`, `function`);
 
+  // ===============================================================
   // Then inject the actual "socketless" export...
+  // ===============================================================
   const socketless = `
     export function createWebClient(WebClientClass) {
       const socket = new WebSocket(window.location.toString().replace("http", "ws"));
@@ -62,19 +66,23 @@ function generateSocketless() {
     };
   `;
 
+  // ===============================================================
   // And include a full copy of the rfc6902 patch/diff/apply library.
   // This is non-optional and not so much "a build step" as simply
   // "we know where it lives, add it".
+  // ===============================================================
   const rfc6902 = fs
     .readFileSync(
-      path.join(__dirname, `../node_modules/rfc6902/dist/rfc6902.min.js`),
+      path.join(__dirname, `../node_modules/rfc6902/dist/rfc6902.min.js`)
     )
     .toString(`utf-8`);
 
   return [upgradeSocket, socketless, rfc6902].join(`\n`);
 }
 
-// Expoer the library as a string constant
+// When invoked, this runs the socketless generation step and sends
+// the result to stdout. This is then written to its own file in the
+// package.json compile step.
 if (typeof process !== `undefined`) {
   const socketlessjs = generateSocketless();
   const base64Encoded = Buffer.from(socketlessjs).toString("base64");
