@@ -1,6 +1,6 @@
 export class ClientClass {
   constructor() {
-    console.log(`created`);
+    console.log(`web client created`);
     this.admin = {
       setId: (id) => {
         this.setState({ id });
@@ -42,7 +42,12 @@ export class ClientClass {
     };
   }
 
-  onConnect() {
+  async onConnect() {
     console.log(`connected to server`);
+  }
+
+  async onBrowserConnect(browser) {
+    const result = await browser?.showMessage(`We should be good to go.`);
+    console.log(`browser.showMessage result: ${result}`);
   }
 }

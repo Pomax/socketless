@@ -5,8 +5,8 @@ export class CustomRouter {
    * in a route handler can directly call (non-socketless)
    * functions on the client instance if needed.
    */
-  constructor(client) {
-    this.client = client;
+  constructor(owner) {
+    this.owner = owner;
     this.routes = {};
   }
 
@@ -25,7 +25,11 @@ export class CustomRouter {
   handle(url, request, response) {
     const route = this.routes[url];
     if (!route) return false;
-    route(this.client, request, response);
+    if (this.owner) {
+      route(this.owner, request, response);
+    } else {
+      route(request, response);
+    }
     return true;
   }
 }

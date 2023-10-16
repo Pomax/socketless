@@ -8,7 +8,8 @@
 - [x] disallow calling Base functions over RPC, except for the client's `syncState` and `quit`,
       by the browser, and `disconnect`, by the server (i.e. a server kick).
 - [x] create new tests
-- [ ] "get user input from browser" mechanism for client code when this.browser===true
+- [x] figure out a way to turn "generateSocketless" into something that can be bundled.
+- [ ] "get user input from browser" mechanism for client code when this.browser===true, after looking at what the MJ implementation actually needs/uses.
 
 # Documentation
 
@@ -19,18 +20,9 @@
 
 - [ ] create several new demos
   - [ ] simple client/server demo
+  - [ ] simple client/server demo with auth
   - [ ] terminal based BBS
   - [ ] multiplayer game: mahjong
     - [ ] terminal client
     - [ ] web client
 
-# open questions
-
-- how to make the browser call client functions, rather than proxy to server? (only one socket)
-
-webclient:
-
-- server to client should always first go to client, then to browser?
-- browser to server should "bypass" client
-
-- [ ] figure out a way to turn "generateSocketless" into something that can be bundled.

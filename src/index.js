@@ -1,16 +1,18 @@
 // @ts-ignore: Node-specific import
-import http from "http";
+import http from "node:http";
 // @ts-ignore: Node-specific import
-import https from "https";
+import https from "node:https";
 
 import { WebSocket, WebSocketServer } from "ws";
 import { formClientClass, formServerClass } from "./classes.js";
 import { formWebClientClass } from "./webclient/classes.js";
 import { CustomRouter } from "./webclient/custom-router.js";
 import { makeRouteHandler } from "./webclient/route-handler.js";
-import { getResponseName } from "./upgraded-socket.js";
+import { RESPONSE_SUFFIX, getResponseName } from "./upgraded-socket.js";
 
-const DEBUG = false;
+// used to force the browser socket router to handle a response, even though
+// normally browser communication has to get send on to the server.
+const FORCED_ROUTE_HANDLING = true;
 
 /**
  * Create a client/server factory, given the client and server classes.
@@ -18,7 +20,7 @@ const DEBUG = false;
  * @param {*} ServerClass
  * @returns
  */
-export function generateClientServer(ClientClass, ServerClass) {
+function generator(ClientClass, ServerClass) {
   ClientClass = formClientClass(ClientClass);
   ServerClass = formServerClass(ServerClass);
   const WebClientClass = formWebClientClass(ClientClass);
@@ -44,9 +46,21 @@ export function generateClientServer(ClientClass, ServerClass) {
       // create a webserver, if we don't already have one.
       let webserver = httpServer;
       if (!webserver) {
+        const router = new CustomRouter();
+        const routeHandling = (request, response) => {
+          if (request.url.includes(`?`)) {
+            const [url, params] = request.url.split(/\\?\?/);
+            request.url = url;
+            request.params = new URLSearchParams(params);
+          }
+          router.handle(request.url, request, response);
+        };
         webserver = httpsOptions
-          ? https.createServer(httpsOptions)
-          : http.createServer();
+          ? https.createServer(httpsOptions, routeHandling)
+          : http.createServer(routeHandling);
+        // Rebind the function that allows users to specify custom route handling:
+        // @ts-ignore: we're adding a custom property to a Server instance, which TS doesn't like.
+        webserver.addRoute = router.addRouteHandler.bind(router);
       }
 
       // create a websocket server, so we can handle websocket upgrade calls.
@@ -123,13 +137,13 @@ export function generateClientServer(ClientClass, ServerClass) {
       httpsOptions,
       ALLOW_SELF_SIGNED_CERTS,
     ) {
-      const client = factory.createClient(
+      const intermediary = factory.createClient(
         serverUrl,
         ALLOW_SELF_SIGNED_CERTS,
         WebClientClass,
       );
 
-      const router = new CustomRouter(client);
+      const router = new CustomRouter(intermediary);
       let routeHandling = makeRouteHandler(publicDir, router);
       const webserver = httpsOptions
         ? https.createServer(httpsOptions, routeHandling)
@@ -144,20 +158,25 @@ export function generateClientServer(ClientClass, ServerClass) {
         });
       });
 
-      client.ws = ws;
-      client.webserver = webserver;
+      intermediary.ws = ws;
+      intermediary.webserver = webserver;
 
       ws.on(`connection`, (socket) => {
         // bind the socket to the browser and set up message parsing
-        client.connectBrowserSocket(socket);
+        intermediary.connectBrowserSocket(socket);
         socket.on(`message`, async (message) => {
           message = message.toString();
-          const { name: eventName, payload } = JSON.parse(message);
+          const { name: eventName, payload, error } = JSON.parse(message);
+
+          if (error) {
+            throw new Error(error);
+          }
+
           const responseName = getResponseName(eventName);
 
           // Is this a special client/browser call?
           if (eventName === `syncState`) {
-            const fullState = await client.syncState();
+            const fullState = await intermediary.syncState();
             // console.log(`Webclient received syncState from browser, sending [${responseName}]`);
             return socket.send(
               JSON.stringify({
@@ -168,26 +187,36 @@ export function generateClientServer(ClientClass, ServerClass) {
           }
 
           if (eventName === `disconnect`) {
-            return client.disconnect();
+            return intermediary.disconnect();
+          }
+
+          // Is this a browser response to the client' calling a browser function?
+          if (eventName.endsWith(RESPONSE_SUFFIX)) {
+            // Note that because this doesn't use the upgraded socket's "send()"
+            // mechanism, there is no timeout on browser responses. Which is good,
+            // because humans like to take their time on things.
+            intermediary.browser.socket.router(message, FORCED_ROUTE_HANDLING);
           }
 
           // If it's not, proxy the call from the browser to the server
-          let target = client.server;
-          const steps = eventName.split(`:`);
-          while (steps.length) target = target[steps.shift()];
-          const result = await target(...payload);
-          // and then proxy the response back to the browser
-          socket.send(
-            JSON.stringify({
-              name: responseName,
-              payload: result,
-            }),
-          );
+          else {
+            let target = intermediary.server;
+            const steps = eventName.split(`:`);
+            while (steps.length) target = target[steps.shift()];
+            const result = await target(...payload);
+            // and then proxy the response back to the browser
+            socket.send(
+              JSON.stringify({
+                name: responseName,
+                payload: result,
+              }),
+            );
+          }
         });
 
         socket.on(`close`, () => {
           // console.log(`browser disconnected`);
-          client.disconnectBrowserSocket();
+          intermediary.disconnectBrowserSocket();
         });
       });
 
@@ -200,3 +229,5 @@ export function generateClientServer(ClientClass, ServerClass) {
 
   return factory;
 }
+
+export { generator as linkClasses };

@@ -1,4 +1,4 @@
-import { generateClientServer } from "../library.js";
+import { linkClasses } from "../library.js";
 import express from "express";
 import http from "http";
 import https from "https";
@@ -32,7 +32,7 @@ describe("server tests", () => {
       onConnect = () => this.disconnect();
     }
 
-    const factory = generateClientServer(ClientClass, ServerClass);
+    const factory = linkClasses(ClientClass, ServerClass);
     const server = factory.createServer();
 
     server.listen(0, () =>
@@ -50,7 +50,7 @@ describe("server tests", () => {
       onConnect = () => this.disconnect();
     }
 
-    const factory = generateClientServer(ClientClass, ServerClass);
+    const factory = linkClasses(ClientClass, ServerClass);
     const webserver = http.createServer();
     const server = factory.createServer(webserver);
     expect(server).toBe(webserver);
@@ -72,7 +72,7 @@ describe("server tests", () => {
       onConnect = () => this.disconnect();
     }
 
-    const factory = generateClientServer(ClientClass, ServerClass);
+    const factory = linkClasses(ClientClass, ServerClass);
     const server = factory.createServer(httpsOptions);
     server.listen(0, () => {
       factory.createClient(
@@ -94,7 +94,7 @@ describe("server tests", () => {
       onConnect = () => this.disconnect();
     }
 
-    const factory = generateClientServer(ClientClass, ServerClass);
+    const factory = linkClasses(ClientClass, ServerClass);
     const webserver = https.createServer(httpsOptions);
     const server = factory.createServer(webserver);
     expect(server).toBe(webserver);
@@ -134,7 +134,7 @@ describe("server tests", () => {
       expect(data).toBe(ROUTE_TEXT);
 
       // then test socketless functionality
-      const factory = generateClientServer(ClientClass, ServerClass);
+      const factory = linkClasses(ClientClass, ServerClass);
       factory.createServer(server);
       factory.createClient(serverURL);
     });
@@ -168,7 +168,7 @@ describe("server tests", () => {
       expect(result).toBe(ROUTE_TEXT);
 
       // then test socketless functionality
-      const factory = generateClientServer(ClientClass, ServerClass);
+      const factory = linkClasses(ClientClass, ServerClass);
       factory.createServer(server);
       factory.createClient(
         `https://localhost:${server.address().port}`,

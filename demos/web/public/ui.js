@@ -12,7 +12,6 @@ class WebClient {
 
   update(prevState) {
     const { state } = this;
-    console.log(`update:`, prevState, state);
     const list = this.gameList;
     list.innerHTML = ``;
     state.gameList.forEach((entry) => {
@@ -43,7 +42,6 @@ class WebClient {
     });
 
     const game = state.activeGame;
-    console.log(`game:`, game);
     if (game) this.drawBoard(game);
   }
 
@@ -76,6 +74,10 @@ class WebClient {
       }
       gameBoard.appendChild(space);
     });
+  }
+
+  showMessage(msg) {
+    return confirm(msg) ? `User clicked "OK"` : `User clicked "Cancel"`;
   }
 }
 

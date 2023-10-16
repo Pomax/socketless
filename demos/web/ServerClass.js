@@ -2,7 +2,7 @@ import { GameManager } from "./GameManager.js";
 
 export class ServerClass {
   constructor() {
-    console.log("created");
+    console.log("server created");
     this.gm = new GameManager();
 
     this.game = {

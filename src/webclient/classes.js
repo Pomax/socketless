@@ -15,6 +15,20 @@ export function formWebClientClass(ClientClass) {
   return class WebClient extends ClientClass {
     browser = undefined;
 
+    constructor() {
+      super();
+      if (!this.onBrowserConnect) {
+        this.onBrowserConnect = async (browser) => {
+          if (DEBUG) console.log(`[WebClientBase] browser connected.`);
+        };
+      }
+      if (!this.onBrowserDisconnect) {
+        this.onBrowserDisconnect = async (browser) => {
+          if (DEBUG) console.log(`[WebClientBase] browser disconnected.`);
+        };
+      }
+    }
+
     // No functions except `quit` and `syncState` may be proxy-invoked
     static get disallowedCalls() {
       const names = Object.getOwnPropertyNames(WebClient.prototype).concat(
@@ -32,10 +46,12 @@ export function formWebClientClass(ClientClass) {
         this.browser = proxySocket(WEBCLIENT, BROWSER, this, browserSocket);
         this.browser.socket.__seq_num = 0;
         this.setState(this.state);
+        this.onBrowserConnect(this.browser);
       }
     }
 
     disconnectBrowserSocket() {
+      this.onBrowserDisconnect(this.browser);
       this.browser = undefined;
     }
 

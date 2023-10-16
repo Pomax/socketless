@@ -1,4 +1,4 @@
-import { generateClientServer } from "../library.js";
+import { linkClasses } from "../library.js";
 
 describe("basic tests", () => {
   it("can run a basic client/server setup", (done) => {
@@ -14,7 +14,7 @@ describe("basic tests", () => {
     }
 
     // Test the connection basics.
-    const factory = generateClientServer(ClientClass, ServerClass);
+    const factory = linkClasses(ClientClass, ServerClass);
     const server = factory.createServer();
 
     // First, stand up the server.
@@ -69,7 +69,7 @@ describe("basic tests", () => {
       }
     }
 
-    const factory = generateClientServer(ClientClass, ServerClass);
+    const factory = linkClasses(ClientClass, ServerClass);
     const server = factory.createServer();
     server.listen(0, () => {
       factory.createClient(`http://localhost:${server.address().port}`);
@@ -101,7 +101,7 @@ describe("basic tests", () => {
       }
     }
 
-    const factory = generateClientServer(ClientClass, ServerClass);
+    const factory = linkClasses(ClientClass, ServerClass);
     const server = factory.createServer();
     server.listen(0, () =>
       factory.createClient(`http://localhost:${server.address().port}`),
@@ -143,7 +143,7 @@ describe("basic tests", () => {
       }
     }
 
-    const factory = generateClientServer(ClientClass, ServerClass);
+    const factory = linkClasses(ClientClass, ServerClass);
     const server = factory.createServer();
     server.listen(0, () => {
       factory.createClient(`http://localhost:${server.address().port}`);

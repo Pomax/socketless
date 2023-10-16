@@ -18,7 +18,7 @@ function uuid() {
 }
 
 // responses should always be "the event name, with :response added"
-const RESPONSE_SUFFIX = `:response`;
+export const RESPONSE_SUFFIX = `:response`;
 export const getResponseName = (eventName) => `${eventName}${RESPONSE_SUFFIX}`;
 
 // use symbols so we don't pollute the socket prototype
@@ -80,14 +80,14 @@ class UpgradedSocket extends WebSocket {
   }
 
   // message router specifically for the message format used by the socketless code.
-  async router(message) {
+  async router(message, forced = false) {
     const { [ORIGIN]: origin, [RECEIVER]: receiver, [REMOTE]: remote } = this;
 
     // Any calls from the browser to the webclient are that's already handled
     // by the websocket directly (see the createWebClient function in index.js,
     // in the ws.on(`connection`, ...) block), so we need to make sure to not
     // try to "double-handle" that:
-    if (remote === BROWSER) {
+    if (remote === BROWSER && !forced) {
       return;
     }
 
@@ -221,7 +221,10 @@ class UpgradedSocket extends WebSocket {
             payload,
           );
         if (DEBUG) console.error(e);
-        error = e.message;
+        error = `Cannot call [[${receiver}]].${eventName.replaceAll(
+          `:`,
+          `.`,
+        )}, function is not defined.`;
       }
     }
 
@@ -317,7 +320,9 @@ class UpgradedSocket extends WebSocket {
 
       // And make sure that if no response has occurred within
       // `timeout` milliseconds, we clean up the listener.
-      setTimeout(() => cleanup(), timeout);
+      if (isFinite(timeout)) {
+        setTimeout(() => cleanup(), timeout);
+      }
     });
   }
 }
@@ -347,22 +352,28 @@ class SocketProxy extends Function {
               this[RECEIVER]
             } to ${this[REMOTE]}`,
           );
+
         const data = await this.socket.upgraded.send(
           this.path.substring(1),
           args,
+          this[REMOTE] === BROWSER ? Infinity : undefined,
         );
+
         if (data instanceof RPCError) {
           const argstr = [...new Array(args.length)]
             .map((_, i) => String.fromCharCode(97 + i))
             .join(`,`);
+
           if (DEBUG)
             console.error(
               `ERROR calling [[${data.originName}]].${this.path
                 .substring(1)
                 .replaceAll(`:`, `.`)}(${argstr}): ${data.message}`,
             );
+
           throw new Error(data.message);
         }
+
         return data;
       },
     });

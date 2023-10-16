@@ -1,4 +1,4 @@
-import { generateClientServer } from "../../library.js";
+import { linkClasses } from "../../src/index.js";
 
 import puppeteer from "puppeteer";
 import url from "url";
@@ -79,7 +79,7 @@ describe("web client tests", () => {
     };
 
     // Create the main server
-    const factory = generateClientServer(ClientClass, ServerClass);
+    const factory = linkClasses(ClientClass, ServerClass);
     server = factory.createServer();
     server.listen(0, () => {
       const PORT = server.address().port;
@@ -171,7 +171,7 @@ describe("web client tests", () => {
     };
 
     // Create the main server
-    const factory = generateClientServer(ClientClass, ServerClass);
+    const factory = linkClasses(ClientClass, ServerClass);
     server = factory.createServer(httpsOptions);
     server.listen(0, () => {
       const PORT = server.address().port;
@@ -269,7 +269,7 @@ describe("web client tests", () => {
     };
 
     // Create the main server
-    const factory = generateClientServer(ClientClass, ServerClass);
+    const factory = linkClasses(ClientClass, ServerClass);
     server = factory.createServer(httpsOptions);
     server.listen(0, () => {
       const PORT = server.address().port;

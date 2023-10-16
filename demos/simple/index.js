@@ -1,10 +1,10 @@
 const NUMBER_OF_CLIENTS = 4;
 
-import { generateClientServer } from "socketless";
 import { ClientClass } from "./ClientClass.js";
 import { ServerClass } from "./ServerClass.js";
+import { linkClasses } from "socketless";
 
-const factory = generateClientServer(ClientClass, ServerClass);
+const factory = linkClasses(ClientClass, ServerClass);
 const server = factory.createServer();
 
 server.listen(0, () => {
