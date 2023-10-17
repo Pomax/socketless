@@ -9,7 +9,8 @@
       by the browser, and `disconnect`, by the server (i.e. a server kick).
 - [x] create new tests
 - [x] figure out a way to turn "generateSocketless" into something that can be bundled.
-- [ ] "get user input from browser" mechanism for client code when this.browser===true, after looking at what the MJ implementation actually needs/uses.
+- [x] "get user input from browser" mechanism for client code when this.browser===true, after looking at what the MJ implementation actually needs/uses.
+- [ ] web clients need a way to fully shut down (i.e. shut down their web server and their socket server). Right now the browser can force the client to disconnect, but it won't shut down.
 
 # Documentation
 

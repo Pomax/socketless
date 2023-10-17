@@ -80,7 +80,7 @@ class ServerClass {
     console.log(`server> client ${client.name} disconnected`);
     if (this.clients.length === 0) {
       console.log(`server> no clients connected, shutting down.`);
-      this.quit();
+      this.shutdown();
     }
   }
 

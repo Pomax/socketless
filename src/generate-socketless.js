@@ -38,7 +38,30 @@ function generateSocketless() {
 
   // ===============================================================
   // Then inject the actual "socketless" export...
-  const socketless = `export function createWebClient(WebClientClass) { const socket = new WebSocket(window.location.toString().replace("http", "ws")); const browserClient = new WebClientClass(); Object.defineProperty(browserClient, "socket", { value: socket, writable: false, configurable: false, enumerable: false }); Object.defineProperty(browserClient, "server", { value: proxySocket("${BROWSER}", "${WEBCLIENT}", browserClient, socket), writable: false, configurable: false, enumerable: false }); Object.defineProperty(browserClient, "quit", { value: () => browserClient.server.disconnect() }); browserClient.state = {}; browserClient.init(); return browserClient; };`;
+  const socketless = `export function createWebClient(WebClientClass) {
+    const socket = new WebSocket(
+      window.location.toString().replace("http", "ws")
+    );
+    const browserClient = new WebClientClass();
+    Object.defineProperty(browserClient, "socket", {
+      value: socket,
+      writable: false,
+      configurable: false,
+      enumerable: false,
+    });
+    Object.defineProperty(browserClient, "server", {
+      value: proxySocket("${BROWSER}", "${WEBCLIENT}", browserClient, socket),
+      writable: false,
+      configurable: false,
+      enumerable: false,
+    });
+    Object.defineProperty(browserClient, "quit", {
+      value: () => browserClient.server.disconnect(),
+    });
+    browserClient.state = {};
+    browserClient.init?.();
+    return browserClient;
+  };`;
 
   // ===============================================================
   // And include a full copy of the rfc6902 patch/diff/apply library.

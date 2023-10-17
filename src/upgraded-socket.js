@@ -172,7 +172,7 @@ class UpgradedSocket extends WebSocket {
       // Run the update with the new state as argument first, then
       // overwrite the old state with the new state after the update.
       origin.state = state;
-      return origin.update(prevState);
+      return origin.update?.(prevState);
     }
 
     // If this is a response message, run the `on` handler for that.
