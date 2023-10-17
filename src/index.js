@@ -43,17 +43,17 @@ function generator(ClientClass, ServerClass) {
         httpServer = serverOrHttpsOptions;
       }
 
-      // create a webserver, if we don't already have one.
+      // create a web server, if we don't already have one.
       let webserver = httpServer;
       if (!webserver) {
-        const router = new CustomRouter();
-        const routeHandling = (request, response) => {
-          if (request.url.includes(`?`)) {
-            const [url, params] = request.url.split(/\\?\?/);
-            request.url = url;
-            request.params = new URLSearchParams(params);
+        const router = new CustomRouter(null);
+        const routeHandling = (req, res) => {
+          if (req.url.includes(`?`)) {
+            const [url, params] = req.url.split(/\\?\?/);
+            req.url = url;
+            req.params = new URLSearchParams(params);
           }
-          router.handle(request.url, request, response);
+          router.handle(req.url, req, res);
         };
         webserver = httpsOptions
           ? https.createServer(httpsOptions, routeHandling)
@@ -137,13 +137,13 @@ function generator(ClientClass, ServerClass) {
       httpsOptions,
       ALLOW_SELF_SIGNED_CERTS,
     ) {
-      const intermediary = factory.createClient(
+      const client = factory.createClient(
         serverUrl,
         ALLOW_SELF_SIGNED_CERTS,
         WebClientClass,
       );
 
-      const router = new CustomRouter(intermediary);
+      const router = new CustomRouter(client);
       let routeHandling = makeRouteHandler(publicDir, router);
       const webserver = httpsOptions
         ? https.createServer(httpsOptions, routeHandling)
@@ -158,12 +158,12 @@ function generator(ClientClass, ServerClass) {
         });
       });
 
-      intermediary.ws = ws;
-      intermediary.webserver = webserver;
+      client.ws = ws;
+      client.webserver = webserver;
 
       ws.on(`connection`, (socket) => {
         // bind the socket to the browser and set up message parsing
-        intermediary.connectBrowserSocket(socket);
+        client.connectBrowserSocket(socket);
         socket.on(`message`, async (message) => {
           message = message.toString();
           const { name: eventName, payload, error } = JSON.parse(message);
@@ -176,7 +176,7 @@ function generator(ClientClass, ServerClass) {
 
           // Is this a special client/browser call?
           if (eventName === `syncState`) {
-            const fullState = await intermediary.syncState();
+            const fullState = await client.syncState();
             // console.log(`Webclient received syncState from browser, sending [${responseName}]`);
             return socket.send(
               JSON.stringify({
@@ -187,7 +187,7 @@ function generator(ClientClass, ServerClass) {
           }
 
           if (eventName === `disconnect`) {
-            return intermediary.disconnect();
+            return client.disconnect();
           }
 
           // Is this a browser response to the client' calling a browser function?
@@ -195,12 +195,12 @@ function generator(ClientClass, ServerClass) {
             // Note that because this doesn't use the upgraded socket's "send()"
             // mechanism, there is no timeout on browser responses. Which is good,
             // because humans like to take their time on things.
-            intermediary.browser.socket.router(message, FORCED_ROUTE_HANDLING);
+            client.browser.socket.router(message, FORCED_ROUTE_HANDLING);
           }
 
           // If it's not, proxy the call from the browser to the server
           else {
-            let target = intermediary.server;
+            let target = client.server;
             const steps = eventName.split(`:`);
             while (steps.length) target = target[steps.shift()];
             const result = await target(...payload);
@@ -216,14 +216,14 @@ function generator(ClientClass, ServerClass) {
 
         socket.on(`close`, () => {
           // console.log(`browser disconnected`);
-          intermediary.disconnectBrowserSocket();
+          client.disconnectBrowserSocket();
         });
       });
 
       // Rebind the function that allows users to specify custom route handling:
       // @ts-ignore: we're adding a custom property to a Server instance, which TS doesn't like.
       webserver.addRoute = router.addRouteHandler.bind(router);
-      return webserver;
+      return { client, clientWebServer: webserver };
     },
   };
 

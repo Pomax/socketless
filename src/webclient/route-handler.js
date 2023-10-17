@@ -48,7 +48,7 @@ function generate404(location, response) {
  * Create a route handler for our local web server
  */
 export function makeRouteHandler(publicDir, customRouter) {
-  return (request, response) => {
+  return async (request, response) => {
     if (request.url.includes(`?`)) {
       const [url, params] = request.url.split(/\\?\?/);
       request.url = url;
@@ -70,7 +70,7 @@ export function makeRouteHandler(publicDir, customRouter) {
     }
 
     // custom route handing
-    if (customRouter.handle(url, request, response)) return;
+    if (await customRouter.handle(url, request, response)) return;
 
     // convert the URL request into a file path
     var location = sanitizeLocation(request.url, publicDir);

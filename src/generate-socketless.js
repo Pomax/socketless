@@ -38,11 +38,11 @@ function generateSocketless() {
 
   // ===============================================================
   // Then inject the actual "socketless" export...
-  const socketless = `export function createWebClient(WebClientClass) {
+  const socketless = `export function createBrowserClient(BrowserClientClass) {
     const socket = new WebSocket(
       window.location.toString().replace("http", "ws")
     );
-    const browserClient = new WebClientClass();
+    const browserClient = new BrowserClientClass();
     Object.defineProperty(browserClient, "socket", {
       value: socket,
       writable: false,

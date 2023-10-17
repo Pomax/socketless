@@ -27,3 +27,9 @@
     - [ ] terminal client
     - [ ] web client
 
+
+# Open issues
+
+- the browser's `this.socket` feels like it should not be necessary and expose, _or_ should be `this.client` and be a proxy socket.
+- [x] add middleware back in for the webclient?
+- [x] update addRoute to allow middleware?

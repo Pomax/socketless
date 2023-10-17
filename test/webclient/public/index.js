@@ -1,4 +1,4 @@
-import { createWebClient } from "./socketless.js";
+import { createBrowserClient } from "./socketless.js";
 
 console.log("script running");
 
@@ -9,7 +9,7 @@ const create = (tag, classString, parent) => {
   return e;
 };
 
-class WebClient {
+class BrowserClientClass {
   async init() {
     this.idField = create(`p`, `idfield`, document.body);
     this.testField = create(`p`, `testfield`, document.body);
@@ -32,4 +32,4 @@ class WebClient {
   }
 }
 
-createWebClient(WebClient);
+createBrowserClient(BrowserClientClass);

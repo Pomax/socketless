@@ -21,8 +21,6 @@ const DEBUG = false;
 
 describe("web client tests", () => {
   it("should run on a basic http setup", (done) => {
-    let server, clientWebServer, browser;
-
     /**
      * ...
      */
@@ -66,11 +64,13 @@ describe("web client tests", () => {
       }
     }
 
+    let clientWebServer;
+
     /**
      * Puppeteer in place of a real user.
      */
     let runTests = async () => {
-      browser = await puppeteer.launch({ headless: `new` });
+      const browser = await puppeteer.launch({ headless: `new` });
       const page = await browser.newPage();
       await page.goto(`http://localhost:${clientWebServer.address().port}`);
       await page.waitForSelector(`.testfield`);
@@ -80,7 +80,7 @@ describe("web client tests", () => {
 
     // Create the main server
     const factory = linkClasses(ClientClass, ServerClass);
-    server = factory.createServer();
+    const server = factory.createServer();
     server.listen(0, () => {
       const PORT = server.address().port;
       const url = `http://localhost:${PORT}`;
@@ -88,19 +88,36 @@ describe("web client tests", () => {
 
       // Create a webclient, which creates a real client as well as
       // a web server so your browser can connect to something.
-      clientWebServer = factory.createWebClient(url, `${__dirname}/public`);
+      const { client, clientWebServer: cws } = factory.createWebClient(
+        url,
+        `${__dirname}/public`,
+      );
 
-      clientWebServer.addRoute(`/quit`, function (client, request, response) {
+      clientWebServer = cws;
+
+      // Use a middleware chain for the first test
+
+      const closeClient = (req, res, next) => {
         if (DEBUG)
           console.log(
             `web client called /quit on client, calling client.disconnect() to disconnect from server.`,
           );
         client.quit();
-        response.write("client disconnected");
-        response.end();
+        next();
+      };
+
+      const closeClientServer = (req, res, next) => {
         if (DEBUG) console.log(`shutting down client web server`);
         clientWebServer.close();
-      });
+        next();
+      };
+
+      const bye = (req, res) => {
+        res.write("client disconnected");
+        res.end();
+      };
+
+      clientWebServer.addRoute(`/quit`, closeClient, closeClientServer, bye);
 
       clientWebServer.listen(0, () => {
         const PORT = clientWebServer.address().port;
@@ -113,8 +130,6 @@ describe("web client tests", () => {
   });
 
   it("should run on a https for the server, but basic http for the web client", (done) => {
-    let server, clientWebServer, browser;
-
     /**
      * ...
      */
@@ -158,11 +173,13 @@ describe("web client tests", () => {
       }
     }
 
+    let clientWebServer;
+
     /**
      * Puppeteer in place of a real user.
      */
     let runTests = async () => {
-      browser = await puppeteer.launch({ headless: `new` });
+      const browser = await puppeteer.launch({ headless: `new` });
       const page = await browser.newPage();
       await page.goto(`http://localhost:${clientWebServer.address().port}`);
       await page.waitForSelector(`.testfield`);
@@ -172,7 +189,7 @@ describe("web client tests", () => {
 
     // Create the main server
     const factory = linkClasses(ClientClass, ServerClass);
-    server = factory.createServer(httpsOptions);
+    const server = factory.createServer(httpsOptions);
     server.listen(0, () => {
       const PORT = server.address().port;
       const url = `https://localhost:${PORT}`;
@@ -180,21 +197,25 @@ describe("web client tests", () => {
 
       // Create a webclient, which creates a real client as well as
       // a web server so your browser can connect to something.
-      clientWebServer = factory.createWebClient(
+      const { client, clientWebServer: cws } = factory.createWebClient(
         url,
         `${__dirname}/public`,
         false,
         ALLOW_SELF_SIGNED_CERTS,
       );
 
-      clientWebServer.addRoute(`/quit`, function (client, request, response) {
+      clientWebServer = cws;
+
+      // Don't use a middleware chain for the second test
+
+      clientWebServer.addRoute(`/quit`, function (req, res) {
         if (DEBUG)
           console.log(
             `web client called /quit on client, calling client.disconnect() to disconnect from server.`,
           );
         client.quit();
-        response.write("client disconnected");
-        response.end();
+        res.write("client disconnected");
+        res.end();
         if (DEBUG) console.log(`shutting down client web server`);
         clientWebServer.close();
       });
@@ -210,8 +231,6 @@ describe("web client tests", () => {
   });
 
   it("should run on https for both the server and the webclient", (done) => {
-    let server, clientWebServer, browser;
-
     /**
      * ...
      */
@@ -253,11 +272,13 @@ describe("web client tests", () => {
       }
     }
 
+    let clientWebServer;
+
     /**
      * Puppeteer in place of a real user.
      */
     let runTests = async () => {
-      browser = await puppeteer.launch({
+      const browser = await puppeteer.launch({
         headless: `new`,
         ignoreHTTPSErrors: true,
       });
@@ -270,7 +291,7 @@ describe("web client tests", () => {
 
     // Create the main server
     const factory = linkClasses(ClientClass, ServerClass);
-    server = factory.createServer(httpsOptions);
+    const server = factory.createServer(httpsOptions);
     server.listen(0, () => {
       const PORT = server.address().port;
       const url = `https://localhost:${PORT}`;
@@ -278,21 +299,23 @@ describe("web client tests", () => {
 
       // Create a webclient, which creates a real client as well as
       // a web server so your browser can connect to something.
-      clientWebServer = factory.createWebClient(
+      const { client, clientWebServer: cws } = factory.createWebClient(
         url,
         `${__dirname}/public`,
         httpsOptions,
         ALLOW_SELF_SIGNED_CERTS,
       );
 
-      clientWebServer.addRoute(`/quit`, function (client, request, response) {
+      clientWebServer = cws;
+
+      clientWebServer.addRoute(`/quit`, function (req, res) {
         if (DEBUG)
           console.log(
             `web client called /quit on client, calling client.disconnect() to disconnect from server.`,
           );
         client.quit();
-        response.write("client disconnected");
-        response.end();
+        res.write("client disconnected");
+        res.end();
         if (DEBUG) console.log(`shutting down client web server`);
         clientWebServer.close();
       });

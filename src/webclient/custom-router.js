@@ -13,8 +13,8 @@ export class CustomRouter {
   /**
    * Add a route handler, using the url as lookup key.
    */
-  addRouteHandler(url, handler) {
-    this.routes[url] = handler;
+  addRouteHandler(url, ...handlers) {
+    this.routes[url] = handlers;
   }
 
   /**
@@ -22,13 +22,22 @@ export class CustomRouter {
    * be found. Otherwise, run the route handler, and then
    * return true, to signal the route got handled.
    */
-  handle(url, request, response) {
-    const route = this.routes[url];
-    if (!route) return false;
-    if (this.owner) {
-      route(this.owner, request, response);
-    } else {
-      route(request, response);
+  async handle(url, req, res) {
+    const chain = this.routes[url];
+    if (!chain) return false;
+
+    for (let i = 0, e = chain.length; i < e; i++) {
+      const route = chain[i];
+      let halt = true;
+      const next = () => (halt = false);
+      try {
+        await route(req, res, next);
+      } catch (e) {
+        console.error(e);
+        console.trace();
+        break;
+      }
+      if (halt) break;
     }
     return true;
   }

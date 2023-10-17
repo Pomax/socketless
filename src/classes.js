@@ -159,7 +159,7 @@ export function formServerClass(ServerClass) {
       await this.onQuit();
       this.clients.forEach((client) => client.disconnect());
       // TODO: ideally, these three run in succession, but
-      // we can't control "how fast" the webserver closes.
+      // we can't control "how fast" the web server closes.
       this.webserver.close();
       this.ws.close();
       this.teardown();

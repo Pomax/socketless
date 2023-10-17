@@ -1,3 +1,3 @@
-import { createWebClient } from "./socketless.js";
-import { WebClient } from "./ui.js";
-createWebClient(WebClient);
+import { createBrowserClient } from "./socketless.js";
+import { BrowserClientClass } from "./ui.js";
+createBrowserClient(BrowserClientClass);

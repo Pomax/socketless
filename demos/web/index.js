@@ -19,9 +19,9 @@ server.listen(8000, () => {
   const clientURLs = [];
   const publicDir = path.join(__dirname, `public`);
   for (let player = 1; player <= NUMBER_OF_PLAYERS; player++) {
-    const webclient = factory.createWebClient(URL, publicDir);
+    const { client, clientWebServer } = factory.createWebClient(URL, publicDir);
     const port = 8000 + player;
-    webclient.listen(port, () => {
+    clientWebServer.listen(port, () => {
       console.log(`- web client ${player} listening on ${localhost}:${port}`);
     });
     clientURLs.push(`http://localhost:${port}`);
@@ -29,12 +29,21 @@ server.listen(8000, () => {
 
   // And add a route handler so that when we connect to the server
   // with a browser, we get a list of web clients and their URLs.
-  server.addRoute(`/`, (_, response) => {
-    response.writeHead(200, { "Content-Type": `text/html` });
-    response.end(
-      `<doctype html><html><body><ol>${clientURLs
-        .map((url) => `<li><a target="_blank" href="${url}">${url}</a></li>`)
-        .join(``)}</ol></body></html>`
-    );
-  });
+  server.addRoute(
+    `/`,
+    // middleware: just a page request notifier
+    (req, res, next) => {
+      console.log(`index page requested`);
+      next();
+    },
+    // serve HTML source for the list of connected clients
+    (_, res) => {
+      res.writeHead(200, { "Content-Type": `text/html` });
+      res.end(
+        `<doctype html><html><body><ol>${clientURLs
+          .map((url) => `<li><a target="_blank" href="${url}">${url}</a></li>`)
+          .join(``)}</ol></body></html>`,
+      );
+    },
+  );
 });

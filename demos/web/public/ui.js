@@ -1,4 +1,4 @@
-class WebClient {
+export class BrowserClientClass {
   init() {
     this.gameList = document.getElementById("gamelist");
     const create = document.getElementById("create");
@@ -80,5 +80,3 @@ class WebClient {
     return confirm(msg) ? `User clicked "OK"` : `User clicked "Cancel"`;
   }
 }
-
-export { WebClient };
