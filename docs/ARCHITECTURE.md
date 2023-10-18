@@ -10,17 +10,14 @@ The basic setup consists of:
 
 ```
 ┌─────────┬─────────────┐    ╭───────────╮
-│ server ̶<̶┆- web server │◁───┤ (browser) │
-└────▲────┴─────△───────┘    ╰───────────╯
-     ║          ┊
-     ║      ┌───◇────┐
-     ╚══════▶ client │
-            └────────┘
+│ server <┼- web server │◁───┤ (browser) │ 
+└────▲────┴─────△───────┘    ╰───────────╯ 
+     ║          ┊                              ╭───────────────────────────────╮
+     ║      ┌───◇────┐                         │ ─── HTTP call                 │
+     ╚══════▶ client │                         │ ┄┄┄ WS upgrade call over HTTP │
+            └────────┘                         │ ═══ two-way websocket         │
+                                               ╰───────────────────────────────╯
 ```
-
-- The single solid line represents a regular HTTP call,
-- The single dotted line represents an HTTP-to-ws upgrade call,
-- The double solid line represents a two-way websocket connection.
 
 ### 2. client-server with browser connections
 
@@ -34,21 +31,18 @@ The more complex browser-connected client setup consists of:
 
 ```
 ┌─────────┬─────────────┐
-│ server ̶<̶┆- web server ◁─────────────┐
+│ server <┼- web server ◁─────────────┐
 └────▲────┴─────△───────┘             │
      ║          ┊                     │
      ║      ┌───◇─────┬─────────────┐ │
-     ╚══════▶ client ̶<̶┆- web server ◁─┤
+     ╚══════▶ client <┼- web server ◁─┤
             └───▲─────┴─────△───────┘ │
-                ║           ┊         │
-                ║       ╭───◇─────╮   │
-                ╚═══════▶ browser ├───┘
-                        ╰─────────╯
+                ║           ┊         │        ╭───────────────────────────────╮
+                ║       ╭───◇─────╮   │        │ ─── HTTP call                 │
+                ╚═══════▶ browser ├───┘        │ ┄┄┄ WS upgrade call over HTTP │
+                        ╰─────────╯            │ ═══ two-way websocket         │
+                                               ╰───────────────────────────────╯
 ```
-
-- The single solid line represents a regular HTTP call,
-- The single dotted line represents an HTTP-to-ws upgrade call,
-- The double solid line represents a two-way websocket connection.
 
 ## How it works
 
