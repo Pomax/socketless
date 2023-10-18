@@ -66,7 +66,7 @@ Note that these proxies _only_ support function calls: trying to access a proper
 
 Server instances have access to the following pre-specified properties:
 
-- `this.clients`, and array of clients, each a socket proxy of the connected client
+- `this.clients`, an array of clients, each a socket proxy of the connected client
 - `this.quit()`, a method to close all connections and shut down the server.
 
 Your server class may also implement any of the following event handlers:

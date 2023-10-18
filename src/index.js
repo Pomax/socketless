@@ -14,6 +14,9 @@ import { RESPONSE_SUFFIX, getResponseName } from "./upgraded-socket.js";
 // normally browser communication has to get send on to the server.
 const FORCED_ROUTE_HANDLING = true;
 
+// a convenience export
+export const ALLOW_SELF_SIGNED_CERTS = true;
+
 /**
  * Create a client/server factory, given the client and server classes.
  * @param {*} ClientClass
@@ -88,19 +91,19 @@ function generator(ClientClass, ServerClass) {
 
     /**
      * Create a client instance for this client/server API.
-     * @param {*} serverURL
-     * @param {*} ALLOW_SELF_SIGNED_CERTS
+     * @param {string} serverURL
+     * @param {boolean} allow_self_signed_certs
      * @param {*} TargetClientClass optional, defaults to ClientClass
      * @returns
      */
     createClient: function createClient(
       serverURL,
-      ALLOW_SELF_SIGNED_CERTS,
-      TargetClientClass = ClientClass,
+      allow_self_signed_certs,
+      TargetClientClass = ClientClass
     ) {
       serverURL = serverURL.replace(`http`, `ws`);
       const socketToServer = new WebSocket(serverURL, {
-        rejectUnauthorized: !ALLOW_SELF_SIGNED_CERTS,
+        rejectUnauthorized: !allow_self_signed_certs,
       });
       const client = new TargetClientClass();
       socketToServer.on(`close`, (...data) => client.onDisconnect(...data));
@@ -125,22 +128,22 @@ function generator(ClientClass, ServerClass) {
 
     /**
      * Create a web client for this client/server API.
-     * @param {*} serverUrl
-     * @param {*} publicDir
+     * @param {string} serverUrl
+     * @param {string} publicDir
      * @param {*} httpsOptions
-     * @param {*} ALLOW_SELF_SIGNED_CERTS
+     * @param {boolean} allow_self_signed_certs
      * @returns
      */
     createWebClient: function createWebClient(
       serverUrl,
       publicDir,
       httpsOptions,
-      ALLOW_SELF_SIGNED_CERTS,
+      allow_self_signed_certs
     ) {
       const client = factory.createClient(
         serverUrl,
-        ALLOW_SELF_SIGNED_CERTS,
-        WebClientClass,
+        allow_self_signed_certs,
+        WebClientClass
       );
 
       const router = new CustomRouter(client);
@@ -182,7 +185,7 @@ function generator(ClientClass, ServerClass) {
               JSON.stringify({
                 name: responseName,
                 payload: fullState,
-              }),
+              })
             );
           }
 
@@ -209,7 +212,7 @@ function generator(ClientClass, ServerClass) {
               JSON.stringify({
                 name: responseName,
                 payload: result,
-              }),
+              })
             );
           }
         });
