@@ -18,6 +18,13 @@ export class CustomRouter {
   }
 
   /**
+   * Remove route handling from the server
+   */
+  removeRoute(url) {
+    delete this.routes[url];
+  }
+
+  /**
    * Return false if no route for the specified URL can
    * be found. Otherwise, run the route handler, and then
    * return true, to signal the route got handled.

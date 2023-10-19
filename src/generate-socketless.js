@@ -55,9 +55,6 @@ function generateSocketless() {
       configurable: false,
       enumerable: false,
     });
-    Object.defineProperty(browserClient, "quit", {
-      value: () => browserClient.server.disconnect(),
-    });
     browserClient.state = {};
     browserClient.init?.();
     return browserClient;

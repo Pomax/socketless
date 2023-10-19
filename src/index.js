@@ -61,9 +61,13 @@ function generator(ClientClass, ServerClass) {
         webserver = httpsOptions
           ? https.createServer(httpsOptions, routeHandling)
           : http.createServer(routeHandling);
+
         // Rebind the function that allows users to specify custom route handling:
+
         // @ts-ignore: we're adding a custom property to a Server instance, which TS doesn't like.
         webserver.addRoute = router.addRouteHandler.bind(router);
+        // @ts-ignore: idem ditto
+        webserver.removeRoute = router.removeRoute.bind(router);
       }
 
       // create a websocket server, so we can handle websocket upgrade calls.
@@ -99,7 +103,7 @@ function generator(ClientClass, ServerClass) {
     createClient: function createClient(
       serverURL,
       allow_self_signed_certs,
-      TargetClientClass = ClientClass
+      TargetClientClass = ClientClass,
     ) {
       serverURL = serverURL.replace(`http`, `ws`);
       const socketToServer = new WebSocket(serverURL, {
@@ -138,12 +142,12 @@ function generator(ClientClass, ServerClass) {
       serverUrl,
       publicDir,
       httpsOptions,
-      allow_self_signed_certs
+      allow_self_signed_certs,
     ) {
       const client = factory.createClient(
         serverUrl,
         allow_self_signed_certs,
-        WebClientClass
+        WebClientClass,
       );
 
       const router = new CustomRouter(client);
@@ -185,7 +189,7 @@ function generator(ClientClass, ServerClass) {
               JSON.stringify({
                 name: responseName,
                 payload: fullState,
-              })
+              }),
             );
           }
 
@@ -212,7 +216,7 @@ function generator(ClientClass, ServerClass) {
               JSON.stringify({
                 name: responseName,
                 payload: result,
-              })
+              }),
             );
           }
         });
@@ -224,8 +228,11 @@ function generator(ClientClass, ServerClass) {
       });
 
       // Rebind the function that allows users to specify custom route handling:
+
       // @ts-ignore: we're adding a custom property to a Server instance, which TS doesn't like.
       webserver.addRoute = router.addRouteHandler.bind(router);
+      // @ts-ignore: idem ditto
+      webserver.removeRoute = router.removeRoute.bind(router);
       return { client, clientWebServer: webserver };
     },
   };

@@ -3,8 +3,9 @@
 Socketless _strictly_ adheres to [semver](https://semver.org)'s major.minor.patch versioning:
 
 - patch version changes indicate bug fixes,
-- minor version changes indicate new functionality and/or internal code changes,
+- minor version changes indicate new functionality and/or internal-only code changes,
 - major version changes indicate backward-incompatible external API changes.
+
 
 # Version history
 
@@ -12,11 +13,11 @@ Socketless _strictly_ adheres to [semver](https://semver.org)'s major.minor.patc
 
 Full rewrite
 - code is now ESM
-- transport mechanism based on the Proxy object
-- fewer files
-- less code
-- easier to maintain
-- everything gets compiled into a single library.js file now
+- the transport mechanism is now based on Proxy objects
+- fewer files!
+- less code!
+- easier to maintain! (...hopefully)
+- the release gets compiled into a single `library.js`` file
 
 ## v0.13.9
 
