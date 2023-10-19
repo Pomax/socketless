@@ -634,10 +634,10 @@ export default {
     }
   },
   mounted() {
-    const setState = (newState) => this.state = newState;
+    const vueAppp = this;
     createBrowserClient(class {
       update() {
-        setState(this.state);
+        vueAppp.state = this.state;
       }
     });
   }
