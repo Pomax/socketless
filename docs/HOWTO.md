@@ -7,9 +7,9 @@ The `socketless` library works by creating proxy objects so that code can be wri
 The `socketless` library exports a single function, `linkClasses`, which is used to create a client and server factory:
 
 ```js
-import { linkClasses} fom "socketless";
-import { ClientClass, ServerClass} from "./my/classes.js";
-const factory = linkClasses(ClientClass, ServerClass)
+import { linkClasses } from "socketless";
+import { ClientClass, ServerClass } from "./my/classes.js";
+const factory = linkClasses(ClientClass, ServerClass);
 const { createClient, createServer } = factory;
 ```
 
@@ -20,8 +20,8 @@ And that's pretty much it all the boilerplate code `socketless` will contribute 
 Things are even simpler in the browser, as we can't create real clients or servers in the browser, only "browser clients" that act as thin-client frontend to the real client:
 
 ```js
-import { createBrowserClient} fom "./socketless.js";
-createBrowserClient(BrowserClientClass)
+import { createBrowserClient } from "./socketless.js";
+createBrowserClient(BrowserClientClass);
 ```
 
 And that's all the `socketless` boilerplate for in the browser.
@@ -33,12 +33,12 @@ And that's all the `socketless` boilerplate for in the browser.
 Creating a server is as easy as calling `createServer` and then listening for connections:
 
 ```js
-import { linkClasses} fom "socketless";
-import { ClientClass, ServerClass} from "./my/classes.js";
-const { createServer } = linkClasses(ClientClass, ServerClass)
+import { linkClasses } from "socketless";
+import { ClientClass, ServerClass } from "./my/classes.js";
+const { createServer } = linkClasses(ClientClass, ServerClass);
 const PORT = process.env.PORT ?? 8000;
 createServer().listen(PORT, () => {
-    console.log(`server is running on port ${PORT}`);
+  console.log(`server is running on port ${PORT}`);
 });
 ```
 
@@ -51,10 +51,10 @@ Without an argument, `createServer` will create a plain HTTP server to negotiate
 By default, that web server will not serve any sort of HTTP traffic outside of websocket upgrade calls, but you can assigned route handlers in order to serve regular content, using `.addroute(...)`:
 
 ```js
-import { linkClasses} fom "socketless";
-import { ClientClass, ServerClass} from "./my/classes.js";
-const factory = linkClasses(ClientClass, ServerClass)
-const server = factory.createServer()
+import { linkClasses } from "socketless";
+import { ClientClass, ServerClass } from "./my/classes.js";
+const factory = linkClasses(ClientClass, ServerClass);
+const server = factory.createServer();
 server.listen(0, () => {
   console.log(`server is running on port ${server.address().port}`);
 
@@ -69,7 +69,7 @@ server.listen(0, () => {
 The `addRoute` function actually follows the Express.js middleware convention, so you can chain as many functions as you need, where any function can call `next()` to have the route handler move on to the next function:
 
 ```js
-import { linkClasses} fom "socketless";
+import { linkClasses} from "socketless";
 import { ClientClass, ServerClass} from "./my/classes.js";
 import { checkAuth } from "./users/auth.js";
 import { userProfileMiddleware } from "./users/profiles.js";
@@ -114,15 +114,15 @@ Now, this HTTP server can of course be presented to the outside world over HTTPS
 In order to make socketless run an HTTPS server, you can provide your own `key` and `cert` to the factory function:
 
 ```js
-import { linkClasses} fom "socketless";
-import { ClientClass, ServerClass} from "./my/classes.js";
-const factory = linkClasses(ClientClass, ServerClass)
+import { linkClasses } from "socketless";
+import { ClientClass, ServerClass } from "./my/classes.js";
+const factory = linkClasses(ClientClass, ServerClass);
 const server = factory.createServer({
-    key: `...`,
-    cert: `...`
-})
+  key: `...`,
+  cert: `...`,
+});
 server.listen(0, () => {
-    console.log(`server is running on port ${server.address().port}`);
+  console.log(`server is running on port ${server.address().port}`);
 });
 ```
 
@@ -131,22 +131,24 @@ Note that these can, of course, be self-signed certs, using something like [pem]
 
 ```js
 import pem from "pem";
-import { linkClasses} fom "socketless";
-import { ClientClass, ServerClass} from "./my/classes.js";
-const factory = linkClasses(ClientClass, ServerClass)
+import { linkClasses } from "socketless";
+import { ClientClass, ServerClass } from "./my/classes.js";
+const factory = linkClasses(ClientClass, ServerClass);
 
 const httpsOptions = await new Promise((resolve, reject) => {
-  pem.createCertificate({
-    days: 1,
-    selfSigned: true
-  },
-  (err, { clientKey: key, certificate: cert}) => {
-    if (err) return reject(err);
-    resolve({ key, cert });
-  });
+  pem.createCertificate(
+    {
+      days: 1,
+      selfSigned: true,
+    },
+    (err, { clientKey: key, certificate: cert }) => {
+      if (err) return reject(err);
+      resolve({ key, cert });
+    }
+  );
 });
 
-const server = factory.createServer(httpsOptions)
+const server = factory.createServer(httpsOptions);
 server.listen(443);
 ```
 
@@ -159,8 +161,8 @@ And of course, let's be fair: you know how to run your own server, it's kind of 
 You know how an express server works, so: set one up, and then pass that into the `createServer` function as part of your listen call:
 
 ```js
-import { linkClasses} fom "socketless";
-import { ClientClass, ServerClass} from "./my/classes.js";
+import { linkClasses } from "socketless";
+import { ClientClass, ServerClass } from "./my/classes.js";
 const factory = linkClasses(ClientClass, ServerClass);
 
 const app = express();
@@ -182,8 +184,8 @@ And of course again, you're almost certainly going to outsource HTTPS to NGINX o
 
 ```js
 import pem from "pem";
-import { linkClasses} fom "socketless";
-import { ClientClass, ServerClass} from "./my/classes.js";
+import { linkClasses } from "socketless";
+import { ClientClass, ServerClass } from "./my/classes.js";
 const factory = linkClasses(ClientClass, ServerClass);
 
 const app = express();
@@ -193,14 +195,16 @@ app.get(`/`, (_, res) => {
 });
 
 const httpsOptions = await new Promise((resolve, reject) => {
-  pem.createCertificate({
-    days: 1,
-    selfSigned: true
-  },
-  (err, { clientKey: key, certificate: cert}) => {
-    if (err) return reject(err);
-    resolve({ key, cert });
-  });
+  pem.createCertificate(
+    {
+      days: 1,
+      selfSigned: true,
+    },
+    (err, { clientKey: key, certificate: cert }) => {
+      if (err) return reject(err);
+      resolve({ key, cert });
+    }
+  );
 });
 
 const server = https.createServer(httpsOptions, app);
@@ -344,8 +348,8 @@ class ClientClass {
 Creating clients is decidedly simpler than creating servers:
 
 ```js
-import { linkClasses } fom "socketless";
-import { ClientClass, ServerClass} from "./my/classes.js";
+import { linkClasses } from "socketless";
+import { ClientClass, ServerClass } from "./my/classes.js";
 const factory = linkClasses(ClientClass, ServerClass);
 
 const serverURL = `http://...`;
@@ -355,8 +359,8 @@ const client = factory.createClient(serverURL);
 The only variation on this is when the serverURL is an `https` URL and we know that a self-signed certificate is being used, in which case we need to make sure to pass `ALLOW_SELF_SIGNED_CERTS` as second argument:
 
 ```js
-import { linkClasses, ALLOW_SELF_SIGNED_CERTS } fom "socketless";
-import { ClientClass, ServerClass} from "./my/classes.js";
+import { linkClasses, ALLOW_SELF_SIGNED_CERTS } from "socketless";
+import { ClientClass, ServerClass } from "./my/classes.js";
 const factory = linkClasses(ClientClass, ServerClass);
 
 const serverURL = `https://...`;
@@ -391,24 +395,29 @@ Regular clients are self-contained, but if you want a client with a browser fron
 import url from "url";
 const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
 
-import { linkClasses } fom "socketless";
-import { ClientClass, ServerClass} from "./my/classes.js";
+import { linkClasses } from "socketless";
+import { ClientClass, ServerClass } from "./my/classes.js";
 const factory = linkClasses(ClientClass, ServerClass);
 
 const serverURL = `http://...`;
-const {client, clientWebServer } = createWebClient(serverUrl, `${__dirname}/public`);
+const { client, clientWebServer } = createWebClient(
+  serverUrl,
+  `${__dirname}/public`
+);
 clientWebServer.listen(0, () => {
   console.log(
-    `client ready for browser connections on port ${clientWebServer.address().port}`
+    `client ready for browser connections on port ${
+      clientWebServer.address().port
+    }`
   );
-})
+});
 ```
 
 As you can see, the `createWebClient` function doesn't just take the server URL, but also a string argument pointing at the directory that will host all the static assets such as your `index.html`, css files, images, etc.
 
 ### Defining a web-enabled client class
 
-The web client class extends the client class with a few more events, and some extra pre-defined instance properties:
+The web client class is a stand-in for the client class, with a few more events and some extra pre-defined instance properties:
 
 ```js
 class WebClientClass {
@@ -476,7 +485,7 @@ When the browser connects to a web client it will be served whatever's in the `i
 With a minimal `index.js` containing the `socketless` import and creation call for the browser portion of the web client:
 
 ```js
-import { createBrowserClient} fom "./socketless.js";
+import { createBrowserClient } from "./socketless.js";
 import { BrowserClientClass } from "./ui.js";
 createBrowserClient(BrowserClientClass);
 ```
@@ -488,7 +497,7 @@ Note that there are no extra steps you need to take to make sure that the `socke
 As mentioned, the browser can load `socketless` as a `./socketless.js` script relative to the web root, which exports a single function `createBrowserClient` with which to connect to the real client:
 
 ```js
-import { createBrowserClient} fom "./socketless.js";
+import { createBrowserClient } from "./socketless.js";
 import { BrowserClientClass } from "./ui.js";
 const instance = createBrowserClient(BrowserClientClass);
 ```
@@ -587,28 +596,58 @@ export class WebUI {
 }
 ```
 
+Alternatively, for maximum flexibility, we can also simply make our browser client class an event emitter, so that anything can listen for updates:
+
+```js
+import { createBrowserClient } from "./socketless.js";
+
+export const SOCKETLESS_EVENT_NAME = `socketless-update`;
+
+const signal = (prevState, state) =>
+  window.dispatchEvent(
+    new Event(SOCKETLESS_EVENT_NAME, {
+      detail: {
+        prevState,
+        state,
+      },
+    })
+  );
+
+createBrowserClient(
+  class {
+    update(prevState) {
+      signal(prevState, this.state);
+    }
+  }
+);
+```
+
+And that's it, anything can now listen to the `window` level `socketless-update` event, and get the updated state as `event.detail.state`, with a reference to the previous state encoded as `event.detail.prevState`.
+
 #### React
 
 You will need to mark `socketless.js` as an "external" library to make sure your bundler does not try to bake it into your app bundle. It _must_ be loaded at runtime in the browser.
 
 ```jsx
 import ReactDOM from "react-dom";
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 import { UI } from "./components/ui";
-import { createBrowserClient} fom "./socketless.js";
+import { createBrowserClient } from "./socketless.js";
 
 function App() {
   const [clientState, setClientState] = useState({});
 
   useEffect(() => {
-    createBrowserClient(class {
-      update() {
-        setClientState(this.state);
+    createBrowserClient(
+      class {
+        update() {
+          setClientState(this.state);
+        }
       }
-    });
+    );
   }, []);
 
-  return <UI clientState={clientState} />
+  return <UI clientState={clientState} />;
 }
 
 const root = ReactDOM.createRoot(document.body);
@@ -619,10 +658,12 @@ And with that, our App will start up, and one-time create the browser client suc
 
 #### Vue
 
-Make the app use a state variable, then create the browser client in `mounted()`, and have the update function update that state variable:
+The direct way to tie `socketless` into view is by using the above event approach, and simply tapping into that event on the Vue side by using a `v-on:socketless-update` attribute.
+
+Alternatively, you can also use your app's `mounted` functionality: declare a `state` variable in `data()`, then create the browser client in `mounted()` and have that update the Vue app's `state` variable:
 
 ```js
-import { createBrowserClient} fom "./socketless.js";
+import { createBrowserClient} from "./socketless.js";
 
 ...
 
@@ -646,12 +687,18 @@ export default {
 
 #### Angular
 
-...I don't know Angular...
+To get data into your Angular app, use the above-mentioned event approach, and then use `@HostListener` ([documented here](https://angular.io/guide/attribute-directives#handling-user-events)) to capture those in the place you want to capture them:
 
-#### Svelte
+```js
+import { HostListener } from "@angular/core".
+import { SOCKETLESS_EVENT_NAME} from "./browser-client-class.js";
 
-...I don't know Svelte...
+export class MyComponent {
+  ...
 
-#### ???
-
-...??????????
+  @HostListener(`window:${SOCKETLESS_EVENT_NAME}`, [`$event.detail`])
+  onUpdate({ prevState, state}) {
+    console.log(`we can now do something with state and/or prevState`);
+  }
+}
+```

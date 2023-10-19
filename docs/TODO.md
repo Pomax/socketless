@@ -20,8 +20,8 @@ This document mostly exists to let me track whether we're at v1 or not yet.
 - [x] document the diagram of "how things work"
 - [ ] rewrite the docs (in progress)
   - [x] architecture document
-  - [ ] "how to" document
-  - [ ] pure (external) API document
+  - [x] "how to" document
+  - [x] pure API document
 
 # Demos
 
@@ -39,3 +39,4 @@ create several new demos
 - the browser's `this.socket` feels like it should not be necessary and exposed, _or_ it should be a `this.client` and be a proxy socket?
 - [x] add middleware back in for the webclient?
 - [x] update addRoute to allow middleware?
+- [ ] should clients have a `.reconnect()` so the browser can control the client's connection to the server?

@@ -91,7 +91,6 @@ import { ServerClass } from "./server.js";
 import { linkClasses } from "socketless";
 
 const { createServer, createClient } = linkClasses(ClientClass, ServerClass);
-
 const server = createServer();
 const PORT = process.env.PORT ?? 8000;
 

@@ -10,8 +10,8 @@ The basic setup consists of:
 
 ```
 ┌─────────┬─────────────┐    ╭───────────╮
-│ server <┼- web server │◁───┤ (browser) │ 
-└────▲────┴─────△───────┘    ╰───────────╯ 
+│ server <┼- web server │◁───┤ (browser) │
+└────▲────┴─────△───────┘    ╰───────────╯
      ║          ┊                              ╭───────────────────────────────╮
      ║      ┌───◇────┐                         │ ─── HTTP call                 │
      ╚══════▶ client │                         │ ┄┄┄ WS upgrade call over HTTP │
@@ -71,8 +71,8 @@ Server instances have access to the following pre-specified properties:
 
 Your server class may also implement any of the following event handlers:
 
-- `onConnect(client)`, triggers after a client has connected
-- `onDisconnect(client)`, triggers after a client has disconnected
+- `onConnect(client)`, triggers after a client has connected.
+- `onDisconnect(client)`, triggers after a client has disconnected.
 - `onQuit()`, triggered before the server closes its web server and websocket server.
 - `teardown()`, triggered after the web server and websocket servers have been shut down.
 
@@ -80,16 +80,17 @@ Your server class may also implement any of the following event handlers:
 
 Client instances have access to the following pre-specified properties:
 
-- `this.server`, a proxy of the server
-- `this.browser`, a proxy of the browser, if this is a web client. Note that calls to functions on this.browser do _not_ time out, they stay waiting until the browser
+- `this.server`, a proxy of the server.
+- `this.browser`, a proxy of the browser, if this is a web client. Note that calls to functions on this.browser do _not_ time out, they stay waiting until the browser.
 - `this.state`, a state object that can be used to store client data. This object gets automatically synchronized to the browser, if this is a web client with a connected browser.
+- `this.disconnect()`, a method to disconnect this client from the server.
 
 Your client class may also implement any of the following event handlers:
 
-- `onConnect()`, triggered after the client connects to the server
-- `onBrowserConnect()`, if this is a web client, triggered after a browser connects
-- `onDisconnect()`, triggered after the client gets disconnected from the server
-- `onBrowserDisconnect()`, if this is a web client, triggered after a browser disconnects
+- `onConnect()`, triggered after the client connects to the server.
+- `onBrowserConnect()`, if this is a web client, triggered after a browser connects.
+- `onDisconnect()`, triggered after the client gets disconnected from the server.
+- `onBrowserDisconnect()`, if this is a web client, triggered after a browser disconnects.
 - `onQuit()`, if this is a web client, triggered before the server closes its web server and websocket server.
 - `teardown()`, if this is a web client, triggered after the web server and websocket servers have been shut down.
 
@@ -97,11 +98,11 @@ Your client class may also implement any of the following event handlers:
 
 Browser client instances created using the browser-side `createBrowserClient` function have access to the following pre-specified properties:
 
-- `this.server`, a proxy for the main server
-- `this.socket`, the _plain_ websocket connection to the client (it should almost never be necessary to interact with this property)
-- `this.quit()`, a convenience method to disconnect from the main server
+- `this.server`, a proxy for the main server.
+- `this.socket`, the _plain_ websocket connection to the client (it should almost never be necessary to interact with this property).
+- `this.quit()`, a convenience method to disconnect from the main server.
 
 You will also want to implement the following functions in your browser client class:
 
-- `init()`, a function that is called as part of the connection process. Any setup should be done inside `init()`, not the constructor (while you _may_ have a constructor, you will not have access to the pre-specified properties until `init` gets called)
+- `init()`, a function that is called as part of the connection process. Any setup should be done inside `init()`, not the constructor (while you _may_ have a constructor, you will not have access to the pre-specified properties until `init` gets called).
 - `update(prevState)`, a function that is called any time the client's state gets reflected to the browser.
