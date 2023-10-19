@@ -581,19 +581,68 @@ function renderTile(tile) {
 
 // And then we're basically doing nothing other than getting our update pushed into our own code!
 export class WebUI {
-  update(prevState) {
+  update() {
     renderPage(this.state);
   }
 }
 ```
 
-#### Vue
-
-...I don't know Vue...
-
 #### React
 
-...I don't want to write this right now...
+You will need to mark `socketless.js` as an "external" library to make sure your bundler does not try to bake it into your app bundle. It _must_ be loaded at runtime in the browser.
+
+```jsx
+import ReactDOM from "react-dom";
+import { useEffect, useState } from 'react';
+import { UI } from "./components/ui";
+import { createBrowserClient} fom "./socketless.js";
+
+function App() {
+  const [clientState, setClientState] = useState({});
+
+  useEffect(() => {
+    createBrowserClient(class {
+      update() {
+        setClientState(this.state);
+      }
+    });
+  }, []);
+
+  return <UI clientState={clientState} />
+}
+
+const root = ReactDOM.createRoot(document.body);
+root.render(<App />);
+```
+
+And with that, our App will start up, and one-time create the browser client such that every time it receives an update, it calls `setClientState` with the new client state, which will update the App's `clientState` variable, which will in turn trigger a rerender in any downstream components we defined.
+
+#### Vue
+
+Make the app use a state variable, then create the browser client in `mounted()`, and have the update function update that state variable:
+
+```js
+import { createBrowserClient} fom "./socketless.js";
+
+...
+
+export default {
+  name: `...`,
+  data() {
+    return {
+      state: {}
+    }
+  },
+  mounted() {
+    const setState = (newState) => this.state = newState;
+    createBrowserClient(class {
+      update() {
+        setState(this.state);
+      }
+    });
+  }
+}
+```
 
 #### Angular
 
