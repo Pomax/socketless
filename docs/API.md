@@ -41,6 +41,7 @@ For security reasons, a constructor is strongly discouraged. If present, it will
 
 ### instance properties
 
+- `this.id`, an id known to both the client and server.
 - `this.server`, a local proxy for the server, supporting the API defined in your ServerClass.
 
 ### methods

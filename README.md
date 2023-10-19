@@ -24,14 +24,16 @@ A short example is the easiest way to demonstrate how Socketless works.
 If we have the following client class:
 
 ```js
+class ClientTimeManager {
+  tick(dateTime) {
+    console.log(`server date-time is ${dateTime}`);
+  }
+}
+
 class ClientClass {
   constructor() {
     console.log("client> created");
-    this.timeManager = {
-      tick: (serverDateTime) => {
-        console.log(`server date-time is ${serverDateTime}`);
-      },
-    };
+    this.timeManager = new ClientTimeManager();
   }
 
   async onConnect() {
@@ -72,7 +74,7 @@ class ServerClass {
     console.log(`server> client ${client.name} disconnected`);
     if (this.clients.length === 0) {
       console.log(`server> no clients connected, shutting down.`);
-      this.shutdown();
+      this.quit();
     }
   }
 
@@ -90,7 +92,7 @@ import { ClientClass } from "./client.js";
 import { ServerClass } from "./server.js";
 import { linkClasses } from "socketless";
 
-const { createServer, createClient } = linkClasses(ClientClass, ServerClass);
+const { createClient, createServer } = linkClasses(ClientClass, ServerClass);
 const server = createServer();
 const PORT = process.env.PORT ?? 8000;
 
@@ -115,6 +117,6 @@ server> client user1582572704133 disconnected
 server> no clients connected, shutting down.
 ```
 
-Note that when the  client is created, it's not passed the reference to the server, but instead it's given a URL to connect to: the client and server can, and typically will, run on completely different machines "anywhere on the internet". As long as the same versions of the client and server classes are used by all parties, there's nothing else you need to do.
+Note that when the client is created, it's not passed the reference to the server, but instead it's given a URL to connect to: the client and server can, and typically will, run on completely different machines "anywhere on the internet". As long as the same versions of the client and server classes are used by all parties, there's nothing else you need to do.
 
 ### _It just works._
