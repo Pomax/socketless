@@ -203,29 +203,35 @@ class UpgradedSocket extends WebSocket {
     if (DEBUG) console.log(`[${receiver}] router: stages:`, stages);
 
     let callable = origin;
+    const [first] = stages;
     let forbidden = origin.__proto__?.constructor.disallowedCalls ?? [];
+
     let error = undefined;
     let response = undefined;
 
-    // Find the actual function to call
-    try {
-      const [first] = stages;
-      if (stages.length === 1 && forbidden.includes(first)) {
-        throw new Error(`Illegal call: ${first} is a protected method`);
+    // Are we even allowed to resolve this chain?
+    if (first && forbidden.includes(first)) {
+      error = `Illegal call: ${first} is a protected property`;
+    }
+
+    // We are: find the actual function to call.
+    if (!error) {
+      try {
+        while (stages.length) {
+          const stage = stages.shift();
+          if (DEBUG) console.log(`checking ${stage}`);
+          callable = callable[stage];
+        }
+        // If this code runs on the server, the function needs to be
+        // called with the client proxy as first argument.
+        if (receiver === `server`) payload.unshift(this[PROXY]);
+      } catch (e) {
+        // "function not found" doesn't count as error "here".
+        // Instead, we send that back to the caller.
+        if (DEBUG)
+          console.error(`cannot resolve ${eventName} on ${receiver}`, e);
+        error = e.message;
       }
-      while (stages.length) {
-        const stage = stages.shift();
-        if (DEBUG) console.log(`checking ${stage}`);
-        callable = callable[stage];
-      }
-      // If this code runs on the server, the function needs to be
-      // called with the client proxy as first argument.
-      if (receiver === `server`) payload.unshift(this[PROXY]);
-    } catch (e) {
-      // "function not found" doesn't count as error "here".
-      // Instead, we send that back to the caller.
-      if (DEBUG) console.error(`cannot resolve ${eventName} on ${receiver}`, e);
-      error = e.message;
     }
 
     // Resolve the function and then send the result as :response, making

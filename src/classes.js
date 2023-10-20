@@ -10,19 +10,22 @@ const STATE_SYMBOL = Symbol();
  */
 export function formClientClass(ClientClass) {
   return class ClientBase extends ClientClass {
-    // No functions except `disconnect` may be proxy-invoked
     static get disallowedCalls() {
+      // No functions in this class may be proxy-invoked
       const names = Object.getOwnPropertyNames(ClientBase.prototype);
+      // (except for `disconnect`)
       [`constructor`, `disconnect`].forEach((name) =>
         names.splice(names.indexOf(name), 1),
       );
+      // Nor should the server be able to reach itself through the client
+      names.push(`server`, `state`);
       return names;
     }
 
     constructor() {
       super();
-
-      // unlike React, we don't even let you assign to state.
+      // disallow writing directly into state
+      // TODO: this needs to have proxy-based deep protection. Right now it's only single level.
       const state = (this[STATE_SYMBOL] = {});
       const readOnlyState = new Proxy(state, {
         get: (_, prop) => state[prop],
@@ -32,33 +35,22 @@ export function formClientClass(ClientClass) {
           );
         },
       });
-
       Object.defineProperty(this, `state`, {
         value: readOnlyState,
         writable: false,
         configurable: false,
       });
+    }
 
-      if (!this.onConnect) {
-        this.onConnect = async () => {
-          if (DEBUG)
-            console.log(`[ClientBase] client ${this.state.id} connected.`);
-        };
-      }
+    onConnect() {
+      super.onConnect?.();
+      if (DEBUG) console.log(`[ClientBase] client ${this.state.id} connected.`);
+    }
 
-      if (!this.onDisconnect) {
-        this.onDisconnect = async () => {
-          if (DEBUG)
-            console.log(`[ClientBase] client ${this.state.id} disconnected.`);
-        };
-      }
-
-      if (!this.onQuit) {
-        this.onQuit = async () => {
-          if (DEBUG)
-            console.log(`[ClientBase] client ${this.state.id} quitting.`);
-        };
-      }
+    onDisconnect() {
+      super.onDisconnect?.();
+      if (DEBUG)
+        console.log(`[ClientBase] client ${this.state.id} disconnected.`);
     }
 
     setState(stateUpdates) {
@@ -90,10 +82,12 @@ export function formServerClass(ServerClass) {
     ws = undefined; // websocket server instance
     webserver = undefined; // http(s) server instance
 
-    // No functions in this class may be proxy-invoked
     static get disallowedCalls() {
+      // No functions in this class may be proxy-invoked
       const names = Object.getOwnPropertyNames(ServerBase.prototype);
       names.splice(names.indexOf(`constructor`), 1);
+      // Nor should these server-specific properties be accessible to clients
+      names.push(`clients`, `ws`, `webserver`);
       return names;
     }
 
@@ -146,32 +140,30 @@ export function formServerClass(ServerClass) {
     }
 
     async onDisconnect(client) {
-      if (super.onDisconnect) return super.onDisconnect(client);
+      super.onDisconnect?.(client);
       if (DEBUG) console.log(`[ServerBase] client ${client.id} disconnected.`);
     }
 
     async onConnect(client) {
-      if (super.onConnect) return super.onConnect(client);
+      super.onConnect?.(client);
       if (DEBUG) console.log(`[ServerBase] client ${client.id} connected.`);
     }
 
     async quit() {
       await this.onQuit();
       this.clients.forEach((client) => client.disconnect());
-      // TODO: ideally, these three run in succession, but
-      // we can't control "how fast" the web server closes.
-      this.webserver.close();
       this.ws.close();
-      this.teardown();
+      this.webserver.closeAllConnections();
+      this.webserver.close(() => this.teardown());
     }
 
     async onQuit() {
-      if (super.onQuit) return super.onQuit();
+      super.onQuit?.();
       if (DEBUG) console.log(`[ServerBase] told to quit.`);
     }
 
     async teardown() {
-      if (super.teardown) return super.teardown();
+      super.teardown?.();
       if (DEBUG) console.log(`[ServerBase] post-quit teardown.`);
     }
   };

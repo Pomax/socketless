@@ -37,24 +37,44 @@ function generateSocketless() {
     );
 
   // ===============================================================
-  // Then inject the actual "socketless" export...
+  //         Then inject the actual "socketless" export
+  // ===============================================================
   const socketless = `export function createBrowserClient(BrowserClientClass) {
-    const socket = new WebSocket(
-      window.location.toString().replace("http", "ws")
-    );
+    const propertyConfig = { writable: false, configurable: false, enumerable: false};
     const browserClient = new BrowserClientClass();
+
+    // create the web socket connection:
+    const socket = new WebSocket(window.location.toString().replace("http", "ws"));
     Object.defineProperty(browserClient, "socket", {
+      ...propertyConfig,
       value: socket,
-      writable: false,
-      configurable: false,
-      enumerable: false,
     });
+
+    // create a proxy for the (webclient tunnel to the) server:
     Object.defineProperty(browserClient, "server", {
+      ...propertyConfig,
       value: proxySocket("${BROWSER}", "${WEBCLIENT}", browserClient, socket),
-      writable: false,
-      configurable: false,
-      enumerable: false,
     });
+
+    // set up the custom function for shutting down the web client:
+    const quit = async() => {
+      if (browserClient.socket.readyState !== 1) {
+        return setTimeout(quit, 100);
+      }
+      browserClient.socket.send(
+        JSON.stringify({
+          name: "quit",
+          payload: {
+            // id: browserClient.id // TODO: have the browser and webclient negotiate an id?
+          },
+        })
+      );
+      browserClient.socket.close();
+      browserClient.teardown?.();
+    };
+
+    Object.defineProperty(browserClient, "quit", { ...propertyConfig, value: quit });
+
     browserClient.state = {};
     browserClient.init?.();
     return browserClient;

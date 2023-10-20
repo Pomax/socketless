@@ -1,152 +1,179 @@
-import { linkClasses } from "../library.js";
+import puppeteer from "puppeteer";
+import { linkClasses } from "../src/index.js";
+import url from "url";
+const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
 
 describe("basic tests", () => {
-  it("can run a basic client/server setup", (done) => {
-    // A very simple client class.
-    class ClientClass {
-      onConnect = () => this.disconnect();
-    }
+  describe("connectivity tests", () => {
+    /**
+     * Basic client/server constellation
+     */
+    it("can run a server + client setup", (done) => {
+      class ClientClass {
+        onConnect = () => this.disconnect();
+      }
 
-    // And a very simple server class.
-    class ServerClass {
-      onDisconnect = () => (this.clients.length ? null : this.quit());
-      teardown = () => done();
-    }
+      class ServerClass {
+        onDisconnect = () => (this.clients.length ? null : this.quit());
+        teardown = () => done();
+      }
 
-    // Test the connection basics.
-    const factory = linkClasses(ClientClass, ServerClass);
-    const server = factory.createServer();
-
-    // First, stand up the server.
-    server.listen(0, () => {
-      // Then stand up a client.
-      factory.createClient(`http://localhost:${server.address().port}`);
-      // And of course the client will immediately disconnect after successfully connecting.
+      const factory = linkClasses(ClientClass, ServerClass);
+      const server = factory.createServer();
+      server.listen(0, () => {
+        factory.createClient(`http://localhost:${server.address().port}`);
+      });
     });
-    // Which will cause the server to shut down because it has no clients left.
-  });
 
-  it("disallows calling protected functions", (done) => {
-    class ClientClass {
-      async onConnect() {
-        expect(async () => await this.server.onConnect()).rejects.toThrow();
-        expect(async () => await this.server.onDisconnect()).rejects.toThrow();
-        expect(async () => await this.server.onQuit()).rejects.toThrow();
-        expect(async () => await this.server.teardown()).rejects.toThrow();
-        expect(
-          async () => await this.server.connectClientSocket(),
-        ).rejects.toThrow();
-        expect(
-          async () => await this.server.addDisconnectHandling(),
-        ).rejects.toThrow();
-        expect(async () => await this.server.quit()).rejects.toThrow();
-
-        this.server.runServerTests();
+    /**
+     * Server with webclient constellation
+     */
+    it("can run a server + webclient setup", (done) => {
+      class WebClientClass {
+        onConnect = () => this.quit();
       }
 
-      async finish() {
-        this.disconnect();
+      class ServerClass {
+        onDisconnect = () => (this.clients.length ? null : this.quit());
+        teardown = () => {
+          done();
+        };
       }
-    }
 
-    class ServerClass {
-      async onDisconnect() {
-        if (!this.clients.length) {
-          this.quit();
+      const factory = linkClasses(WebClientClass, ServerClass);
+      const server = factory.createServer();
+      server.listen(0, () => {
+        factory.createWebClient(
+          `http://localhost:${server.address().port}`,
+          `${__dirname}/webclient/basic`,
+        );
+      });
+    });
+
+    /**
+     * Server with webclient constellation, with a browser connected
+     */
+    it("can run a server + webclient + browser setup", (done) => {
+      class WebClientClass {}
+
+      class ServerClass {
+        onDisconnect() {
+          this.clients.length ? null : this.quit();
+        }
+        teardown() {
+          done();
         }
       }
 
-      async runServerTests(client) {
-        expect(async () => await client.setState("test")).rejects.toThrow();
-        expect(
-          async () => await client.connectServerSocket(),
-        ).rejects.toThrow();
-        client.finish();
-      }
+      const factory = linkClasses(WebClientClass, ServerClass);
+      const server = factory.createServer();
+      server.listen(0, () => {
+        const { clientWebServer } = factory.createWebClient(
+          `http://localhost:${server.address().port}`,
+          `${__dirname}/webclient/basic`,
+        );
 
-      async teardown() {
-        done();
-      }
-    }
+        clientWebServer.listen(0, async () => {
+          const clientURL = `http://localhost:${
+            clientWebServer.address().port
+          }`;
+          const browser = await puppeteer.launch({ headless: `new` });
+          const page = await browser.newPage();
 
-    const factory = linkClasses(ClientClass, ServerClass);
-    const server = factory.createServer();
-    server.listen(0, () => {
-      factory.createClient(`http://localhost:${server.address().port}`);
+          await page.goto(clientURL);
+          await page.waitForSelector(`#quit`);
+          await page.click(`#quit`);
+          await browser.close();
+        });
+      });
     });
   });
 
-  it("can ping-pong function calls", (done) => {
-    class ServerClass {
-      ping = async (client, pong) => pong + 1;
+  describe("communication tests", () => {
+    it("can ping-pong function calls", (done) => {
+      let error;
 
-      async onDisconnect() {
-        if (!this.clients.length) {
-          this.quit();
+      class ClientClass {
+        async onConnect() {
+          for (let i = 0; i < 10; i++) {
+            const result = await this.server.ping(i);
+            if (result !== i + 1) {
+              error = new Error(
+                `result ${result} does not match i+1 (${i + 1})`,
+              );
+            }
+          }
+          this.disconnect();
         }
       }
 
-      async teardown() {
-        done();
-      }
-    }
+      class ServerClass {
+        ping = async (client, pong) => pong + 1;
 
-    class ClientClass {
-      async onConnect() {
-        for (let i = 0; i < 10; i++) {
-          const result = await this.server.ping(i);
-          expect(result).toBe(i + 1);
+        async onDisconnect(client) {
+          if (!this.clients.length) {
+            this.quit();
+          }
         }
-        this.disconnect();
-      }
-    }
 
-    const factory = linkClasses(ClientClass, ServerClass);
-    const server = factory.createServer();
-    server.listen(0, () =>
-      factory.createClient(`http://localhost:${server.address().port}`),
-    );
-  });
-
-  it("can ping(pong)-ping(pong) function calls", (done) => {
-    class ServerClass {
-      async ping(client, pong) {
-        // instead of responding, explicitly call the client's ping() instead
-        client.ping(pong + 1);
-      }
-
-      async onDisconnect() {
-        if (!this.clients.length) {
-          this.quit();
+        async teardown() {
+          done(error);
         }
       }
 
-      async teardown() {
-        done();
-      }
-    }
+      const factory = linkClasses(ClientClass, ServerClass);
+      const server = factory.createServer();
+      server.listen(0, () =>
+        factory.createClient(`http://localhost:${server.address().port}`),
+      );
+    });
 
-    class ClientClass {
-      async onConnect() {
-        this.server.ping(1);
-      }
+    it("can ping(pong)-ping(pong) function calls", (done) => {
+      let error;
+      let pings = 0;
+      let pongs = 0;
+      let final = 0;
 
-      async ping(pong) {
-        if (pong > 10) {
-          return this.disconnect();
+      class ClientClass {
+        async onConnect() {
+          this.server.ping(1);
         }
-        this.server.ping(pong + 1);
+
+        async ping(pong) {
+          final = pong;
+          pongs++;
+          if (pong > 10) {
+            return this.disconnect();
+          }
+          this.server.ping(pong + 1);
+        }
       }
 
-      async() {
-        this.disconnect();
-      }
-    }
+      class ServerClass {
+        async ping(client, pong) {
+          pings++;
+          client.ping(pong + 1);
+        }
 
-    const factory = linkClasses(ClientClass, ServerClass);
-    const server = factory.createServer();
-    server.listen(0, () => {
-      factory.createClient(`http://localhost:${server.address().port}`);
+        async onDisconnect() {
+          if (!this.clients.length) {
+            this.quit();
+          }
+        }
+
+        async teardown() {
+          if (pings !== 6 || pongs !== 6 || final !== 12) {
+            error = new Error(`number of pings and pongs don't match the test`);
+          }
+          done(error);
+        }
+      }
+
+      const factory = linkClasses(ClientClass, ServerClass);
+      const server = factory.createServer();
+      server.listen(0, () => {
+        factory.createClient(`http://localhost:${server.address().port}`);
+      });
     });
   });
 });

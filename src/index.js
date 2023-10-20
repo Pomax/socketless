@@ -136,7 +136,7 @@ function generator(ClientClass, ServerClass) {
      * @param {string} publicDir
      * @param {*} httpsOptions
      * @param {boolean} allow_self_signed_certs
-     * @returns
+     * @returns {{ client: WebClientClass, clientWebServer: http.Server}}
      */
     createWebClient: function createWebClient(
       serverUrl,
@@ -179,9 +179,9 @@ function generator(ClientClass, ServerClass) {
             throw new Error(error);
           }
 
+          // Is this a special client/browser call?
           const responseName = getResponseName(eventName);
 
-          // Is this a special client/browser call?
           if (eventName === `syncState`) {
             const fullState = await client.syncState();
             // console.log(`Webclient received syncState from browser, sending [${responseName}]`);
@@ -191,6 +191,10 @@ function generator(ClientClass, ServerClass) {
                 payload: fullState,
               }),
             );
+          }
+
+          if (eventName === `quit`) {
+            return client.quit();
           }
 
           if (eventName === `disconnect`) {

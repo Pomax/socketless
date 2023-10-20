@@ -15,6 +15,20 @@ export function formWebClientClass(ClientClass) {
   return class WebClient extends ClientClass {
     browser = undefined;
 
+    // No functions except `quit` and `syncState` may be proxy-invoked
+    static get disallowedCalls() {
+      const names = Object.getOwnPropertyNames(WebClient.prototype).concat(
+        ClientClass.disallowedCalls,
+      );
+      // allow quit() and syncState() to be called
+      [`constructor`, `quit`, `syncState`].forEach((name) =>
+        names.splice(names.indexOf(name), 1),
+      );
+      // but of course don't allow access to the "special" properties
+      names.push(`browser`, `ws`, `webserver`);
+      return names;
+    }
+
     constructor() {
       super();
       if (!this.onBrowserConnect) {
@@ -27,17 +41,6 @@ export function formWebClientClass(ClientClass) {
           if (DEBUG) console.log(`[WebClientBase] browser disconnected.`);
         };
       }
-    }
-
-    // No functions except `quit` and `syncState` may be proxy-invoked
-    static get disallowedCalls() {
-      const names = Object.getOwnPropertyNames(WebClient.prototype).concat(
-        ClientClass.disallowedCalls,
-      );
-      [`constructor`, `quit`, `syncState`].forEach((name) =>
-        names.splice(names.indexOf(name), 1),
-      );
-      return names;
     }
 
     connectBrowserSocket(browserSocket) {
@@ -100,13 +103,26 @@ export function formWebClientClass(ClientClass) {
       );
     }
 
-    quit() {
+    async quit() {
       if (this.browser) {
         this.browser.socket.close();
         this.disconnectBrowserSocket();
       }
       this.disconnect();
-      this.onQuit();
+      await this.onQuit();
+      this.ws.close();
+      this.webserver.closeAllConnections();
+      this.webserver.close(() => this.teardown());
+    }
+
+    async onQuit() {
+      super.onQuit?.();
+      if (DEBUG) console.log(`[WebClient] client ${this.id} told to quit.`);
+    }
+
+    async teardown() {
+      super.teardown?.();
+      if (DEBUG) console.log(`[WebClient] client ${this.id} running teardown.`);
     }
   };
 }
