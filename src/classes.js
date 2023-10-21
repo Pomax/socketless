@@ -17,8 +17,8 @@ export function formClientClass(ClientClass) {
       [`constructor`, `disconnect`].forEach((name) =>
         names.splice(names.indexOf(name), 1),
       );
-      // Nor should the server be able to reach itself through the client
-      names.push(`server`, `state`);
+      // Nor should the following properties be accessible
+      names.push(`server`, `state`, `params`);
       return names;
     }
 

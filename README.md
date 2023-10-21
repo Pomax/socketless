@@ -93,10 +93,10 @@ import { ServerClass } from "./server.js";
 import { linkClasses } from "socketless";
 
 const { createClient, createServer } = linkClasses(ClientClass, ServerClass);
-const server = createServer();
+const { server, webserver } = createServer();
 const PORT = process.env.PORT ?? 8000;
 
-server.listen(PORT, () => {
+webserver.listen(PORT, () => {
   const client = createClient(`http://localhost:${PORT}`);
 });
 ```

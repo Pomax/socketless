@@ -43,7 +43,8 @@ function generateSocketless() {
     const propertyConfig = { writable: false, configurable: false, enumerable: false};
     const browserClient = new BrowserClientClass();
 
-    // create the web socket connection:
+    // create the web socket connection - note that if there are any query arguments,
+    // those will get passed into the websocket upgrade request, too.
     const socket = new WebSocket(window.location.toString().replace("http", "ws"));
     Object.defineProperty(browserClient, "socket", {
       ...propertyConfig,

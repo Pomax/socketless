@@ -14,6 +14,8 @@ import { RESPONSE_SUFFIX, getResponseName } from "./upgraded-socket.js";
 // normally browser communication has to get send on to the server.
 const FORCED_ROUTE_HANDLING = true;
 
+const DEBUG = false;
+
 // a convenience export
 export const ALLOW_SELF_SIGNED_CERTS = Symbol("allow self-signed certificates");
 
@@ -35,7 +37,7 @@ function generator(ClientClass, ServerClass) {
      *            or an https options object for Node's built-in http(s)
      *            createServer functions. Or nothing, to create a plain
      *            http server rather than an https server.
-     * @returns
+     * @returns {{ server: ServerClass, webserver: http.Server }}
      */
     createServer: function createServer(serverOrHttpsOptions) {
       let httpServer;
@@ -90,7 +92,7 @@ function generator(ClientClass, ServerClass) {
       });
 
       // and then return the web server for folks to .listen() etc.
-      return webserver;
+      return { server, webserver };
     },
 
     /**
@@ -106,11 +108,28 @@ function generator(ClientClass, ServerClass) {
       TargetClientClass = ClientClass,
     ) {
       serverURL = serverURL.replace(`http`, `ws`);
+
+      const client = new TargetClientClass();
+
+      // Are there URL parameters we need to collect?
+      let params = { get: (_) => undefined };
+      if (serverURL.includes(`?`)) {
+        params = new URLSearchParams(serverURL.split(`?`)[1]);
+      }
+
+      Object.defineProperty(client, `params`, {
+        value: params,
+        writable: false,
+        configurable: false,
+        enumerable: false,
+      });
+
       const socketToServer = new WebSocket(serverURL, {
         rejectUnauthorized: allow_self_signed_certs !== ALLOW_SELF_SIGNED_CERTS,
       });
-      const client = new TargetClientClass();
+
       socketToServer.on(`close`, (...data) => client.onDisconnect(...data));
+
       function registerForId(data) {
         try {
           const { name, payload } = JSON.parse(data);
@@ -151,16 +170,30 @@ function generator(ClientClass, ServerClass) {
       );
 
       const router = new CustomRouter(client);
-      let routeHandling = makeRouteHandler(publicDir, router);
+      let routeHandling = makeRouteHandler(client, publicDir, router);
       const webserver = httpsOptions
         ? https.createServer(httpsOptions, routeHandling)
         : http.createServer(routeHandling);
 
       const ws = new WebSocketServer({ noServer: true });
       webserver.on(`upgrade`, (req, socket, head) => {
-        // console.log(`http->ws upgrade call`);
+        const url = req.url;
+        let params = {
+          get: (_) => undefined,
+        };
+
+        if (url.includes(`?`)) {
+          params = new URLSearchParams(url.split(`?`)[1]);
+        }
+
+        const sid = client.params.get(`sid`);
+        if (sid && params.get(`sid`) !== sid) {
+          if (DEBUG)
+            console.error(`incorrect SID provided during ws upgrade request`);
+          return socket.end();
+        }
+
         ws.handleUpgrade(req, socket, head, (websocket) => {
-          // console.log(`upgraded http->ws`);
           ws.emit(`connection`, websocket, req);
         });
       });

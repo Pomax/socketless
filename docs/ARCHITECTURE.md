@@ -81,6 +81,7 @@ Your server class may also implement any of the following event handlers:
 Client instances have access to the following pre-specified properties:
 
 - `this.id`, an id known to both the client and the server.
+- `this.params`, a parameter object derived from the serverURL.
 - `this.server`, a proxy of the server.
 - `this.browser`, a proxy of the browser, if this is a web client. Note that calls to functions on this.browser do _not_ time out, they stay waiting until the browser.
 - `this.state`, a state object that can be used to store client data. This object gets automatically synchronized to the browser, if this is a web client with a connected browser.

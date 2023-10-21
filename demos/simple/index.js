@@ -5,10 +5,10 @@ import { ServerClass } from "./ServerClass.js";
 import { linkClasses } from "socketless";
 
 const factory = linkClasses(ClientClass, ServerClass);
-const server = factory.createServer();
+const { webserver } = factory.createServer();
 
-server.listen(0, () => {
-  const serverURL = `http://localhost:${server.address().port}`;
+webserver.listen(0, () => {
+  const serverURL = `http://localhost:${webserver.address().port}`;
   [...new Array(NUMBER_OF_CLIENTS)].forEach(() =>
     factory.createClient(serverURL),
   );

@@ -25,6 +25,7 @@ This document mostly exists to let me track whether we're at v1 or not yet.
     - [x] server to webclient
     - [] webclient to browser?
     - [] browser to webclient?
+  - [] add "sid" verification tests, including a browser creating its own websocket connection rather than using socketless.js in an attempt to gain direct access
 
 # Documentation
 
@@ -64,4 +65,4 @@ create several new demos
 
 # TRUE TODO
 
-Work out the howto docs for Authentication. 
+Work out the howto docs for Authentication.

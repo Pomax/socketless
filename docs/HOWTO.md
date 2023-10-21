@@ -37,7 +37,7 @@ import { linkClasses } from "socketless";
 import { ClientClass, ServerClass } from "./my/classes.js";
 const { createServer } = linkClasses(ClientClass, ServerClass);
 const PORT = process.env.PORT ?? 8000;
-createServer().listen(PORT, () => {
+createServer().webserver.listen(PORT, () => {
   console.log(`server is running on port ${PORT}`);
 });
 ```
@@ -54,12 +54,12 @@ By default, that web server will not serve any sort of HTTP traffic outside of w
 import { linkClasses } from "socketless";
 import { ClientClass, ServerClass } from "./my/classes.js";
 const factory = linkClasses(ClientClass, ServerClass);
-const server = factory.createServer();
-server.listen(0, () => {
-  console.log(`server is running on port ${server.address().port}`);
+const { webserver } = factory.createServer();
+webserver.listen(0, () => {
+  console.log(`server is running on port ${webserver.address().port}`);
 
   // Add a route handler for the root:
-  server.addRoute(`/`, (req, res) => {
+  webserver.addRoute(`/`, (req, res) => {
     res.writeHead(200, { "Content-Type": `text/html` });
     res.end(`<doctype html><html><body>It's a web page!</body></html>`);
   });
@@ -87,12 +87,12 @@ const checkAuthMiddleware = (req, res, next) => {
 };
 
 const factory = linkClasses(ClientClass, ServerClass)
-const server = factory.createServer()
-server.listen(0, () => {
-  console.log(`server is running on port ${server.address().port}`);
+const { webserver } = factory.createServer()
+webserver.listen(0, () => {
+  console.log(`server is running on port ${webserver.address().port}`);
 
   // Add a route handler for the root:
-  server.addRoute(`/`,
+  webserver.addRoute(`/`,
     quickLog,
     checkAuthMiddleware,
     userProfileMiddleware,
@@ -135,12 +135,12 @@ In order to make socketless run an HTTPS server, you can provide your own `key` 
 import { linkClasses } from "socketless";
 import { ClientClass, ServerClass } from "./my/classes.js";
 const factory = linkClasses(ClientClass, ServerClass);
-const server = factory.createServer({
+const { webserver } = factory.createServer({
   key: `...`,
   cert: `...`,
 });
-server.listen(0, () => {
-  console.log(`server is running on port ${server.address().port}`);
+webserver.listen(0, () => {
+  console.log(`server is running on port ${webserver.address().port}`);
 });
 ```
 
@@ -166,8 +166,8 @@ const httpsOptions = await new Promise((resolve, reject) => {
   );
 });
 
-const server = factory.createServer(httpsOptions);
-server.listen(443);
+const { webserver } = factory.createServer(httpsOptions);
+webserver.listen(443);
 ```
 
 However, if you're using self-signed certs, you're going to run into a bunch of delightful security gotchas, so you'll want to make sure to create your clients with the `ALLOW_SELF_SIGNED_CERT` flag. We'll talk more about that in the clients section.
@@ -189,8 +189,8 @@ app.get(`/`, (_, res) => {
   res.render(`index`, { title: `our page` });
 });
 
-const server = app.listen(0, async () => {
-  factory.createServer(server);
+const webserver = app.listen(0, async () => {
+  factory.createServer(webserver);
 });
 ```
 
@@ -500,25 +500,19 @@ When the browser connects to a web client it will be served whatever's in the `i
 </html>
 ```
 
-With a minimal `index.js` containing the `socketless` import and creation call for the browser portion of the web client:
-
-```js
-import { createBrowserClient } from "./socketless.js";
-import { BrowserClientClass } from "./ui.js";
-createBrowserClient(BrowserClientClass);
-```
-
-Note that there are no extra steps you need to take to make sure that the `socketless.js` file exists in your assets directory: the client's web serer comes with special route handling for the `socketless.js` request.
+With a minimal `index.js` containing the `socketless` import and creation call for the browser portion of the web client (see next section).
 
 ## The browser
 
-As mentioned, the browser can load `socketless` as a `./socketless.js` script relative to the web root, which exports a single function `createBrowserClient` with which to connect to the real client:
+The browser can load `socketless` as a `./socketless.js` script relative to the web root, which exports a single function `createBrowserClient` with which to connect to the real client:
 
 ```js
 import { createBrowserClient } from "./socketless.js";
 import { BrowserClientClass } from "./ui.js";
 const instance = createBrowserClient(BrowserClientClass);
 ```
+
+(Note that you do not need to place a `socketless.js` file in your assets directory: the client's web serer comes with special route handling for the request)
 
 This builds an instance of the provided class, with a `this.server` property that lets the browser (think it) communicate(s) with the server (in reality it's getting proxied by the real client), as well as a `this.socket` that is the websocket connection to the real client. You should almost _never_ need to use it, but for the rare few times that you do, it's there.
 
@@ -528,36 +522,80 @@ The browser is kept in sync with the client via the `this.state` variable, and b
 
 ### Authentication
 
-The `socketless` library does not come with authentication built in. If authentication is required, judicious use of `addRoute` is encouraged:
+The `socketless` library comes with limited authentication built in, in the form on a secret identifier. The main thing to bearing in mind is that only the server should be the authority when it comes to what constitutes an authenticated user.
+
+To use this form of authentication:
+
+1. Give the server a login API using HTTP end points, that can be posted to from the server's main page.
+2. On a successful log-in, make the server spin up a new web client and tell it to connect to the server URL with `?sid=...` as query argument.
+3. Give the authenticated user a link to their webclient's url that includes that same `?sid=...` query parameter.
+
+When the user clicks on this web client link, the codebase will perform an `sid` comparison both for the browser request for `socketless.js` _as well as_ for the websocket upgrade request (so folks can't just write their own websocket code and bypass the check built into the `socketless.js` browser library).
+
+As an example:
 
 ```js
-const { client, clientWebServer } = createWebClient(...);
-const { processAuthData, checkAuthentication} from "./my-middleware.js";
+const { ClientClass, ServerClass } = ...
+const factory = linkClasses(ClientClass, ServerClass);
+const { webserver } = factory.createServer();
 
-clientWebServer.addRoute(`/login`, processAuthData, (req, res) => {
-  if (req.method === `POST`) {
-    // ...
-  }
-});
+webserver.listen(0, () => {
+  const port = webserver.address().port;
+  const serverURL = `http://localhost:${port}`;
 
-clientWebServer.addRoute(`/`, checkAuthentication, (req, res) => {
-  // ...
-});
+  // generate a random, secret identifier and pass that into the web client:
+  const sid = Math.random().toString().substring(2);
+  const { client, clientWebServer } = factory.createWebClient(
+    `${serverURL}?sid=${sid}`, // <-- note the `sid` query argument here
+    `${__dirname}/webclient/public`,
+  );
 
-clientWebServer.listen(0, () => {
-  const PORT = clientWebServer.address().port;
-  const url = `http://localhost:${PORT}`;
-  console.log(`web client running on ${url}`);
+  let clientURL = `pending...`;
+
+  webserver.addRoute(`/`, (req, res) => {
+    res.writeHead(200, { "Content-Type": `text/html` });
+    res.end(`<!doctype html>
+      <html>
+        <body>
+          <a href="${clientURL}">${clientURL}</a>
+        </body>
+      </html>
+    `);
+  });
+
+  clientWebServer.listen(0, async () => {
+    const clientPort = clientWebServer.address().port;
+    clientURL = `http://localhost:${clientPort}?sid=${sid}`;
+  });
 });
 ```
 
-With an `index.html` that has a login form that posts to `/login`, setting `client.setState({ authenticated: true })` on success and returns a page that loads `socketless.js` so that the browser will ... something?
+This sets up the main server, with an index page on the `/` URL that has a link to the web client's URL, including the secret identifier.
 
-CONTINUE THINKING HERE
+And then on the webclient side, we make sure that our `public` dir has an index.html that loads some JS that looks like:
+
+```js
+import { BrowserClientClass } from "./ui.js";
+
+...
+
+// dynamic import for socketless.js so that we can pass the URL search parameters through
+import(`./socketless.js${location.search}`)
+  // if we passed in the correct secret identifier, the `socketless.js` library will get loaded in
+  .then((socketless) => {
+    // from here, the process is identical to if we were to use socketless without authentication.
+    const { createBrowserClient } = socketless;
+    createBrowserClient(BrowserClientClass);
+  })
+  // if we didn't, we'll get an error.
+  .catch((e) => console.error(e));
+```
+
+A little bit more work compared to running unauthenticated, but at least most of the heavy lifting is done by the `socketless` library, so the extra code required to use `sid` verification is only a few more lines of code.
 
 ### How to "quit"
 
-The `socketless` library does not come with a built in way to shut down the web client from the browser, mostly for security reasons. Instead, the recommended way to achieve this is to use a URL that the browser can navigate to (or `fetch()`) and have that trigger a client shutdown on if you as system designer want that to be possible:
+For security reasons, the `socketless` library does not come with a built in way to shut down the web client from the browser. While this means you need to implement this functionality yourself, the fact that the client is a web server makes that job relatively straight forward, with the recommended way to achieve this being to add a URL endpoint that the browser can navigate to and have that trigger a client shutdown:
 
 ```js
 ...
@@ -577,7 +615,7 @@ clientWebServer.listen(0, () => {
 });
 ```
 
-Your browser can then trigger this route using a page navigation to `/quit` or ``fetch(`/quit`)`` call. For added security, you probably also want to make sure only the connected browser is allowed to call this route, by dynamically generating the quit route in the client class as part of browser connection, and then remove it again during browser disconnects:
+The browser can then trigger this route using a page navigation to `/quit` or ``fetch(`/quit`)`` call. For added security, you probably also want to make sure only the connected browser is allowed to call this route, by dynamically generating the quit route in the client class as part of browser connection, and then remove it again during browser disconnects:
 
 ```js
 class ClientClass {

@@ -1,3 +1,5 @@
-import { createBrowserClient } from "./socketless.js";
 import { BrowserClientClass } from "./ui.js";
-createBrowserClient(BrowserClientClass);
+import(`./socketless.js${location.search}`).then((lib) => {
+  const { createBrowserClient } = lib;
+  createBrowserClient(BrowserClientClass);
+});

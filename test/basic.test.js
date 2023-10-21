@@ -19,9 +19,9 @@ describe("basic tests", () => {
       }
 
       const factory = linkClasses(ClientClass, ServerClass);
-      const server = factory.createServer();
-      server.listen(0, () => {
-        factory.createClient(`http://localhost:${server.address().port}`);
+      const { webserver } = factory.createServer();
+      webserver.listen(0, () => {
+        factory.createClient(`http://localhost:${webserver.address().port}`);
       });
     });
 
@@ -41,10 +41,10 @@ describe("basic tests", () => {
       }
 
       const factory = linkClasses(WebClientClass, ServerClass);
-      const server = factory.createServer();
-      server.listen(0, () => {
+      const { webserver } = factory.createServer();
+      webserver.listen(0, () => {
         factory.createWebClient(
-          `http://localhost:${server.address().port}`,
+          `http://localhost:${webserver.address().port}`,
           `${__dirname}/webclient/basic`,
         );
       });
@@ -66,10 +66,10 @@ describe("basic tests", () => {
       }
 
       const factory = linkClasses(WebClientClass, ServerClass);
-      const server = factory.createServer();
-      server.listen(0, () => {
+      const { webserver } = factory.createServer();
+      webserver.listen(0, () => {
         const { client, clientWebServer } = factory.createWebClient(
-          `http://localhost:${server.address().port}`,
+          `http://localhost:${webserver.address().port}`,
           `${__dirname}/webclient/basic`,
         );
 
@@ -129,9 +129,9 @@ describe("basic tests", () => {
       }
 
       const factory = linkClasses(ClientClass, ServerClass);
-      const server = factory.createServer();
-      server.listen(0, () =>
-        factory.createClient(`http://localhost:${server.address().port}`),
+      const { webserver } = factory.createServer();
+      webserver.listen(0, () =>
+        factory.createClient(`http://localhost:${webserver.address().port}`),
       );
     });
 
@@ -177,9 +177,9 @@ describe("basic tests", () => {
       }
 
       const factory = linkClasses(ClientClass, ServerClass);
-      const server = factory.createServer();
-      server.listen(0, () => {
-        factory.createClient(`http://localhost:${server.address().port}`);
+      const { webserver } = factory.createServer();
+      webserver.listen(0, () => {
+        factory.createClient(`http://localhost:${webserver.address().port}`);
       });
     });
   });

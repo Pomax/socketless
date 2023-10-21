@@ -5,6 +5,8 @@ import { join } from "node:path";
 
 import { socketlessjs } from "./socketless.js";
 
+const DEBUG = false;
+
 const CONTENT_TYPES = {
   ".html": `text/html`,
   ".css": `text/css`,
@@ -37,25 +39,32 @@ function sanitizeLocation(location, publicDir) {
 }
 
 // ...docs go here...
-function generate404(location, response) {
+function generate404(location, response, reason = ``) {
   // We're going to assume any bad URL is a 404. Even if it's an attempt at "h4x0r3s"
-  console.error(`Can't serve ${location}, so it probably doesn't exist`);
-  response.writeHead(404, { "Content-Type": `text/html` });
+  if (DEBUG)
+    console.error(
+      reason ?? `Can't serve ${location}, so it probably doesn't exist`,
+    );
+  response.writeHead(404, { "Content-Type": getContentType(`.html`) });
   response.end(`<doctype html><html><body>resource not found</body></html>`);
 }
 
 /**
  * Create a route handler for our local web server
  */
-export function makeRouteHandler(publicDir, customRouter) {
+export function makeRouteHandler(client, publicDir, customRouter) {
   return async (request, response) => {
+    request.params = {
+      get: (_) => undefined,
+    };
+
     if (request.url.includes(`?`)) {
       const [url, params] = request.url.split(/\\?\?/);
       request.url = url;
       request.params = new URLSearchParams(params);
     }
 
-    const url = request.url;
+    const { url, params } = request;
 
     // this should never have been default behaviour
     if (url === `/favicon.ico`) {
@@ -65,6 +74,14 @@ export function makeRouteHandler(publicDir, customRouter) {
 
     // special handling for socketless.js
     if (url === `/socketless.js`) {
+      const sid = client.params.get(`sid`);
+      if (sid && params.get(`sid`) !== sid) {
+        return generate404(
+          `socketless.js`,
+          response,
+          `sid mismatch, not serving socketless.js`,
+        );
+      }
       response.writeHead(200, { "Content-Type": getContentType(`.js`) });
       return response.end(socketlessjs, `utf-8`);
     }

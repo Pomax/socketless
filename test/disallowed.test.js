@@ -20,11 +20,10 @@ function clientTest(ClientClass, __done) {
   }
 
   const factory = linkClasses(ClientClass, ServerClass);
-  const server = factory.createServer();
-  server.listen(0, () => {
-    const client = factory.createClient(
-      `http://localhost:${server.address().port}`,
-    );
+  const { webserver } = factory.createServer();
+  webserver.listen(0, () => {
+    const serverURL = `http://localhost:${webserver.address().port}`;
+    const client = factory.createClient(serverURL);
     client.done = done;
   });
 }
@@ -57,17 +56,18 @@ function serverTest(ServerClass, __done, WEB_TEST = false) {
   }
 
   const factory = linkClasses(ClientClass, Wrapper);
-  const server = factory.createServer();
-  server.listen(0, () => {
+  const { webserver } = factory.createServer();
+  webserver.listen(0, () => {
+    const serverURL = `http://localhost:${webserver.address().port}`;
     if (WEB_TEST) {
       const web = factory.createWebClient(
-        `http://localhost:${server.address().port}`,
+        serverURL,
         `${__dirname}/webclient/basic`,
       );
       client = web.client;
       web.clientWebServer.listen(0);
     } else {
-      factory.createClient(`http://localhost:${server.address().port}`);
+      factory.createClient(serverURL);
     }
   });
 }
@@ -416,7 +416,7 @@ describe("illegal access tests", () => {
    *
    */
   describe("server to webclient", () => {
-    it("server cannot call client.connectBrowserSocket", (done) => {
+    it("server cannot call webclient.connectBrowserSocket", (done) => {
       class ServerClass {
         async onConnect(client) {
           try {
@@ -442,7 +442,7 @@ describe("illegal access tests", () => {
       serverWebTest(ServerClass, done);
     });
 
-    it("server cannot call client.disconnectBrowserSocket", (done) => {
+    it("server cannot call webclient.disconnectBrowserSocket", (done) => {
       class ServerClass {
         async onConnect(client) {
           try {
@@ -468,7 +468,7 @@ describe("illegal access tests", () => {
       serverWebTest(ServerClass, done);
     });
 
-    it("server cannot call client.onQuit", (done) => {
+    it("server cannot call webclient.onQuit", (done) => {
       class ServerClass {
         async onConnect(client) {
           try {
@@ -489,7 +489,7 @@ describe("illegal access tests", () => {
       serverWebTest(ServerClass, done);
     });
 
-    it("server cannot call client.teardown", (done) => {
+    it("server cannot call webclient.teardown", (done) => {
       class ServerClass {
         async onConnect(client) {
           try {
@@ -512,7 +512,7 @@ describe("illegal access tests", () => {
       serverWebTest(ServerClass, done);
     });
 
-    it("server cannot call client.browser.update", (done) => {
+    it("server cannot call webclient.browser.update", (done) => {
       class ServerClass {
         async onConnect(client) {
           try {
@@ -535,7 +535,7 @@ describe("illegal access tests", () => {
       serverWebTest(ServerClass, done);
     });
 
-    it("server cannot call client.ws.close", (done) => {
+    it("server cannot call webclient.ws.close", (done) => {
       class ServerClass {
         async onConnect(client) {
           try {
@@ -556,7 +556,7 @@ describe("illegal access tests", () => {
       serverWebTest(ServerClass, done);
     });
 
-    it("server cannot call client.webserver.close", (done) => {
+    it("server cannot call webclient.webserver.close", (done) => {
       class ServerClass {
         async onConnect(client) {
           try {
