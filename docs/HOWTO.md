@@ -658,7 +658,7 @@ And with that, our App will start up, and one-time create the browser client suc
 
 #### Vue
 
-The direct way to tie `socketless` into view is by using the above event approach, and simply tapping into that event on the Vue side by using a `v-on:socketless-update` attribute.
+The direct way to tie `socketless` into Vue is by using the above event approach, and simply tapping into that event on the Vue side by using a `v-on:socketless-update` attribute.
 
 Alternatively, you can also use your app's `mounted` functionality: declare a `state` variable in `data()`, then create the browser client in `mounted()` and have that update the Vue app's `state` variable:
 

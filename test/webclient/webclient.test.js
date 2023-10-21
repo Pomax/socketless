@@ -1,11 +1,10 @@
-import { linkClasses } from "../../src/index.js";
+import { linkClasses, ALLOW_SELF_SIGNED_CERTS } from "../../library.js";
 
 import puppeteer from "puppeteer";
 import url from "url";
 const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
 
-const ALLOW_SELF_SIGNED_CERTS = true;
-
+// self-signed certificate code for HTTPS:
 import pem from "pem";
 const httpsOptions = await new Promise((resolve, reject) => {
   pem.createCertificate(
@@ -13,12 +12,16 @@ const httpsOptions = await new Promise((resolve, reject) => {
     function (e, { clientKey: key, certificate: cert }) {
       if (e) return reject(e);
       resolve({ key, cert });
-    },
+    }
   );
 });
 
-const DEBUG = false;
-
+/**
+ * ...
+ * @param {*} done
+ * @param {*} getError
+ * @returns
+ */
 function getClasses(done, getError) {
   class ClientClass {
     async onConnect() {
@@ -27,7 +30,7 @@ function getClasses(done, getError) {
           this.setState({
             randomValue: Math.random(),
           }),
-        3000,
+        3000
       );
     }
     onQuit() {
@@ -64,23 +67,26 @@ describe("web client tests", () => {
     server.listen(0, () => {
       const PORT = server.address().port;
       const url = `http://localhost:${PORT}`;
-
       const { client, clientWebServer } = factory.createWebClient(
         url,
-        `${__dirname}/dedicated`,
+        `${__dirname}/dedicated`
       );
 
       clientWebServer.addRoute(`/quit`, (req, res) => {
-        client.quit();
-        res.write("client disconnected");
-        res.end();
+        res.end("client disconnected");
+        // Not sure why we need a timeout here, but if
+        // we don't the browser get uppity on MacOS...
+        setTimeout(() => client.quit(), 25);
       });
 
       clientWebServer.listen(0, async () => {
         const browser = await puppeteer.launch({ headless: `new` });
         const page = await browser.newPage();
-        page.on("pageerror", (msg) => (error = new Error(msg)));
-        page.on("console", (msg) => console.error(msg.text()));
+        page.on(
+          "pageerror",
+          (msg) => (error = new Error(`[browser error]`, msg))
+        );
+        page.on("console", (msg) => console.log(`[browser log]`, msg.text()));
         await page.goto(`http://localhost:${clientWebServer.address().port}`);
         await page.waitForSelector(`.testfield`);
         await page.click(`#quit`);
@@ -100,29 +106,30 @@ describe("web client tests", () => {
     server.listen(0, () => {
       const PORT = server.address().port;
       const url = `https://localhost:${PORT}`;
-
-      // Create a webclient, which creates a real client as well as
-      // a web server so your browser can connect to something.
       const { client, clientWebServer } = factory.createWebClient(
         url,
         `${__dirname}/dedicated`,
         false,
-        ALLOW_SELF_SIGNED_CERTS,
+        ALLOW_SELF_SIGNED_CERTS
       );
 
-      clientWebServer.addRoute(`/quit`, function (req, res) {
-        client.quit();
-        res.write("client disconnected");
-        res.end();
-        clientWebServer.close();
+      clientWebServer.addRoute(`/quit`, (req, res) => {
+        res.end("client disconnected");
+        // Not sure why we need a timeout here, but if
+        // we don't the browser get uppity on MacOS...
+        setTimeout(() => client.quit(), 25);
       });
 
       clientWebServer.listen(0, async () => {
+        const url = `http://localhost:${clientWebServer.address().port}`;
         const browser = await puppeteer.launch({ headless: `new` });
         const page = await browser.newPage();
-        page.on("pageerror", (msg) => (error = new Error(msg)));
-        page.on("console", (msg) => console.error(msg.text()));
-        await page.goto(`http://localhost:${clientWebServer.address().port}`);
+        page.on(
+          "pageerror",
+          (msg) => (error = new Error(`[browser error]`, msg))
+        );
+        page.on("console", (msg) => console.log(`[browser log]`, msg.text()));
+        await page.goto(url);
         await page.waitForSelector(`.testfield`);
         await page.click(`#quit`);
         await browser.close();
@@ -130,6 +137,9 @@ describe("web client tests", () => {
     });
   });
 
+  /**
+   * ...
+   */
   it("should run on https for both the server and the webclient", (done) => {
     let error;
     const { ClientClass, ServerClass } = getClasses(done, () => error);
@@ -138,23 +148,18 @@ describe("web client tests", () => {
     server.listen(0, () => {
       const PORT = server.address().port;
       const url = `https://localhost:${PORT}`;
-      if (DEBUG) console.log(`test server running on ${url}`);
-
-      // Create a webclient, which creates a real client as well as
-      // a web server so your browser can connect to something.
       const { client, clientWebServer } = factory.createWebClient(
         url,
         `${__dirname}/dedicated`,
         httpsOptions,
-        ALLOW_SELF_SIGNED_CERTS,
+        ALLOW_SELF_SIGNED_CERTS
       );
 
-      clientWebServer.addRoute(`/quit`, function (req, res) {
-        client.quit();
-        res.write("client disconnected");
-        res.end();
-        if (DEBUG) console.log(`shutting down client web server`);
-        clientWebServer.close();
+      clientWebServer.addRoute(`/quit`, (req, res) => {
+        res.end("client disconnected");
+        // Not sure why we need a timeout here, but if
+        // we don't the browser get uppity on MacOS...
+        setTimeout(() => client.quit(), 25);
       });
 
       clientWebServer.listen(0, async () => {
@@ -163,8 +168,11 @@ describe("web client tests", () => {
           ignoreHTTPSErrors: true,
         });
         const page = await browser.newPage();
-        page.on("pageerror", (msg) => (error = new Error(msg)));
-        page.on("console", (msg) => console.error(msg.text()));
+        page.on(
+          "pageerror",
+          (msg) => (error = new Error(`[browser error]`, msg))
+        );
+        page.on("console", (msg) => console.log(`[browser log]`, msg.text()));
         await page.goto(`https://localhost:${clientWebServer.address().port}`);
         await page.waitForSelector(`.testfield`);
         await page.click(`#quit`);

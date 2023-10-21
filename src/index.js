@@ -15,7 +15,7 @@ import { RESPONSE_SUFFIX, getResponseName } from "./upgraded-socket.js";
 const FORCED_ROUTE_HANDLING = true;
 
 // a convenience export
-export const ALLOW_SELF_SIGNED_CERTS = true;
+export const ALLOW_SELF_SIGNED_CERTS = Symbol("allow self-signed certificates");
 
 /**
  * Create a client/server factory, given the client and server classes.
@@ -96,7 +96,7 @@ function generator(ClientClass, ServerClass) {
     /**
      * Create a client instance for this client/server API.
      * @param {string} serverURL
-     * @param {boolean} allow_self_signed_certs
+     * @param {Symbol|undefined} allow_self_signed_certs
      * @param {*} TargetClientClass optional, defaults to ClientClass
      * @returns
      */
@@ -107,7 +107,7 @@ function generator(ClientClass, ServerClass) {
     ) {
       serverURL = serverURL.replace(`http`, `ws`);
       const socketToServer = new WebSocket(serverURL, {
-        rejectUnauthorized: !allow_self_signed_certs,
+        rejectUnauthorized: allow_self_signed_certs !== ALLOW_SELF_SIGNED_CERTS,
       });
       const client = new TargetClientClass();
       socketToServer.on(`close`, (...data) => client.onDisconnect(...data));
@@ -135,7 +135,7 @@ function generator(ClientClass, ServerClass) {
      * @param {string} serverUrl
      * @param {string} publicDir
      * @param {*} httpsOptions
-     * @param {boolean} allow_self_signed_certs
+     * @param {Symbol|undefined} allow_self_signed_certs
      * @returns {{ client: WebClientClass, clientWebServer: http.Server}}
      */
     createWebClient: function createWebClient(
