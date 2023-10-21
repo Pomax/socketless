@@ -1,4 +1,4 @@
-import { linkClasses } from "../library.js";
+import { linkClasses, ALLOW_SELF_SIGNED_CERTS } from "../library.js";
 import express from "express";
 import http from "http";
 import https from "https";
@@ -10,8 +10,6 @@ function execute(command) {
     exec(command, (e, out, err) => (e ? reject(err) : resolve(out)));
   });
 }
-
-const ALLOW_SELF_SIGNED_CERTS = true;
 
 const httpsOptions = await new Promise((resolve, reject) => {
   pem.createCertificate(
@@ -33,17 +31,19 @@ describe("server tests", () => {
     }
 
     const factory = linkClasses(ClientClass, ServerClass);
-    const server = factory.createServer();
+    const { webserver } = factory.createServer();
 
-    server.listen(0, () =>
-      factory.createClient(`http://localhost:${server.address().port}`),
+    webserver.listen(0, () =>
+      factory.createClient(`http://localhost:${webserver.address().port}`),
     );
   });
 
   it("can run with user-provided plain http server", (done) => {
+    let error;
+
     class ServerClass {
       onDisconnect = () => (this.clients.length ? null : this.quit());
-      teardown = () => done();
+      teardown = () => done(error && new Error(error));
     }
 
     class ClientClass {
@@ -51,18 +51,19 @@ describe("server tests", () => {
     }
 
     const factory = linkClasses(ClientClass, ServerClass);
-    const webserver = http.createServer();
-    const server = factory.createServer(webserver);
-    expect(server).toBe(webserver);
+    const server = http.createServer();
+    const { webserver } = factory.createServer(server);
 
-    server.listen(0, () =>
-      factory.createClient(`http://localhost:${server.address().port}`),
+    if (server !== webserver) {
+      error = "different servers?";
+    }
+
+    webserver.listen(0, () =>
+      factory.createClient(`http://localhost:${webserver.address().port}`),
     );
   });
 
   it("can create https server", (done) => {
-    expect(httpsOptions).toBeDefined();
-
     class ServerClass {
       onDisconnect = () => (this.clients.length ? null : this.quit());
       teardown = () => done();
@@ -73,21 +74,44 @@ describe("server tests", () => {
     }
 
     const factory = linkClasses(ClientClass, ServerClass);
-    const server = factory.createServer(httpsOptions);
-    server.listen(0, () => {
+    const { webserver } = factory.createServer(httpsOptions);
+    webserver.listen(0, () => {
       factory.createClient(
-        `https://localhost:${server.address().port}`,
+        `https://localhost:${webserver.address().port}`,
         ALLOW_SELF_SIGNED_CERTS,
       );
     });
   });
 
+  it("rejects https server with self-signed certificate without ALLOW_SELF_SIGNED_CERTS", (done) => {
+    let error = `connection was allowed through`;
+
+    class ServerClass {
+      teardown = () => done(error && new Error(error));
+    }
+
+    class ClientClass {
+      onError(err) {
+        if (err.message === `self-signed certificate`) {
+          error = undefined;
+        }
+        server.quit();
+      }
+    }
+
+    const factory = linkClasses(ClientClass, ServerClass);
+    const { server, webserver } = factory.createServer(httpsOptions);
+    webserver.listen(0, () => {
+      factory.createClient(`https://localhost:${webserver.address().port}`);
+    });
+  });
+
   it("can run with user-provided https server", (done) => {
-    expect(httpsOptions).toBeDefined();
+    let error;
 
     class ServerClass {
       onDisconnect = () => (this.clients.length ? null : this.quit());
-      teardown = () => done();
+      teardown = () => done(error && new Error(error));
     }
 
     class ClientClass {
@@ -95,23 +119,27 @@ describe("server tests", () => {
     }
 
     const factory = linkClasses(ClientClass, ServerClass);
-    const webserver = https.createServer(httpsOptions);
-    const server = factory.createServer(webserver);
-    expect(server).toBe(webserver);
-    server.listen(0, () => {
+    const server = https.createServer(httpsOptions);
+    const { webserver } = factory.createServer(server);
+
+    if (server !== webserver) {
+      error = "different servers?";
+    }
+
+    webserver.listen(0, () => {
       factory.createClient(
-        `https://localhost:${server.address().port}`,
+        `https://localhost:${webserver.address().port}`,
         ALLOW_SELF_SIGNED_CERTS,
       );
     });
   });
 
   it("can run with user-provided plain http Express server", (done) => {
+    let error;
+
     class ServerClass {
       onDisconnect = () => (this.clients.length ? null : this.quit());
-      teardown = () => {
-        done();
-      };
+      teardown = () => done(error && new Error(error));
     }
 
     class ClientClass {
@@ -131,7 +159,10 @@ describe("server tests", () => {
       const serverURL = `http://localhost:${server.address().port}/`;
       const response = await fetch(serverURL);
       const data = await response.text();
-      expect(data).toBe(ROUTE_TEXT);
+
+      if (data !== ROUTE_TEXT) {
+        error = `incorrect page response`;
+      }
 
       // then test socketless functionality
       const factory = linkClasses(ClientClass, ServerClass);
@@ -141,9 +172,11 @@ describe("server tests", () => {
   });
 
   it("can run with user-provided https Express server", (done) => {
+    let error;
+
     class ServerClass {
       onDisconnect = () => (this.clients.length ? null : this.quit());
-      teardown = () => done();
+      teardown = () => done(error && new Error(error));
     }
 
     class ClientClass {
@@ -165,7 +198,10 @@ describe("server tests", () => {
       // over the self-signed cert, so we outsource this one to curl:
       const serverURL = `https://localhost:${server.address().port}/`;
       const result = await execute(`curl --insecure ${serverURL}`);
-      expect(result).toBe(ROUTE_TEXT);
+
+      if (result !== ROUTE_TEXT) {
+        error = `incorrect page response`;
+      }
 
       // then test socketless functionality
       const factory = linkClasses(ClientClass, ServerClass);

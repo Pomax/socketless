@@ -40,6 +40,7 @@ For security reasons, a constructor is strongly discouraged. If present, it will
 
 ### event handlers
 
+- `onError(error)`, triggers if there are websocket errors during connection negotiation.
 - `onConnect(client)`, triggers after a client has connected. `client` is a proxy, and will have already been added to `this.clients`.
 - `onDisconnect(client)`, triggers after a client has disconnected. `client` is a proxy, and will have already been removed from `this.clients`.
 - `onQuit()`, triggered before the server closes its web server and websocket server.
@@ -61,6 +62,7 @@ For security reasons, a constructor is strongly discouraged. If present, it will
 
 ### event handlers
 
+- `onError(error)`, triggers if there are websocket errors during connection negotiation.
 - `onConnect()`, triggers after the client has connected to the server.
 - `onDisconnect()`, triggers after the client has disconnected from the server.
 

@@ -74,6 +74,9 @@ function generator(ClientClass, ServerClass) {
 
       // create a websocket server, so we can handle websocket upgrade calls.
       const ws = new WebSocketServer({ noServer: true });
+
+      ws.on(`error`, (err) => server.onError(err));
+
       webserver.on(`upgrade`, (req, socket, head) => {
         // console.log(`http->ws upgrade call`);
         ws.handleUpgrade(req, socket, head, (websocket) => {
@@ -127,6 +130,8 @@ function generator(ClientClass, ServerClass) {
       const socketToServer = new WebSocket(serverURL, {
         rejectUnauthorized: allow_self_signed_certs !== ALLOW_SELF_SIGNED_CERTS,
       });
+
+      socketToServer.on(`error`, (err) => client.onError(err));
 
       socketToServer.on(`close`, (...data) => client.onDisconnect(...data));
 

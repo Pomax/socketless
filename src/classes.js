@@ -42,6 +42,11 @@ export function formClientClass(ClientClass) {
       });
     }
 
+    async onError(error) {
+      super.onError?.(error);
+      if (DEBUG) console.log(`[ClientBase] some kind of error occurred.`);
+    }
+
     onConnect() {
       super.onConnect?.();
       if (DEBUG) console.log(`[ClientBase] client ${this.state.id} connected.`);
@@ -139,14 +144,19 @@ export function formServerClass(ServerClass) {
       });
     }
 
-    async onDisconnect(client) {
-      super.onDisconnect?.(client);
-      if (DEBUG) console.log(`[ServerBase] client ${client.id} disconnected.`);
+    async onError(error) {
+      super.onError?.(error);
+      if (DEBUG) console.log(`[ServerBase] some kind of error occurred.`);
     }
 
     async onConnect(client) {
       super.onConnect?.(client);
       if (DEBUG) console.log(`[ServerBase] client ${client.id} connected.`);
+    }
+
+    async onDisconnect(client) {
+      super.onDisconnect?.(client);
+      if (DEBUG) console.log(`[ServerBase] client ${client.id} disconnected.`);
     }
 
     async quit() {

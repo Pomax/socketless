@@ -86,6 +86,27 @@ describe("illegal access tests", () => {
    * ...
    */
   describe("client to server ", () => {
+    it("client cannot call server.onError", (done) => {
+      class ClientClass {
+        async onConnect() {
+          try {
+            await this.server.onError();
+            return this.done(
+              new Error(`Client was able to call server.onError function`),
+            );
+          } catch (e) {
+            if (e.message !== `Illegal call: onError is a protected property`) {
+              return this.done(
+                new Error(`received incorrect error message "${e.message}"`),
+              );
+            }
+            this.done();
+          }
+        }
+      }
+      clientTest(ClientClass, done);
+    });
+
     it("client cannot call server.onConnect", (done) => {
       class ClientClass {
         async onConnect() {
@@ -295,6 +316,27 @@ describe("illegal access tests", () => {
    *
    */
   describe("server to client", () => {
+    it("server cannot call client.onError", (done) => {
+      class ServerClass {
+        async onConnect(client) {
+          try {
+            await client.onError();
+            return this.done(
+              new Error(`Server was able to call client.onError function`),
+            );
+          } catch (e) {
+            if (e.message !== `Illegal call: onError is a protected property`) {
+              return this.done(
+                new Error(`received incorrect error message "${e.message}"`),
+              );
+            }
+          }
+          this.done();
+        }
+      }
+      serverTest(ServerClass, done);
+    });
+
     it("server cannot call client.onConnect", (done) => {
       class ServerClass {
         async onConnect(client) {

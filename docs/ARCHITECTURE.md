@@ -71,6 +71,7 @@ Server instances have access to the following pre-specified properties:
 
 Your server class may also implement any of the following event handlers:
 
+- `onError(error)`, triggers if there are websocket errors during connection negotiation.
 - `onConnect(client)`, triggers after a client has connected.
 - `onDisconnect(client)`, triggers after a client has disconnected.
 - `onQuit()`, triggered before the server closes its web server and websocket server.
@@ -89,6 +90,7 @@ Client instances have access to the following pre-specified properties:
 
 Your client class may also implement any of the following event handlers:
 
+- `onError(error)`, triggers if there are websocket errors during connection negotiation.
 - `onConnect()`, triggered after the client connects to the server.
 - `onBrowserConnect()`, if this is a web client, triggered after a browser connects.
 - `onDisconnect()`, triggered after the client gets disconnected from the server.
