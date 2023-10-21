@@ -8,11 +8,8 @@ This document mostly exists to let me track whether we're at v1 or not yet.
   - [x] full vs. diffed state transmission
 - [x] disallow calling Base functions over RPC, except for the client's `syncState` and `quit`,
       by the browser, and `disconnect`, by the server (i.e. a server kick).
-- [] can clients call server.clients[0].something? Or the server call client.server.some.function?
 - [x] figure out a way to turn "generateSocketless" into something that can be bundled.
 - [x] "get user input from browser" mechanism for client code when this.browser===true, after looking at what the MJ implementation actually needs/uses.
-- [] web clients need a way to fully shut down (i.e. shut down their web server and their socket server). Right now the browser can force the client to disconnect, but it won't shut down.
-  - this might be a docs issue...
 
 # Tests
 
@@ -63,3 +60,8 @@ create several new demos
 # Useful for dev
 
 "why-is-node-running": "^2.2.2"
+
+
+# TRUE TODO
+
+Work out the howto docs for Authentication. 

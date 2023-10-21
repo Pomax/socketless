@@ -68,10 +68,17 @@ describe("basic tests", () => {
       const factory = linkClasses(WebClientClass, ServerClass);
       const server = factory.createServer();
       server.listen(0, () => {
-        const { clientWebServer } = factory.createWebClient(
+        const { client, clientWebServer } = factory.createWebClient(
           `http://localhost:${server.address().port}`,
           `${__dirname}/webclient/basic`,
         );
+
+        clientWebServer.addRoute(`/quit`, (req, res) => {
+          res.end("client disconnected");
+          // Not sure why we need a timeout here, but if
+          // we don't the browser get uppity on MacOS...
+          setTimeout(() => client.quit(), 25);
+        });
 
         clientWebServer.listen(0, async () => {
           const clientURL = `http://localhost:${

@@ -105,6 +105,24 @@ server.listen(0, () => {
 });
 ```
 
+Note that unlike most frameworked, `addRoute` is not tied to a specific HTTP verb. You can examine `req.method` if you need handling based on GET/POST/etc.
+
+Also note that if you want to transport values across middleware functions, there is no predefined way to do so. However, [much like in Express](https://expressjs.com/en/guide/writing-middleware.html), you should be able to just tack your values onto the `req` object, provided the values you're storing don't conflict with the handful of predefined [http.ClientRequest](https://nodejs.org/api/https.html) properties:
+
+```js
+server.addRoute(
+  `/`,
+  (req, res, next) => {
+    req.currentTime = Date.now();
+    next();
+  },
+  (req, res) => {
+    res.writeHead(200, { "Content-Type": `text/plain` });
+    res.end(`time was ${req.currentTime}`);
+  }
+);
+```
+
 And should you ever need to remove a specific route handler, then `removeRoute(url)` will do that for you.
 
 Now, this HTTP server can of course be presented to the outside world over HTTPS using an intermediary like [NGINX](https://www.nginx.com), but you could also...
@@ -508,25 +526,54 @@ Browser client classes may have an `init()` function, in which case that functio
 
 The browser is kept in sync with the client via the `this.state` variable, and browser client classes _should_ have an `update(prevState)` function, which gets called every time the state gets synced with the client. This is a one-way sync: the browser should be considered "a UI on top of the client's state", where the client is the _actual_ authority when it comes to what its state is. Do not write code that modifies `this.state` in the browser, treat it as a read-only variable, with the `update(prevState)` function being the signal that the state got updated, with the current state being `this.state` and the previous state being the `prevState` argument.
 
-### How to "quit"
+### Authentication
 
-The `socketless` library explicitly does not come with a built in way to shut down the web client. Instead, the recommended way to achieve this is to use a URL that the browser can navigate to (or `fetch()`) and have that trigger a client shutdown:
+The `socketless` library does not come with authentication built in. If authentication is required, judicious use of `addRoute` is encouraged:
 
 ```js
-const serverUrl = `...`;
-const { client, clientWebServer } = createWebClient(url, `${__dirname}/public`);
+const { client, clientWebServer } = createWebClient(...);
+const { processAuthData, checkAuthentication} from "./my-middleware.js";
 
-clientWebServer.addRoute(`/quit`, (req, res) => {
-  client.quit();
-  clientWebServer.close();
-  res.write("client disconnected");
-  res.end();
+clientWebServer.addRoute(`/login`, processAuthData, (req, res) => {
+  if (req.method === `POST`) {
+    // ...
+  }
+});
+
+clientWebServer.addRoute(`/`, checkAuthentication, (req, res) => {
+  // ...
 });
 
 clientWebServer.listen(0, () => {
   const PORT = clientWebServer.address().port;
   const url = `http://localhost:${PORT}`;
-  if (DEBUG) console.log(`web client running on ${url}`);
+  console.log(`web client running on ${url}`);
+});
+```
+
+With an `index.html` that has a login form that posts to `/login`, setting `client.setState({ authenticated: true })` on success and returns a page that loads `socketless.js` so that the browser will ... something?
+
+CONTINUE THINKING HERE
+
+### How to "quit"
+
+The `socketless` library does not come with a built in way to shut down the web client from the browser, mostly for security reasons. Instead, the recommended way to achieve this is to use a URL that the browser can navigate to (or `fetch()`) and have that trigger a client shutdown on if you as system designer want that to be possible:
+
+```js
+...
+
+const { client, clientWebServer } = createWebClient(...);
+
+clientWebServer.addRoute(`/quit`, (req, res) => {
+  res.end("web client quit", () => {
+    client.quit();
+  });
+});
+
+clientWebServer.listen(0, () => {
+  const PORT = clientWebServer.address().port;
+  const url = `http://localhost:${PORT}`;
+  console.log(`web client running on ${url}`);
 });
 ```
 
@@ -535,26 +582,26 @@ Your browser can then trigger this route using a page navigation to `/quit` or `
 ```js
 class ClientClass {
   ...
-
   async onBrowserConnect(browser) {
     this.state.quitURL = `/${uuid.v4()}`
     this.webserver.addRoute(this.state.quitURL, (req, res) => {
-      this.webserver.close();
-      this.quit();
-      res.write("Thank you, come again!");
-      res.end();
+      res.end("Thank you, come again!", () => {
+        this.quit();
+      });
     });
   }
-
   async onBrowserDisconnect(browser) {
     this.webserver.removeRoute(this.state.quitURL);
   }
-
   ...
 }
 ```
 
 And then because of the state syncing mechanism, your browser code will be able to use `this.state.quitURL` to call the correct URL that shuts the real client down.
+
+### Connecting with multiple browsers
+
+Web clients are set up to allow a single browser to connect, and reject additional browser connections until the current connection gets closed. Rather that connecting multiple browsers to a single web client, give each user their own web client instead.
 
 ### Examples of browser classes
 

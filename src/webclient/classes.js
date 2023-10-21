@@ -18,11 +18,11 @@ export function formWebClientClass(ClientClass) {
     // No functions except `quit` and `syncState` may be proxy-invoked
     static get disallowedCalls() {
       const names = Object.getOwnPropertyNames(WebClient.prototype).concat(
-        ClientClass.disallowedCalls,
+        ClientClass.disallowedCalls
       );
       // allow quit() and syncState() to be called
       [`constructor`, `quit`, `syncState`].forEach((name) =>
-        names.splice(names.indexOf(name), 1),
+        names.splice(names.indexOf(name), 1)
       );
       // but of course don't allow access to the "special" properties
       names.push(`browser`, `ws`, `webserver`);
@@ -44,8 +44,11 @@ export function formWebClientClass(ClientClass) {
     }
 
     connectBrowserSocket(browserSocket) {
-      if (!this.browser) {
-        // note that there is no auth here (yet)
+      if (this.browser) {
+        // We don't allow more than one browser to connect
+        browserSocket.close();
+      } else {
+        // Note that there is no auth here. this is left up to devs to implement.
         this.browser = proxySocket(WEBCLIENT, BROWSER, this, browserSocket);
         this.browser.socket.__seq_num = 0;
         this.setState(this.state);
@@ -76,7 +79,7 @@ export function formWebClientClass(ClientClass) {
           if (DEBUG)
             console.log(
               `[WebClientBase] sending diff as part of setState:`,
-              payload,
+              payload
             );
           this.browser.socket.send(JSON.stringify(payload));
         } else {
@@ -90,7 +93,7 @@ export function formWebClientClass(ClientClass) {
       if (this.browser) {
         if (DEBUG)
           console.log(
-            `[WebClientBase] running syncState (will respond with full state)`,
+            `[WebClientBase] running syncState (will respond with full state)`
           );
         const fullState = JSON.parse(JSON.stringify(this.state));
         this.browser.socket.__seq_num = 0;
@@ -99,7 +102,7 @@ export function formWebClientClass(ClientClass) {
         return fullState;
       }
       throw new Error(
-        "[WebClientBase] Cannot sync state: no browser attached to client.",
+        "[WebClientBase] Cannot sync state: no browser attached to client."
       );
     }
 

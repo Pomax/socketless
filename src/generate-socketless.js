@@ -56,25 +56,6 @@ function generateSocketless() {
       value: proxySocket("${BROWSER}", "${WEBCLIENT}", browserClient, socket),
     });
 
-    // set up the custom function for shutting down the web client:
-    const quit = async() => {
-      if (browserClient.socket.readyState !== 1) {
-        return setTimeout(quit, 100);
-      }
-      browserClient.socket.send(
-        JSON.stringify({
-          name: "quit",
-          payload: {
-            // id: browserClient.id // TODO: have the browser and webclient negotiate an id?
-          },
-        })
-      );
-      browserClient.socket.close();
-      browserClient.teardown?.();
-    };
-
-    Object.defineProperty(browserClient, "quit", { ...propertyConfig, value: quit });
-
     browserClient.state = {};
     browserClient.init?.();
     return browserClient;
