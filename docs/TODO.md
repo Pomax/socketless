@@ -18,6 +18,7 @@ This document mostly exists to let me track whether we're at v1 or not yet.
     - [x] server + client
     - [x] server + webclient
     - [x] (server +) webclient + browser
+    - [x] add "sid" verification tests, including a browser creating its own websocket connection rather than using socketless.js in an attempt to gain direct access
   - [] disallowed access
     - [x] client to server
     - [x] server to client
@@ -25,7 +26,11 @@ This document mostly exists to let me track whether we're at v1 or not yet.
     - [x] server to webclient
     - [] webclient to browser?
     - [] browser to webclient?
-  - [] add "sid" verification tests, including a browser creating its own websocket connection rather than using socketless.js in an attempt to gain direct access
+  - [] server types
+    - [x] basic http
+    - [x] basic https
+    - [x] express server
+    - [x] verify self-signed does not work without symbol
 
 # Documentation
 
