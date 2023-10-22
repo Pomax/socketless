@@ -1,54 +1,51 @@
-const GameManager = require(`./GameManager.js`);
+import { GameManager } from "./GameManager.js";
 
-class ServerClass {
+export class ServerClass {
   constructor() {
-    log("created");
+    console.log("server created");
     this.gm = new GameManager();
+
+    this.game = {
+      getList: (client) => {
+        return this.gm.getList();
+      },
+      create: (client) => {
+        this.gm.create(client);
+        this.notifyGameList();
+      },
+      join: (client, { gameId }) => {
+        this.gm.join(gameId, client);
+        this.notifyGameList();
+      },
+      play: (client, { gameId, position }) => {
+        this.gm.play(gameId, client.id, position);
+      },
+    };
   }
 
-  onConnect(client) {
-    log(`new connection, ${this.clients.length} clients connected`);
-    client.admin.setId(client.id);
-    client.game.list({ games: this.gm.getList() });
+  async onConnect(client) {
+    console.log(`new connection, ${this.clients.length} clients connected`);
+    await client.admin.setId(client.id);
+    await client.game.list({ games: this.gm.getList() });
   }
 
   onDisconnect(client) {
-    log(`client ${client.id} disconnected`);
+    console.log(`client ${client.id} disconnected`);
     if (this.clients.length === 0) {
-      log(`no clients connected, shutting down.`);
+      console.log(`no clients connected, shutting down.`);
       this.quit();
     }
   }
 
-  async "game:getList"(client) {
-    return this.gm.getList();
+  teardown() {
+    // FIXME: I don't like this...
+    process.exit(0);
   }
 
   notifyGameList() {
-    this.clients.forEach(client =>
-      client.game.list({
-        games: this.gm.getList(client)
-      })
-    );
+    this.clients.forEach((client) => {
+      const games = this.gm.getList(client);
+      client.game.list({ games });
+    });
   }
-
-  async "game:create"(client) {
-    this.gm.create(client);
-    this.notifyGameList();
-  }
-
-  async "game:join"(client, { gameId }) {
-    this.gm.join(gameId, client);
-    this.notifyGameList();
-  }
-
-  async "game:play"(client, { gameId, position }) {
-    this.gm.play(gameId, client.id, position);
-  }
-}
-
-module.exports = ServerClass;
-
-function log(...data) {
-  console.log("server>", ...data);
 }

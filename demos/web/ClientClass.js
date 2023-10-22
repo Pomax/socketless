@@ -1,54 +1,53 @@
-class ClientClass {
+export class ClientClass {
   constructor() {
-    log("created");
-  }
-
-  onConnect() {
-    log("connected to server");
-  }
-
-  async "admin:setId"(id) {
-    this.state.id = id;
-    log(`setting id to ${id}`);
-  }
-
-  async "game:list"({ games }) {
-    this.state.gameList = games;
-  }
-
-  async "game:start"({ startingPlayer, gameId, board }) {
-    this.state.activeGame = {
-      gameId,
-      currentPlayer: startingPlayer,
-      board: board
+    console.log(`web client created`);
+    this.admin = {
+      setId: (id) => {
+        this.setState({ id });
+        console.log(`setting id to ${id}`);
+      },
+    };
+    this.game = {
+      list: ({ games }) => {
+        this.setState({ gameList: games });
+      },
+      start: (gameId, startingPlayer, board) => {
+        this.setState({
+          activeGame: {
+            gameId,
+            currentPlayer: startingPlayer,
+            board: board,
+          },
+        });
+      },
+      played: (gameId, currentPlayer, board) => {
+        const game = this.state.activeGame;
+        if (game.gameId === gameId) {
+          game.currentPlayer = currentPlayer;
+          game.board = board;
+        }
+      },
+      draw: (gameId) => {
+        const game = this.state.activeGame;
+        if (game.gameId === gameId) {
+          game.draw = true;
+        }
+      },
+      won: (gameId, winner) => {
+        const game = this.state.activeGame;
+        if (game.gameId === gameId) {
+          game.winner = winner;
+        }
+      },
     };
   }
 
-  async "game:played"({ gameId, currentPlayer, board }) {
-    const game = this.state.activeGame;
-    if (game.gameId === gameId) {
-      game.currentPlayer = currentPlayer;
-      game.board = board;
-    }
+  async onConnect() {
+    console.log(`connected to server`);
   }
 
-  async "game:won"({ gameId, winner }) {
-    const game = this.state.activeGame;
-    if (game.gameId === gameId) {
-      game.winner = winner;
-    }
+  async onBrowserConnect(browser) {
+    const result = await browser?.showMessage(`We should be good to go.`);
+    console.log(`browser.showMessage result: ${result}`);
   }
-
-  async "game:draw"({ gameId }) {
-    const game = this.state.activeGame;
-    if (game.gameId === gameId) {
-      game.draw = true;
-    }
-  }
-}
-
-module.exports = ClientClass;
-
-function log(...data) {
-  console.log("client>", ...data);
 }

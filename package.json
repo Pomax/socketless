@@ -1,12 +1,19 @@
 {
   "name": "socketless",
   "version": "0.13.12",
-  "description": "A framework and methodology for writing web socket client/server code, without writing any socket code.",
-  "main": "src/generate-client-server.js",
+  "type": "module",
+  "description": "A framework and methodology for writing web socket RPC programs, without writing a single line of web socket or RPC code.",
+  "main": "library.js",
   "scripts": {
-    "demo": "node demo/index.js",
+    "build": "npm run build:socketless && npm run build:library",
+    "build:socketless": "node src/generate-socketless.js > src/webclient/socketless.js",
+    "build:library": "esbuild ./src/index.js --bundle --platform=node --target=node20 --packages=external --format=esm --minify > library.js",
+    "demo:simple": "cd demos && npm run simple",
+    "demo:web": "cd demos && npm run web",
     "prettier": "prettier --write ./**/*.js",
-    "test": "jest"
+    "test": "npm run test:ast && npm run prettier && npm run build && npm run test:mocha",
+    "test:ast": "tsc ./src/index.js --checkJs --noEmit --module nodenext",
+    "test:mocha": "mocha \"test/**/*.test.js\""
   },
   "repository": {
     "type": "git",
@@ -26,13 +33,18 @@
   },
   "homepage": "https://github.com/Pomax/socketless#readme",
   "dependencies": {
-    "rfc6902": "^3.0.4",
-    "ws": "^7.1.1"
+    "chai-as-promised": "^7.1.1",
+    "rfc6902": "^5.0.1",
+    "ws": "^8.14.2"
   },
   "devDependencies": {
-    "jest": "^25.1.0",
-    "node-fetch": "^2.6.0",
-    "prettier": "^1.19.1",
-    "puppeteer": "^2.1.1"
+    "chai": "^4.3.10",
+    "esbuild": "^0.19.4",
+    "express": "^4.18.2",
+    "mocha": "^10.2.0",
+    "pem": "^1.14.8",
+    "prettier": "^3.0.3",
+    "puppeteer": "^21.3.6",
+    "typescript": "^5.2.2"
   }
 }

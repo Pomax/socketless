@@ -1,5 +1,6 @@
-node_modules
-.gitignore
-docs
 demos
+node_modules
+src
 test
+.gitignore
+TODO.md

@@ -1,6 +1,7 @@
 {
   "name": "demos",
   "version": "0.0.1",
+  "type": "module",
   "description": "Socketless demos",
   "main": "",
   "author": "Pomax",
@@ -13,7 +14,8 @@
     "socketless": "file:.."
   },
   "scripts": {
-    "simple": "node ./simple/index.js",
-    "web": "node ./web/index.js"
+    "clean": "rm -rf node_modules && npm i",
+    "simple": "npm run clean && node ./simple/index.js",
+    "web": "npm run clean && node ./web/index.js"
   }
 }

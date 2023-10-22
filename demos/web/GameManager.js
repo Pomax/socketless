@@ -1,6 +1,6 @@
-const Game = require(`./Game.js`);
+import { Game } from "./Game.js";
 
-class GameManager {
+export class GameManager {
   constructor() {
     this.games = {};
     this.idCounter = 1;
@@ -8,7 +8,7 @@ class GameManager {
   }
 
   getList(client) {
-    return Object.values(this.games).map(game => game.getSummary(client));
+    return Object.values(this.games).map((game) => game.getSummary(client));
   }
 
   digest(id) {
@@ -38,5 +38,3 @@ class GameManager {
     game.play(clientId, position);
   }
 }
-
-module.exports = GameManager;

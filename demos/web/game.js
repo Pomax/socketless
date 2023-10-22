@@ -1,4 +1,5 @@
-class Game {
+// A silly match three game implementation
+export class Game {
   constructor(gameId) {
     this.id = gameId;
     this.players = [];
@@ -14,12 +15,8 @@ class Game {
 
   start() {
     this.activePlayer = this.players[(Math.random() * 2) | 0].id;
-    this.players.forEach(client =>
-      client.game.start({
-        gameId: this.id,
-        startingPlayer: this.activePlayer,
-        board: this.board.join(`,`)
-      })
+    this.players.forEach((client) =>
+      client.game.start(this.id, this.activePlayer, this.board.join(`,`)),
     );
   }
 
@@ -29,55 +26,44 @@ class Game {
     if (clientId !== this.activePlayer) throw new Error("out of turn");
     if (this.won) throw new Error("game finished");
     if (position < 0 || position > 8) throw new Error("illegal move");
-    const pid = this.players.findIndex(client => client.id === clientId);
+    const pid = this.players.findIndex((client) => client.id === clientId);
     if (this.board[position]) throw new Error("move was already played");
-
+    // IF we're all good: mark the play and inform all players.
     this.playMove(pid, position);
   }
 
   playMove(pid, position) {
-    // All good: mark the play and inform all players.
     this.board[position] = pid + 1;
     this.movesLeft--;
     const board = this.board.join(`,`);
-    const currentPlayer = (this.activePlayer = this.players[pid ^ 1].id);
-    this.players.forEach(client =>
-      client.game.played({
-        gameId: this.id,
-        currentPlayer,
-        board
-      })
+    const currentPlayer = (this.activePlayer = this.players[pid ^ 1].id); // flip between player 0 and 1 using xor
+    this.players.forEach((client) =>
+      client.game.played(this.id, currentPlayer, board),
     );
 
     this.checkGameOver(pid, position);
   }
 
   checkGameOver(pid, position) {
+    // can't have a game-over until player 0 has at least three tiles claimed
+    if (this.movesLeft > 4) return;
+
     // Do we have a draw?
     if (this.movesLeft === 0) {
-      return this.players.forEach(client =>
-        client.game.draw({
-          gameId: this.id
-        })
-      );
+      return this.players.forEach((client) => client.game.draw(this.id));
     }
 
     // If not, do we have a winner?
     const gameWon = this.checkWinner(this.board, position);
     if (gameWon) {
       const winner = this.players[pid].id;
-      this.players.forEach(client =>
-        client.game.won({
-          gameId: this.id,
-          winner
-        })
-      );
+      this.players.forEach((client) => client.game.won(this.id, winner));
     }
   }
 
   checkWinner(b, position) {
     switch (position) {
-      // we don't need to check the whole board, we only need to check if the new play is a winning move.
+      // we don't need to check the whole board, we only need to check if the new play completes a triplet.
       case 0:
         return (
           (b[0] === b[1] && b[1] === b[2]) ||
@@ -135,9 +121,7 @@ class Game {
       id: this.id,
       owner: this.players[0] === client,
       waiting: this.players.length < 2,
-      started: !!this.activePlayer
+      started: !!this.activePlayer,
     };
   }
 }
-
-module.exports = Game;
