@@ -5,17 +5,14 @@ Socketless is a websocket-based RPC-like framework for client/server implementat
 # Table of contents
 
 - [Installation](#installation)
-- [Implementation and use example](#implementation-and-use-example)
-- how it works (diagram and textual)
-  - http vs. https vs. express
-- documentation (link on to API.md)
-- demos (link to DEMOS.md, separate md files for each demo with link to code on github)
+- [A short example](#a-short-example)
+- [Get in touch](#what-if-i-want-to-get-in-touch)
 
 # Installation
 
 Socketless can be installed from https://www.npmjs.com/package/socketless using your package manager of choice, and can be used in Deno by importing `"npm:socketless@1"`.
 
-Note that because `socketless` is code that by definition needs to run server-side, it does not provide a precompiled single-file library in a `dist` directory, nor should it ever (need to) be part of a bundling task. It comes with its own mechanism for letting you connect to the system using a browser, as [explained later in this readme](#......).
+Note that because `socketless` is code that by definition needs to run server-side, it does not provide a precompiled single-file library in a `dist` directory, nor should it ever (need to) be part of a bundling task. It comes with its own mechanism for letting you connect to the system using a browser, as explained in the ["how to..."](docs/HOWTO.md) docs.
 
 # A short example
 
@@ -119,4 +116,12 @@ server> no clients connected, shutting down.
 
 Note that when the client is created, it's not passed the reference to the server, but instead it's given a URL to connect to: the client and server can, and typically will, run on completely different machines "anywhere on the internet". As long as the same versions of the client and server classes are used by all parties, there's nothing else you need to do.
 
-### _It just works._
+#### _It just works._
+
+## I want to know more!
+
+That's the spirit! Also, if this didn't whet your appetite you probably didn't need this library in the first place, but let's cut to the chase: install this library, have a look at the [documentation](./docs), probably start at the ["how to ..."](/docs/HOWTO.md) docs, and let's get this working for you!
+
+## What if I want to get in touch?
+
+I mean there's always the issue tracker, that's a pretty solid way to get in touch in a way that'll let us cooperate on improving this library. However, if you just want to fire off a social media message, find me over on [Mastodon](https://mastodon.social/@TheRealPomax) and give me a shout.
