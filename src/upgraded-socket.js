@@ -191,18 +191,21 @@ class UpgradedSocket extends WebSocket {
     const stages = eventName.split(`:`);
     if (DEBUG) console.log(`[${receiver}] router: stages:`, stages);
 
-    let context = origin;
-    let callable = origin;
-    const [first] = stages;
-    let forbidden = origin.__proto__?.constructor.disallowedCalls ?? [];
-
-    let error = undefined;
+    // placeholders for our response and potential call errors
     let response = undefined;
+    let error = undefined;
 
     // Are we even allowed to resolve this chain?
+    const [first] = stages;
+    let forbidden = origin.__proto__?.constructor.disallowedCalls ?? [];
     if (first && forbidden.includes(first)) {
       error = `Illegal call: ${first} is a protected property`;
     }
+
+    // We'll be stepping into "callable", making sure that each time
+    // we step deeper, we update the call context to the
+    let context = origin;
+    let callable = origin;
 
     // We are: find the actual function to call.
     if (!error) {
