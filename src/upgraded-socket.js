@@ -191,6 +191,7 @@ class UpgradedSocket extends WebSocket {
     const stages = eventName.split(`:`);
     if (DEBUG) console.log(`[${receiver}] router: stages:`, stages);
 
+    let context = origin;
     let callable = origin;
     const [first] = stages;
     let forbidden = origin.__proto__?.constructor.disallowedCalls ?? [];
@@ -209,6 +210,7 @@ class UpgradedSocket extends WebSocket {
         while (stages.length) {
           const stage = stages.shift();
           if (DEBUG) console.log(`checking ${stage}`);
+          context = callable;
           callable = callable[stage];
         }
         // If this code runs on the server, the function needs to be
@@ -227,7 +229,7 @@ class UpgradedSocket extends WebSocket {
     // sure to take into account that a call itself might throw.
     if (!error) {
       try {
-        response = (await callable.bind(origin)(...payload)) ?? true;
+        response = (await callable.bind(context)(...payload)) ?? true;
         // If this is a webclient, and there is a browser connected,
         // also make sure to trigger a state sync, so that client code
         // does not need to include setState calls all over the place.
