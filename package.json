@@ -7,7 +7,7 @@
   "scripts": {
     "build": "npm run build:socketless && npm run build:library",
     "build:socketless": "node src/generate-socketless.js > src/webclient/socketless.js",
-    "build:library": "esbuild ./src/index.js --bundle --platform=node --target=node20 --packages=external --format=esm --minify > library.js",
+    "build:library": "esbuild ./src/index.js --bundle --platform=node --target=node20 --packages=external --format=esm --minify --sourcemap --outfile=library.js",
     "demo:simple": "cd demos && npm run simple",
     "demo:web": "cd demos && npm run web",
     "prettier": "prettier --write ./**/*.js",

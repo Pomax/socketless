@@ -12,3 +12,12 @@ See the [ARCHITECTURE.md](ARCHITECTURE.md) document for details that won't be re
 RPC calls are compared to a list of "forbidden" calls in the router function, which are pulled from the server, client, and webclient classes using their static `disallowedCalls` property, declared in `src/classes.js` and `src/webclient/classes.js`.
 
 Function calls are proxied through the `SocketProxy` class exported by `src/upgraded-socket.js`.
+
+## Testing
+
+run `npm test`, which will:
+
+- lint the code using `tsc`,
+- if there are no linting errors, autoformats the code using `prettier`, then
+- builds the `library.js` and `library.js.map` files using `esbuild`, and finally
+- runs all tests in the `./test` dir using `mocha`.
