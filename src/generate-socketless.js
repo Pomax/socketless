@@ -64,13 +64,16 @@ export function generateSocketless() {
       // create a proxy for the (webclient tunnel to the) server:
       Object.defineProperty(browserClient, "server", {
         ...propertyConfig,
-        value: proxySocket("${BROWSER}", "${WEBCLIENT}", browserClient, socket),
+        value: proxySocket("BROWSER", "WEBCLIENT", browserClient, socket),
       });
 
       browserClient.state = {};
       browserClient.init?.();
       return browserClient;
-    }.toString();
+    }
+      .toString()
+      .replace(`BROWSER`, BROWSER)
+      .replace(`WEBCLIENT`, WEBCLIENT);
 
   // ===============================================================
   // And include a full copy of the rfc6902 patch/diff/apply library.
