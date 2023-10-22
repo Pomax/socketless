@@ -9,7 +9,11 @@ Socketless _strictly_ adheres to [semver](https://semver.org)'s major.minor.patc
 
 # Version history
 
-## v1.0.0 (October 2023)
+## v1.0.1 (22 October 2023)
+
+added a source map for better debugging
+
+## v1.0.0 (21 October 2023)
 
 Full rewrite
 - code is now ESM
