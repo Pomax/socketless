@@ -231,14 +231,6 @@ function generator(ClientClass, ServerClass) {
             );
           }
 
-          if (eventName === `quit`) {
-            return client.quit();
-          }
-
-          if (eventName === `disconnect`) {
-            return client.disconnect();
-          }
-
           // Is this a browser response to the client' calling a browser function?
           if (eventName.endsWith(RESPONSE_SUFFIX)) {
             // Note that because this doesn't use the upgraded socket's "send()"

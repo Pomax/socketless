@@ -186,17 +186,6 @@ class UpgradedSocket extends WebSocket {
       return;
     }
 
-    // If we get here, this is a real RPC call rather than a response or state update.
-    if (payload && !Array.isArray(payload)) {
-      throw new Error(
-        `[${receiver}] received payload for ${eventName} from [${remote}] but it was not an array? ${JSON.stringify(
-          payload,
-          null,
-          2,
-        )}`,
-      );
-    }
-
     // If it's a request message, resolve it to a function call and "return"
     // the value by sending a :response message over the websocket instead.
     const stages = eventName.split(`:`);
