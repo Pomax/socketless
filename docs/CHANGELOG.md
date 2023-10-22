@@ -9,6 +9,10 @@ Socketless _strictly_ adheres to [semver](https://semver.org)'s major.minor.patc
 
 # Version history
 
+## v1.0.5 (22 October 2023)
+
+Fixed a bug in how rfc6902 was resolved.
+
 ## v1.0.4 (22 October 2023)
 
 Removed the webclient/socketless.js build step, which was only necessary to allow the bundling that was removed in v1.0.2

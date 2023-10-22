@@ -20,11 +20,13 @@ import url from "url";
 const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
 
 import { CLIENT, WEBCLIENT, BROWSER } from "./sources.js";
+import { proxySocket } from "./upgraded-socket.js";
 
 export function generateSocketless() {
   // ===============================================================
   // Loop in the socket upgrade code, with tactical ESM replacements
   // ===============================================================
+
   const upgradeSocket = fs
     .readFileSync(path.join(__dirname, `./upgraded-socket.js`))
     .toString(`utf-8`)
@@ -39,50 +41,54 @@ export function generateSocketless() {
   // ===============================================================
   //         Then inject the actual "socketless" export
   // ===============================================================
-  const socketless = `export function createBrowserClient(BrowserClientClass) {
-    const propertyConfig = { writable: false, configurable: false, enumerable: false};
-    const browserClient = new BrowserClientClass();
+  const socketless =
+    `export ` +
+    function createBrowserClient(BrowserClientClass) {
+      const propertyConfig = {
+        writable: false,
+        configurable: false,
+        enumerable: false,
+      };
+      const browserClient = new BrowserClientClass();
 
-    // create the web socket connection - note that if there are any query arguments,
-    // those will get passed into the websocket upgrade request, too.
-    const socket = new WebSocket(window.location.toString().replace("http", "ws"));
-    Object.defineProperty(browserClient, "socket", {
-      ...propertyConfig,
-      value: socket,
-    });
+      // create the web socket connection - note that if there are any query arguments,
+      // those will get passed into the websocket upgrade request, too.
+      const socket = new WebSocket(
+        window.location.toString().replace("http", "ws"),
+      );
+      Object.defineProperty(browserClient, "socket", {
+        ...propertyConfig,
+        value: socket,
+      });
 
-    // add a state sync function
-    Object.defineProperty(browserClient, "syncState", {
-      ...propertyConfig,
-      value: () => {
-        browserClient.socket.send(JSON.stringify({
-          eventName: "syncState",
-          payload: false
-        }))
-      },
-    });
+      // create a proxy for the (webclient tunnel to the) server:
+      Object.defineProperty(browserClient, "server", {
+        ...propertyConfig,
+        value: proxySocket("${BROWSER}", "${WEBCLIENT}", browserClient, socket),
+      });
 
-    // create a proxy for the (webclient tunnel to the) server:
-    Object.defineProperty(browserClient, "server", {
-      ...propertyConfig,
-      value: proxySocket("${BROWSER}", "${WEBCLIENT}", browserClient, socket),
-    });
-
-    browserClient.state = {};
-    browserClient.init?.();
-    return browserClient;
-  };`;
+      browserClient.state = {};
+      browserClient.init?.();
+      return browserClient;
+    }.toString();
 
   // ===============================================================
   // And include a full copy of the rfc6902 patch/diff/apply library.
   // This is non-optional and not so much "a build step" as simply
   // "we know where it lives, add it".
+  //
+  // Although we do need to make sure we check whether socketless is
+  // being used as a module, or whether someone's just working in
+  // the socketless project itself, because that changes where
+  // other modules can be found.
   // ===============================================================
-  const rfc6902 = fs
-    .readFileSync(
-      path.join(__dirname, `../node_modules/rfc6902/dist/rfc6902.min.js`),
-    )
-    .toString(`utf-8`);
+
+  const rfc6902Path = path.join(
+    __dirname,
+    __dirname.includes(`node_modules`) ? `../../..` : `..`,
+    `node_modules/rfc6902/dist/rfc6902.min.js`,
+  );
+  const rfc6902 = fs.readFileSync(rfc6902Path).toString(`utf-8`);
 
   return [upgradeSocket, socketless, rfc6902].join(`\n`);
 }
