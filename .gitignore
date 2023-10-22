@@ -2,5 +2,3 @@ package-lock.json
 node_modules
 demos/node_modules
 demos/package-lock.json
-library.js
-library.js.map

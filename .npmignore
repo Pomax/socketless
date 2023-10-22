@@ -1,6 +1,5 @@
 demos
 node_modules
-src
 test
 .gitignore
 TODO.md

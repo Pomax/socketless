@@ -9,6 +9,10 @@ Socketless _strictly_ adheres to [semver](https://semver.org)'s major.minor.patc
 
 # Version history
 
+## v1.0.2 (22 October 2023)
+
+removed the build step, it just interfered with debugging, and the footprint of the library with sourcemap was bigger than just including the `src` dir.
+
 ## v1.0.1 (22 October 2023)
 
 added a source map for better debugging

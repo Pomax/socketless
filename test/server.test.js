@@ -1,4 +1,4 @@
-import { linkClasses, ALLOW_SELF_SIGNED_CERTS } from "../library.js";
+import { linkClasses, ALLOW_SELF_SIGNED_CERTS } from "../src/index.js";
 import express from "express";
 import http from "http";
 import https from "https";

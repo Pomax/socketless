@@ -1,4 +1,4 @@
-import { linkClasses } from "../library.js";
+import { linkClasses } from "../src/index.js";
 import url from "url";
 const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
 
