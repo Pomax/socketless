@@ -9,6 +9,10 @@ Socketless _strictly_ adheres to [semver](https://semver.org)'s major.minor.patc
 
 # Version history
 
+## v1.0.4 (22 October 2023)
+
+Removed the webclient/socketless.js build step, which was only necessary to allow the bundling that was removed in v1.0.2
+
 ## v1.0.3 (22 October 2023)
 
 Fixed a bug in upgraded-socket that caused functions to be called with the wrong `bind()` context.

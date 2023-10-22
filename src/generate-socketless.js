@@ -21,7 +21,7 @@ const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
 
 import { CLIENT, WEBCLIENT, BROWSER } from "./sources.js";
 
-function generateSocketless() {
+export function generateSocketless() {
   // ===============================================================
   // Loop in the socket upgrade code, with tactical ESM replacements
   // ===============================================================
@@ -51,6 +51,17 @@ function generateSocketless() {
       value: socket,
     });
 
+    // add a state sync function
+    Object.defineProperty(browserClient, "syncState", {
+      ...propertyConfig,
+      value: () => {
+        browserClient.socket.send(JSON.stringify({
+          eventName: "syncState",
+          payload: false
+        }))
+      },
+    });
+
     // create a proxy for the (webclient tunnel to the) server:
     Object.defineProperty(browserClient, "server", {
       ...propertyConfig,
@@ -74,12 +85,4 @@ function generateSocketless() {
     .toString(`utf-8`);
 
   return [upgradeSocket, socketless, rfc6902].join(`\n`);
-}
-
-// Export the "compiled" library as a string constant so it can be
-// bundled into the final library.js file without quote conflicts.
-if (typeof process !== `undefined`) {
-  const socketlessjs = generateSocketless();
-  const base64Encoded = Buffer.from(socketlessjs).toString("base64");
-  console.log(`export const socketlessjs = atob("${base64Encoded}");`);
 }

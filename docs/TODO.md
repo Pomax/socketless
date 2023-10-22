@@ -31,6 +31,9 @@ This document mostly exists to let me track whether we're at v1 or not yet.
     - [x] basic https
     - [x] express server
     - [x] verify self-signed does not work without symbol
+- [] webclient state tests
+  - [] state
+  - [] syncState call
 
 # Documentation
 
@@ -66,7 +69,6 @@ create several new demos
 # Useful for dev
 
 "why-is-node-running": "^2.2.2"
-
 
 # TRUE TODO
 
