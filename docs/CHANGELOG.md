@@ -9,6 +9,10 @@ Socketless _strictly_ adheres to [semver](https://semver.org)'s major.minor.patc
 
 # Version history
 
+## v1.0.7 (23 October 2023)
+
+Fixed a phrasing "bug" around how throws were reported across a proxied call.
+
 ## v1.0.6 (22 October 2023)
 
 Fixed a bug in how generateSocketless injects the browser/webclient string identifier.
