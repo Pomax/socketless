@@ -182,5 +182,65 @@ describe("basic tests", () => {
         factory.createClient(`http://localhost:${webserver.address().port}`);
       });
     });
+
+    it("verify that calling missing functions throws", (done) => {
+      let error = `managed to "call" nonexistent function`;
+
+      class ClientClass {}
+
+      class ServerClass {
+        async onConnect(client) {
+          console.log(`client connected`);
+          try {
+            await client.nonexistent();
+          } catch (e) {
+            console.log(e.message);
+            if (e.message.includes(`function is undefined.`)) {
+              error = undefined;
+            }
+          }
+          this.quit();
+        }
+        teardown = () => done(error);
+      }
+
+      const factory = linkClasses(ClientClass, ServerClass);
+      const { webserver } = factory.createServer();
+      webserver.listen(0, () => {
+        factory.createClient(`http://localhost:${webserver.address().port}`);
+      });
+    });
+
+    it("verify that calling a function that throws, correctly throws", (done) => {
+      let error = `managed to "call" nonexistent function`;
+
+      class ClientClass {
+        async throwing() {
+          return this.x();
+        }
+      }
+
+      class ServerClass {
+        async onConnect(client) {
+          console.log(`client connected`);
+          try {
+            await client.throwing();
+          } catch (e) {
+            console.log(e.message);
+            if (e.message.includes(`function threw instead of returning`)) {
+              error = undefined;
+            }
+          }
+          this.quit();
+        }
+        teardown = () => done(error);
+      }
+
+      const factory = linkClasses(ClientClass, ServerClass);
+      const { webserver } = factory.createServer();
+      webserver.listen(0, () => {
+        factory.createClient(`http://localhost:${webserver.address().port}`);
+      });
+    });
   });
 });
