@@ -246,10 +246,16 @@ class UpgradedSocket extends WebSocket {
             payload,
           );
         if (DEBUG) console.error(e);
+        let reason = e.message;
+        if (reason.includes(`(reading 'bind')`)) {
+          reason = `function is undefined.`;
+        } else {
+          reason = `function threw instead of returning (${reason})`;
+        }
         error = `Cannot call [[${receiver}]].${eventName.replaceAll(
           `:`,
           `.`,
-        )}, function is not defined.`;
+        )}, ${reason}`;
       }
     }
 
