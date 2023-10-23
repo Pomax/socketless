@@ -6,8 +6,7 @@ Socketless _strictly_ adheres to [semver](https://semver.org)'s major.minor.patc
 - minor version changes indicate new functionality and/or internal-only code changes,
 - major version changes indicate backward-incompatible external API changes.
 
-
-# Version history
+# Current version history
 
 ## v1.0.7 (23 October 2023)
 
@@ -46,6 +45,8 @@ Full rewrite
 - less code!
 - easier to maintain! (...hopefully)
 - the release gets compiled into a single `library.js`` file
+
+# Pre-1.0 versions
 
 ## v0.13.9
 

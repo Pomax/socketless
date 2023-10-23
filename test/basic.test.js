@@ -190,11 +190,9 @@ describe("basic tests", () => {
 
       class ServerClass {
         async onConnect(client) {
-          console.log(`client connected`);
           try {
             await client.nonexistent();
           } catch (e) {
-            console.log(e.message);
             if (e.message.includes(`function is undefined.`)) {
               error = undefined;
             }
@@ -222,12 +220,40 @@ describe("basic tests", () => {
 
       class ServerClass {
         async onConnect(client) {
-          console.log(`client connected`);
           try {
             await client.throwing();
           } catch (e) {
-            console.log(e.message);
             if (e.message.includes(`function threw instead of returning`)) {
+              error = undefined;
+            }
+          }
+          this.quit();
+        }
+        teardown = () => done(error);
+      }
+
+      const factory = linkClasses(ClientClass, ServerClass);
+      const { webserver } = factory.createServer();
+      webserver.listen(0, () => {
+        factory.createClient(`http://localhost:${webserver.address().port}`);
+      });
+    });
+
+    it("verify that private functions don't work", (done) => {
+      let error = `managed to call a private function`;
+
+      class ClientClass {
+        async #privateFunction() {
+          return `this shouldn't work`;
+        }
+      }
+
+      class ServerClass {
+        async onConnect(client) {
+          try {
+            await client.privateFunction();
+          } catch (e) {
+            if (e.message.includes(`function is undefined.`)) {
               error = undefined;
             }
           }
