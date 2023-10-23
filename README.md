@@ -6,6 +6,7 @@ Socketless is a websocket-based RPC-like framework for client/server implementat
 
 - [Installation](#installation)
 - [A short example](#a-short-example)
+- [Check out the docs](#i-want-to-know-more)
 - [Get in touch](#what-if-i-want-to-get-in-touch)
 
 # Installation
