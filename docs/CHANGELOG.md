@@ -8,6 +8,10 @@ Socketless _strictly_ adheres to [semver](https://semver.org)'s major.minor.patc
 
 # Current version history
 
+## v1.0.8 (25 October 2023)
+
+Improved error reporting when trying to deep copy using JSON.parse(JSON.stringify)
+
 ## v1.0.7 (23 October 2023)
 
 Fixed a phrasing "bug" around how throws were reported across a proxied call.
@@ -39,6 +43,7 @@ added a source map for better debugging
 ## v1.0.0 (21 October 2023)
 
 Full rewrite
+
 - code is now ESM
 - the transport mechanism is now based on Proxy objects
 - fewer files!
