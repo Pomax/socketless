@@ -11,11 +11,15 @@ Socketless is a websocket-based RPC-like framework for client/server implementat
 
 # Installation
 
-Socketless can be installed from https://www.npmjs.com/package/socketless using your package manager of choice, and can be used in Deno by importing `"npm:socketless@1"`.
+The current version of `socketless` is `v2.0.0` [(See the change-log for more information)](./docs/CHANGELOG.md).
 
-Note that because `socketless` is code that by definition needs to run server-side, it does not provide a precompiled single-file library in a `dist` directory, nor should it ever (need to) be part of a bundling task. It comes with its own mechanism for letting you connect to the system using a browser, as explained in the ["how to..."](docs/HOWTO.md) docs.
+The `socketles` library can be installed from https://www.npmjs.com/package/socketless using your package manager of choice, and can be used in Deno by importing `"npm:socketless@2"`.
 
-The current version of `socketless` is v2.0.0 [(See the change-log for more information)](./docs/CHANGELOG.md).
+**Note**: This library is written and exposed as modern ESM code, and relies on enough modern JS language features that this library is only guaranteed to work on the current generation of browsers, and current LTS version of Node. No support for older/dead browsers or end-of-life versions of Node is offered.
+
+## Using `socketless` in the browser
+
+As the `socketless` library is code that by definition needs to run server-side, it does not provide a precompiled single-file library in a `dist` directory, nor should you ever (need to) bundle `socketless` into a front-end bundle. Instead, the library has its own mechanism for letting browsers connect, explained in the ["how to..."](docs/HOWTO.md) docs.
 
 # A short example
 
