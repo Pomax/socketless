@@ -10,9 +10,9 @@ Socketless _strictly_ adheres to [semver](https://semver.org)'s major.minor.patc
 
 ## v2.0.0 (25 October 2023)
 
-Locked down the sync state in the browser. This breaks backwards compatibility by no longer allowing the browser to modify its `this.state` in any w ay, as any modifications would throw off the json diff/patch mechanism used by state syncing.
+Locked down the sync state in the browser. This breaks backwards compatibility by no longer allowing the browser to modify its `this.state` in any way, as any modifications would throw off the json diff/patch mechanism used by state syncing.
 
-# Previous versions history
+# Previous version history
 
 ## v1.0.8 (25 October 2023)
 
