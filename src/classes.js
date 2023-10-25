@@ -1,5 +1,5 @@
 import { proxySocket } from "./upgraded-socket.js";
-import { CLIENT, SERVER } from "./sources.js";
+import { CLIENT, SERVER } from "./utils.js";
 
 const DEBUG = false;
 

@@ -15,7 +15,7 @@ const { createClient, createServer } = factory;
 
 And that's pretty much it all the boilerplate code `socketless` will contribute to your project.
 
-## The browser basics
+## The basics: the browser as thin-client
 
 Things are even simpler in the browser, as we can't create real clients or servers in the browser, only "browser clients" that act as thin-client frontend to the real client:
 
@@ -30,7 +30,7 @@ And that's all the `socketless` boilerplate for in the browser.
 
 ### Creating a server
 
-Creating a server is as easy as calling `createServer` and then listening for connections:
+Creating a server is as easy as calling `createServer` and then listening for connections on its webserver:
 
 ```js
 import { linkClasses } from "socketless";
@@ -65,6 +65,8 @@ webserver.listen(0, () => {
   });
 });
 ```
+
+##### The `.addRoute` function
 
 The `addRoute` function actually follows the Express.js middleware convention, so you can chain as many functions as you need, where any function can call `next()` to have the route handler move on to the next function:
 
@@ -105,7 +107,7 @@ webserver.listen(0, () => {
 });
 ```
 
-Note that unlike most frameworked, `addRoute` is not tied to a specific HTTP verb. You can examine `req.method` if you need handling based on GET/POST/etc.
+Note that unlike most web frameworks, `addRoute` is based on the lower-level Node `http` module and is not tied to a specific HTTP verb. You can examine `req.method` if you need to route functionality based on GET/POST/etc. However, `socketless` _will_ split off the URL query parameters as a `req.params` object (use ``.get(`...`)`` to retrieve individual values) as well as the POST/PUT body as `req.body` (as plain string data).
 
 Also note that if you want to transport values across middleware functions, there is no predefined way to do so. However, [much like in Express](https://expressjs.com/en/guide/writing-middleware.html), you should be able to just tack your values onto the `req` object, provided the values you're storing don't conflict with the handful of predefined [http.ClientRequest](https://nodejs.org/api/https.html) properties:
 
@@ -259,7 +261,77 @@ class ServerClass {
 }
 ```
 
-In addition to this, _any function or instance property that you declare on the class will be RPC-accessible_ meaning that clients will be able to call those functions and have them run. As such, you don't want to declare "convenience" functions on your server class, and you'll want to declare those _outside_ the class instead. For example, you might be tempted to write the following code:
+### Prespecified server instance properties
+
+Any function that isn't the constructor has access to two special properties:
+
+- `this.clients`, an array of clients, each a socket proxy of the connected client
+- `this.quit()`, a method to close all connections and shut down the server.
+
+### All server functions start with `client`
+
+All server functions get called with the calling client as first argument, so you need to write your functions to take this into account, as the same is not true for client class functions:
+
+```js
+const ONE_WEEK_IN_MS = 1000 * 3600 * 24 * 7;
+
+class ServerClass {
+  // note the "client" as first argument:
+  async declareLoss(client) {
+    this.clients.forEach((c) => c.playerDeclaredLoss(client.id));
+  }
+}
+
+class ClientClass {
+  async onConnect() {
+    // note that we're not passing ourselves as an arguments here,
+    // the server already knows who makes the call based on the
+    // fact that we already know which web socket was used.
+    this.server.declareLoss();
+  }
+  async playerDeclaredLoss(id) {
+    // also note that (perhaps obviously) there is
+    // no "client" argument on the client side.
+  }
+}
+```
+
+### Keeping functions off the network
+
+Any instance function that you want to explicitly "lock off" can simply be marked as [private function](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Classes/Private_class_fields):
+
+```js
+class ServerClass {
+  // private function, only accessible through `this`
+  async #reallyStartGame(id) {
+    this.gameManager.start(id);
+  }
+
+  // normal, public function
+  async startGame(client) {
+    // fall through to our private function
+    this.#reallyStartGame(client.id);
+  }
+  ...
+}
+
+class ClientClass {
+  async onConnect() {
+    // This works:
+    this.server.startGame();
+
+    // this throws through socketless, because there is no function by that name:
+    this.server.reallyStartGame();
+
+    // And this is a SyntaxError, and your code won't even be allowed to run until you fix this:
+    this.server.#reallyStartGame();
+  }
+}
+```
+
+### Keeping properties off the network
+
+Because all instance properties are visible to clients, they can just bypass your API and directly work with things you'd really rather they didn't:
 
 ```js
 class ServerClass {
@@ -281,9 +353,7 @@ class ClientClass {
 }
 ```
 
-Because all instance properties are visible to clients, they can just bypass your API and directly work with things you'd really rather they didn't.
-
-Instead, treat your server as purely an API layer between your "real" program, and your clients:
+Instead, treat your server purely as an API layer between your "real" program, and your clients:
 
 ```js
 // Our actual program
@@ -330,35 +400,6 @@ class ClientClass {
 
 Now clients cannot access the `gameManager` as a server property, and they won't be able to cheat!
 
-Also note that any function that isn't the constructor has access to two special properties:
-
-- `this.clients`, an array of clients, each a socket proxy of the connected client
-- `this.quit()`, a method to close all connections and shut down the server.
-
-And also note that any server function will be called with the client who called it as first argument. You don't need to wrap anything in object notation, but you will need to write your functions to take this into account, as clients will _not_ need to include themselves as a call argument:
-
-```js
-const ONE_WEEK_IN_MS = 1000 * 3600 * 24 * 7;
-
-class ServerClass {
-  async getGamesPlayed(client, startDate, endDate) {
-    return gameManager.statistics.getGamesPlayed({
-        id: client.id,
-        range: [startDate, endDate]
-    });
-  }
-}
-
-class ClientClass {
-  async onConnect() {
-    const now = Date.now();
-    const lastWeek = now - ONE_WEEK_IN_MS;
-    const gameCount = await this.server.getGamesPlayed(lastWeek, now);
-    ...
-  }
-}
-```
-
 ## Clients
 
 ### Creating a client
@@ -404,6 +445,8 @@ class ClientClass {
 ```
 
 Mirroring the server, clients have a special `this.server` that can be used to call server functions as if they were local calls in any function outside of the constructor.
+
+And of course, the same rules for keeping functions and properties off the network apply to clients.
 
 ## WebClients
 
@@ -471,7 +514,7 @@ class WebClientClass {
 }
 ```
 
-Any function except for the constructor has access to `this.browser`, a proxy of the browser. However, unlike the client and server proxies, calls made on `this.browser`` do _not_ time out, they remaining in a waiting state until the browser returns a value.
+Any function except for the constructor has access to `this.browser`, a proxy of the browser. However, unlike the client and server proxies, calls made on `this.browser` do _not_ time out, they remaining in a waiting state until the browser returns a value.
 
 ### Web client state synchronization
 

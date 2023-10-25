@@ -13,7 +13,7 @@ The basic setup consists of:
 │ server <┼- web server │◁───┤ (browser) │
 └────▲────┴─────△───────┘    ╰───────────╯
      ║          ┊                              ╭───────────────────────────────╮
-     ║      ┌───◇────┐                         │ ─── HTTP call                 │
+     ║      ┌───◇────┐                         │ ─── HTTP(s) call              │
      ╚══════▶ client │                         │ ┄┄┄ WS upgrade call over HTTP │
             └────────┘                         │ ═══ two-way websocket         │
                                                ╰───────────────────────────────╯
@@ -38,7 +38,7 @@ The more complex browser-connected client setup consists of:
      ╚══════▶ client <┼- web server ◁─┤
             └───▲─────┴─────△───────┘ │
                 ║           ┊         │        ╭───────────────────────────────╮
-                ║       ╭───◇─────╮   │        │ ─── HTTP call                 │
+                ║       ╭───◇─────╮   │        │ ─── HTTP(s) call              │
                 ╚═══════▶ browser ├───┘        │ ┄┄┄ WS upgrade call over HTTP │
                         ╰─────────╯            │ ═══ two-way websocket         │
                                                ╰───────────────────────────────╯

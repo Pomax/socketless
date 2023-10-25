@@ -46,6 +46,17 @@ For security reasons, a constructor is strongly discouraged. If present, it will
 - `onQuit()`, triggered before the server closes its web server and websocket server.
 - `teardown()`, triggered after the web server and websocket server have been shut down.
 
+### Web server instances
+
+Web servers are Node http(s) servers (even when using something like Express), with the following addition
+
+- `.addRoute(relativeURL, [...middlewareHandlers], finalHandler)` adds explicit route handling for a specific URL endpoint. In this:
+  - `[...middleWare]` is zero or more middleware handlers of the form `(req, res, next) => { ... }` where a call to `next()` will make the next middleware function on the list run after the current one completes, or if there are no more middleware functions, `finalHandler` will get called.
+  - `finalHandler` is a function with signature `(req, res) => { ... }` and is required as last function in the route handling.
+  - The `req` argument is a Node `http.ClientRequest` object, but with query arguments split out as `req.params`, and POST/PUT body content split out as `req.body`. Note that the body will be plain string data.
+  - The `res` argument is a Node `http.ClientResponse` object.
+
+
 ## **Client classes**
 
 For security reasons, a constructor is strongly discouraged. If present, it will be called without arguments.
@@ -91,6 +102,10 @@ Web client classes inherit the client methods, and add the following:
 - `onBrowserDisconnect()`, triggered after a browser disconnects.
 - `onQuit()`, triggered before the web client closes its web server and websocket server.
 - `teardown()`, triggered after the web server and websocket server have been shut down.
+
+### Web server instances
+
+The webclient web server has the same functionality as those generated through the `createServer()` factory method, details for which are listed in the Server Classes section above.
 
 ## **Browser client classes**
 

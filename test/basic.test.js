@@ -239,7 +239,7 @@ describe("basic tests", () => {
       });
     });
 
-    it("verify that private functions don't work", (done) => {
+    it("verify that private functions aren't exposed", (done) => {
       let error = `managed to call a private function`;
 
       class ClientClass {

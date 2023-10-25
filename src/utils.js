@@ -9,3 +9,12 @@ export const SERVER = `server`;
 export const CLIENT = `client`;
 export const WEBCLIENT = `webclient`;
 export const BROWSER = `browser`;
+
+export function deepCopy(obj) {
+  try {
+    return JSON.parse(JSON.stringify(obj));
+  } catch (e) {
+    console.error(`Could not round-trip object via JSON:`, obj);
+    throw e;
+  }
+}

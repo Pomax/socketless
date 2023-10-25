@@ -54,6 +54,7 @@ function generate404(location, response, reason = ``) {
  */
 export function makeRouteHandler(client, publicDir, customRouter) {
   return async (request, response) => {
+    // Split off the query parameters as request.params
     request.params = {
       get: (_) => undefined,
     };
@@ -62,6 +63,17 @@ export function makeRouteHandler(client, publicDir, customRouter) {
       const [url, params] = request.url.split(/\\?\?/);
       request.url = url;
       request.params = new URLSearchParams(params);
+    }
+
+    // Split off the payload as request.body, if there is one.
+    if (request.method === `POST` || request.method === `PUT`) {
+      await new Promise((resolve) => {
+        let body = [];
+        request.on("data", (chunk) => body.push(chunk));
+        request.on("end", () =>
+          resolve((request.body = Buffer.concat(body).toString())),
+        );
+      });
     }
 
     const { url, params } = request;

@@ -24,7 +24,7 @@
  */
 
 import { WebSocket } from "ws";
-import { CLIENT, BROWSER } from "./sources.js";
+import { CLIENT, BROWSER, deepCopy } from "./utils.js";
 
 class RPCError {
   constructor(originName, message) {
@@ -147,7 +147,7 @@ class UpgradedSocket extends WebSocket {
     if (state && receiver === BROWSER) {
       if (DEBUG) console.log(`handling state update in the browser`, state);
       if (DEBUG) console.log(`origin object:`, { origin });
-      const prevState = JSON.parse(JSON.stringify(origin.state));
+      const prevState = deepCopy(origin.state);
       if (diff) {
         if (DEBUG) console.log(`received diff`, state);
         const patch = state;
@@ -155,7 +155,7 @@ class UpgradedSocket extends WebSocket {
         // verify we're still in sync by comparing messaging sequence numbers
         if (seq_num === origin.__seq_num + 1) {
           origin.__seq_num = seq_num;
-          target = JSON.parse(JSON.stringify(prevState));
+          target = deepCopy(prevState);
           if (DEBUG) console.log(`applying patch to`, target);
           // @ts-ignore: this only runs in the browser, where rfc6902 is a global.
           rfc6902.applyPatch(target, patch);

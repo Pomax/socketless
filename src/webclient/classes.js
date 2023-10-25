@@ -1,5 +1,5 @@
 import { proxySocket } from "../upgraded-socket.js";
-import { WEBCLIENT, BROWSER } from "../sources.js";
+import { WEBCLIENT, BROWSER, deepCopy } from "../utils.js";
 // @ts-ignore: Node-specific import
 import { createPatch } from "rfc6902";
 
@@ -86,7 +86,7 @@ export function formWebClientClass(ClientClass) {
           if (DEBUG) console.log(`no difference, skipping state sync.`);
         }
       }
-      this.__oldState = JSON.parse(JSON.stringify(this.state));
+      this.__oldState = deepCopy(this.state);
     }
 
     syncState() {
@@ -95,7 +95,7 @@ export function formWebClientClass(ClientClass) {
           console.log(
             `[WebClientBase] running syncState (will respond with full state)`,
           );
-        const fullState = JSON.parse(JSON.stringify(this.state));
+        const fullState = deepCopy(this.state);
         this.browser.socket.__seq_num = 0;
         if (DEBUG)
           console.log(`[WebClientBase] responding with full state:`, fullState);

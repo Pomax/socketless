@@ -19,7 +19,7 @@ import path from "path";
 import url from "url";
 const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
 
-import { CLIENT, WEBCLIENT, BROWSER } from "./sources.js";
+import { CLIENT, WEBCLIENT, BROWSER, deepCopy } from "./utils.js";
 import { proxySocket } from "./upgraded-socket.js";
 
 export function generateSocketless() {
@@ -34,8 +34,8 @@ export function generateSocketless() {
     .replace(`import { WebSocket } from "ws";`, ``)
     // and we don't need this import:
     .replace(
-      `import { CLIENT, BROWSER } from "./sources.js";`,
-      `const BROWSER = "${BROWSER}";\nconst CLIENT = "${CLIENT}";`,
+      `import { CLIENT, BROWSER, deepCopy } from "./utils.js";`,
+      `const BROWSER = "${BROWSER}";\nconst CLIENT = "${CLIENT}";\nconst deepCopy = ${deepCopy.toString()}`,
     );
 
   // ===============================================================
