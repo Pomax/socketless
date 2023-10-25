@@ -2,8 +2,8 @@
 
 Socketless _strictly_ adheres to [semver](https://semver.org)'s major.minor.patch versioning:
 
-- patch version changes indicate bug fixes,
-- minor version changes indicate new functionality and/or internal-only code changes,
+- patch version changes indicate bug fixes and/or internal-only code changes,
+- minor version changes indicate new functionality that does not break backward compatibility,
 - major version changes indicate backward-incompatible external API changes.
 
 # Current version history
