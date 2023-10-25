@@ -56,7 +56,6 @@ Web servers are Node http(s) servers (even when using something like Express), w
   - The `req` argument is a Node `http.ClientRequest` object, but with query arguments split out as `req.params`, and POST/PUT body content split out as `req.body`. Note that the body will be plain string data.
   - The `res` argument is a Node `http.ClientResponse` object.
 
-
 ## **Client classes**
 
 For security reasons, a constructor is strongly discouraged. If present, it will be called without arguments.
@@ -116,6 +115,9 @@ A constructor is strongly discouraged, initialization should be handled in `init
 - `this.server`, a local proxy for the server, supporting the API defined in your ServerClass.
 - `this.socket`, the plain websocket connection to the client that the browser connected to.
 - `this.state`, a state object that reflects the connected web client's current state.
+- `this.connected`, a flag that indicates whether we're connected to our web client.
+- `this.disconnect()`, allows the browser to intentionally disconnect from the web client, used to intentionally trigger `.onBrowserDisconnect` at the web client.
+- `this.reconnect()`, allows the browser to reconnect to their web client.
 
 ### event handlers
 

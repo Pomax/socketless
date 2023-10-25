@@ -84,10 +84,9 @@ describe("web client tests", () => {
         const clientURL = `http://localhost:${clientWebServer.address().port}`;
         const browser = await puppeteer.launch({ headless: `new` });
         const page = await browser.newPage();
-        page.on(
-          "pageerror",
-          (msg) => (error = new Error(`[browser error]`, msg)),
-        );
+        page.on("pageerror", (msg) => {
+          error = new Error(`[browser error]`, msg);
+        });
         page.on("console", (msg) => console.log(`[browser log]`, msg.text()));
         await page.goto(clientURL);
         await page.waitForSelector(`.testfield`);
@@ -315,6 +314,115 @@ describe("web client tests", () => {
         }
         ws.close();
         client.quit();
+      });
+    });
+  });
+
+  it("should sync state between client and browser", (done) => {
+    let error = `state did not sync correctly`;
+
+    const list = [1, 2, 3, 4, 5];
+
+    class ServerClass {
+      onDisconnect() {
+        if (this.clients.length === 0) {
+          this.quit();
+        }
+      }
+      teardown() {
+        done(error);
+      }
+    }
+
+    let c = 0;
+
+    class ClientClass {
+      onBrowserConnect() {
+        const run = () => {
+          const v = list.shift();
+          this.setState({ v });
+          if (v) setTimeout(run, 50);
+        };
+        run();
+      }
+    }
+
+    const factory = linkClasses(ClientClass, ServerClass);
+    const { webserver } = factory.createServer();
+
+    webserver.listen(0, () => {
+      const PORT = webserver.address().port;
+      const serverURL = `http://localhost:${PORT}`;
+      const { client, clientWebServer } = factory.createWebClient(
+        serverURL,
+        `${__dirname}/stateful`,
+      );
+
+      clientWebServer.listen(0, async () => {
+        const clientURL = `http://localhost:${clientWebServer.address().port}`;
+        const browser = await puppeteer.launch({ headless: `new` });
+        const page = await browser.newPage();
+        page.on(
+          "pageerror",
+          (msg) => (error = new Error(`[browser error]`, msg)),
+        );
+        await page.goto(clientURL);
+        await page.waitForSelector(`body.done`);
+        await browser.close();
+        error = ``;
+        client.quit();
+      });
+    });
+  });
+
+  it("state should be immutable at the browser", (done) => {
+    let error = `browser was able to modify state`;
+
+    class ServerClass {
+      onDisconnect() {
+        if (this.clients.length === 0) {
+          this.quit();
+        }
+      }
+      teardown() {
+        done(error);
+      }
+    }
+
+    class ClientClass {
+      onBrowserConnect() {
+        this.setState({
+          a: {
+            b: "c",
+          },
+        });
+      }
+    }
+
+    const factory = linkClasses(ClientClass, ServerClass);
+    const { webserver } = factory.createServer();
+
+    webserver.listen(0, () => {
+      const PORT = webserver.address().port;
+      const serverURL = `http://localhost:${PORT}`;
+      const { client, clientWebServer } = factory.createWebClient(
+        serverURL,
+        `${__dirname}/statemod`,
+      );
+
+      clientWebServer.listen(0, async () => {
+        const clientURL = `http://localhost:${clientWebServer.address().port}`;
+        const browser = await puppeteer.launch({ headless: `new` });
+        const page = await browser.newPage();
+        page.on("pageerror", async (msg) => {
+          msg = msg.message;
+          if (msg.includes(`Cannot assign to read only property`)) {
+            error = ``;
+            await browser.close();
+            client.quit();
+          }
+        });
+        await page.goto(clientURL);
       });
     });
   });

@@ -51,22 +51,53 @@ export function generateSocketless() {
       };
       const browserClient = new BrowserClientClass();
 
+      const buildSocket = () => {
+        return new WebSocket(window.location.toString().replace("http", "ws"));
+      };
+
+      let socket = buildSocket();
+
+      const buildProxyServer = () => {
+        return proxySocket("BROWSER", "WEBCLIENT", browserClient, socket);
+      };
+
+      let proxyServer = buildProxyServer();
+
       // create the web socket connection - note that if there are any query arguments,
       // those will get passed into the websocket upgrade request, too.
-      const socket = new WebSocket(
-        window.location.toString().replace("http", "ws"),
-      );
       Object.defineProperty(browserClient, "socket", {
         ...propertyConfig,
         value: socket,
       });
 
+      // convenience function to "gracefully" disconnect from a web client:
+      Object.defineProperty(browserClient, "disconnect", {
+        ...propertyConfig,
+        value: () => {
+          browserClient.connected = false;
+          socket.close();
+          socket = undefined;
+          proxyServer = undefined;
+        },
+      });
+
+      // convenience function to reconnect to the web client:
+      Object.defineProperty(browserClient, "reconnect", {
+        ...propertyConfig,
+        value: () => {
+          socket = buildSocket();
+          proxyServer = buildProxyServer();
+          browserClient.connected = true;
+        },
+      });
+
       // create a proxy for the (webclient tunnel to the) server:
       Object.defineProperty(browserClient, "server", {
         ...propertyConfig,
-        value: proxySocket("BROWSER", "WEBCLIENT", browserClient, socket),
+        value: proxyServer,
       });
 
+      browserClient.connected = true;
       browserClient.state = {};
       browserClient.init?.();
       return browserClient;

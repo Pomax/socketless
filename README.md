@@ -15,7 +15,7 @@ Socketless can be installed from https://www.npmjs.com/package/socketless using 
 
 Note that because `socketless` is code that by definition needs to run server-side, it does not provide a precompiled single-file library in a `dist` directory, nor should it ever (need to) be part of a bundling task. It comes with its own mechanism for letting you connect to the system using a browser, as explained in the ["how to..."](docs/HOWTO.md) docs.
 
-The current version of `socketless` is v1.0.8 [(See the change-log for more information)](./docs/CHANGELOG.md).
+The current version of `socketless` is v2.0.0 [(See the change-log for more information)](./docs/CHANGELOG.md).
 
 # A short example
 

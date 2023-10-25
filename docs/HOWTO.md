@@ -557,7 +557,7 @@ const instance = createBrowserClient(BrowserClientClass);
 
 (Note that you do not need to place a `socketless.js` file in your assets directory: the client's web serer comes with special route handling for the request)
 
-This builds an instance of the provided class, with a `this.server` property that lets the browser (think it) communicate(s) with the server (in reality it's getting proxied by the real client), as well as a `this.socket` that is the websocket connection to the real client. You should almost _never_ need to use it, but for the rare few times that you do, it's there.
+This builds an instance of the provided class, with a `this.server` property that lets the browser (think it) communicate(s) with the server (in reality it's getting proxied by the real client), as well as a `this.socket` that is the websocket connection to the real client. You should almost _never_ need to use it, but for the rare few times that you do, it's there. At most you'd use it to gracefully disconnect, but to make sure you don't, `this.disconnect()` already exists, too (with a matching `this.reconnect()` to reestablish a connection. Browsers also have a `this.connected` flag to indicate connection status).
 
 Browser client classes may have an `init()` function, in which case that function will be called at the end of the `createBrowserClient` pass.
 
@@ -638,7 +638,9 @@ A little bit more work compared to running unauthenticated, but at least most of
 
 ### How to "quit"
 
-For security reasons, the `socketless` library does not come with a built in way to shut down the web client from the browser. While this means you need to implement this functionality yourself, the fact that the client is a web server makes that job relatively straight forward, with the recommended way to achieve this being to add a URL endpoint that the browser can navigate to and have that trigger a client shutdown:
+While you can disconnect the browser from the web client with `this.disconnect()`, the `socketless` library does not come with a built in way to _shut down_ the web client from the browser, for security reasons.
+
+While this means you need to implement this functionality yourself, the fact that the client is a web server makes that job relatively straight forward, with the recommended way to achieve this being to add a URL endpoint that the browser can navigate to and have that trigger a client shutdown:
 
 ```js
 ...

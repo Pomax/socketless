@@ -104,7 +104,10 @@ Browser client instances created using the browser-side `createBrowserClient` fu
 
 - `this.server`, a proxy for the main server.
 - `this.socket`, the _plain_ websocket connection to the client (it should almost never be necessary to interact with this property).
-- `this.quit()`, a convenience method to disconnect from the main server.
+- `this.state`, a state object that reflects the connected web client's current state.
+- `this.connected`, a flag that indicates whether we're connected to our web client.
+- `this.disconnect()`, allows the browser to intentionally disconnect from the web client, used to intentionally trigger `.onBrowserDisconnect` at the web client.
+- `this.reconnect()`, allows the browser to reconnect to their web client.
 
 You will also want to implement the following functions in your browser client class:
 

@@ -26,14 +26,25 @@
 import { WebSocket } from "ws";
 import { CLIENT, BROWSER, deepCopy } from "./utils.js";
 
+const DEBUG = false;
+
+// Used to prevent the browser from trying to modify the state variable,
+// which would invalidate the diff/patch approach to state management.
+const lockObject = (input) => {
+  Object.keys(input).forEach((key) => {
+    if (typeof input[key] === "object" && !Object.isFrozen(input[key]))
+      lockObject(input[key]);
+  });
+  return Object.freeze(input);
+};
+
+// Used as "temporary" error object before throwing a real Error.
 class RPCError {
   constructor(originName, message) {
     this.originName = originName;
     this.message = message;
   }
 }
-
-const DEBUG = false;
 
 // importing the uuid package is way too expensive for what we need here
 function uuid() {
@@ -171,6 +182,7 @@ class UpgradedSocket extends WebSocket {
       }
       // Run the update with the new state as argument first, then
       // overwrite the old state with the new state after the update.
+      lockObject(state);
       origin.state = state;
       return origin.update?.(prevState);
     }

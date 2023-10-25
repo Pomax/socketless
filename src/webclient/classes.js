@@ -57,8 +57,11 @@ export function formWebClientClass(ClientClass) {
     }
 
     disconnectBrowserSocket() {
-      this.onBrowserDisconnect(this.browser);
-      this.browser = undefined;
+      if (this.browser) {
+        const browser = this.browser;
+        this.browser = undefined;
+        this.onBrowserDisconnect(browser);
+      }
     }
 
     setState(stateUpdates) {
