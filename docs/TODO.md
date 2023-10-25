@@ -72,4 +72,4 @@ create several new demos
 
 # TRUE TODO
 
-Work out the howto docs for Authentication.
+update readme to show full server+client+browser, not just server+client
