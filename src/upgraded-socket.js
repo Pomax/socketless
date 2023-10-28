@@ -389,32 +389,34 @@ class SocketProxy extends Function {
         return new SocketProxy(socket, receiver, remote, `${path}:${prop}`);
       },
       apply: async (_, __, args) => {
-        if (DEBUG)
-          console.log(
-            `[SPapply] sending ${this.path.substring(1)} receiver ${
-              this[RECEIVER]
-            } to ${this[REMOTE]}`,
-          );
+        // We need to capture the current stack trace if we want to throw an
+        // error later. If we build a new Error after we await the server call,
+        // the stack trace is basically going to be "this function" which isn't
+        // super useful for letting folks fix their code.
+        let callError;
+        try {
+          throw new Error();
+        } catch (e) {
+          callError = e;
+        }
 
-        const data = await this.socket.upgraded.send(
-          this.path.substring(1),
-          args,
-          this[REMOTE] === BROWSER ? Infinity : undefined,
-        );
+        // Try to resolve the network call:
+        const call = this.path.substring(1);
+        const timeout = this[REMOTE] === BROWSER ? Infinity : undefined;
+        const data = await this.socket.upgraded.send(call, args, timeout);
 
         if (data instanceof RPCError) {
-          const argstr = [...new Array(args.length)]
-            .map((_, i) => String.fromCharCode(97 + i))
-            .join(`,`);
-
-          if (DEBUG)
-            console.error(
-              `ERROR calling [[${data.originName}]].${this.path
-                .substring(1)
-                .replaceAll(`:`, `.`)}(${argstr}): ${data.message}`,
-            );
-
-          throw new Error(data.message);
+          // Fix up our error so it has the correct message and
+          // stack trace, then throw for the user to deal with.
+          let line;
+          let lines = callError.stack.split(`\n`);
+          do {
+            line = lines.shift();
+          } while (!line.includes(`apply`));
+          callError.message = data.message;
+          callError.stack =
+            `CallError: ${callError.message}\n` + lines.join(`\n`);
+          throw callError;
         }
 
         return data;

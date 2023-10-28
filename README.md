@@ -11,7 +11,7 @@ Socketless is a websocket-based RPC-like framework for client/server implementat
 
 # Installation
 
-The current version of `socketless` is `v2.0.0` [(See the change-log for more information)](./docs/CHANGELOG.md).
+The current version of `socketless` is `v2.0.1` [(See the change-log for more information)](./docs/CHANGELOG.md).
 
 The `socketles` library can be installed from https://www.npmjs.com/package/socketless using your package manager of choice, and can be used in Deno by importing `"npm:socketless@2"`.
 

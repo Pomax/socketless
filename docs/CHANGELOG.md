@@ -8,6 +8,31 @@ Socketless _strictly_ adheres to [semver](https://semver.org)'s major.minor.patc
 
 # Current version history
 
+## v2.0.1 (28 October 2023)
+
+- Fixed client crashing if the browser tried to call server functions without (or before) the web client was connected to the server.
+- Updated the way errors are thrown by the SocketProxy's `apply` function, so that you can actually tell where things go wrong.
+
+Previous you would get:
+
+```
+socketless.js:426 Uncaught (in promise) Error:
+    at Object.apply (socketless.js:426:17)
+    at async #authenticate (test.js:36:14)
+```
+
+Where Firefox would give you a few more steps, but Chrome wouldn't. Nnow you'll get:
+
+```
+test.js:37 Uncaught (in promise) CallError: Server unavailable
+    at #authenticate (test.js:36:32)
+    at BrowserClient.init (test.js:18:23)
+    at createBrowserClient (socketless.js:507:27)
+    at test.js:48:15
+```
+
+Without the line for `apply` because _you should not need to care about `socketless` internals_, and with both Firefox and Chrome reporting the full stack trace.
+
 ## v2.0.0 (25 October 2023)
 
 Locked down the sync state in the browser. This breaks backwards compatibility by no longer allowing the browser to modify its `this.state` in any way, as any modifications would throw off the json diff/patch mechanism used by state syncing.

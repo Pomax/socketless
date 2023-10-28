@@ -73,7 +73,7 @@ export function formClientClass(ClientClass) {
     }
 
     disconnect() {
-      this.server.socket.close();
+      this.server?.socket.close();
     }
   };
 }

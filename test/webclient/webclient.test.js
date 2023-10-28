@@ -1,3 +1,4 @@
+import why from "why-is-node-running";
 import { WebSocket } from "ws";
 import { linkClasses, ALLOW_SELF_SIGNED_CERTS } from "../../src/index.js";
 
@@ -16,6 +17,10 @@ const httpsOptions = await new Promise((resolve, reject) => {
     },
   );
 });
+
+function addConsole(page) {
+  page.on("console", (msg) => console.log(`[browser log]`, msg.text()));
+}
 
 /**
  * ...
@@ -424,6 +429,33 @@ describe("web client tests", () => {
         });
         await page.goto(clientURL);
       });
+    });
+  });
+
+  it("should not crash calling a server function without a server", (done) => {
+    let browser;
+    class ServerClass {}
+    class ClientClass {
+      teardown() {
+        done();
+      }
+    }
+    const factory = linkClasses(ClientClass, ServerClass);
+    const { client, clientWebServer } = factory.createWebClient(
+      `http://localhost:8000`,
+      `${__dirname}/standalone`,
+    );
+
+    clientWebServer.addRoute(`/quit`, async (req, res) => {
+      await client.quit();
+      await browser.close();
+    });
+
+    clientWebServer.listen(0, async () => {
+      const clientURL = `http://localhost:${clientWebServer.address().port}`;
+      browser = await puppeteer.launch({ headless: `new` });
+      const page = await browser.newPage();
+      await page.goto(clientURL);
     });
   });
 });

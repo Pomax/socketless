@@ -241,17 +241,27 @@ function generator(ClientClass, ServerClass) {
 
           // If it's not, proxy the call from the browser to the server
           else {
-            let target = client.server;
-            const steps = eventName.split(`:`);
-            while (steps.length) target = target[steps.shift()];
-            const result = await target(...payload);
-            // and then proxy the response back to the browser
-            socket.send(
-              JSON.stringify({
-                name: responseName,
-                payload: result,
-              }),
-            );
+            if (client.server) {
+              let target = client.server;
+              const steps = eventName.split(`:`);
+              while (steps.length) target = target[steps.shift()];
+              const result = await target(...payload);
+              // and then proxy the response back to the browser
+              socket.send(
+                JSON.stringify({
+                  name: responseName,
+                  payload: result,
+                }),
+              );
+            } else {
+              socket.send(
+                JSON.stringify({
+                  name: responseName,
+                  payload: undefined,
+                  error: `Server not available`,
+                }),
+              );
+            }
           }
         });
 
