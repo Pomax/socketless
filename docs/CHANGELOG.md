@@ -8,6 +8,10 @@ Socketless _strictly_ adheres to [semver](https://semver.org)'s major.minor.patc
 
 # Current version history
 
+## v2.1.1 (28 October 2023)
+
+Added missing docs for the `.reconnect()` function.
+
 ## v2.1.0 (28 October 2023)
 
 Clients now have a `.reconnect()` function for reconnecting to the server, making things like "letting the client run while we restart the server" much easier.
