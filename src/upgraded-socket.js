@@ -182,9 +182,12 @@ class UpgradedSocket extends WebSocket {
       }
       // Run the update with the new state as argument first, then
       // overwrite the old state with the new state after the update.
-      lockObject(state);
-      origin.state = state;
-      return origin.update?.(prevState);
+      if (state) {
+        lockObject(state);
+        origin.state = state;
+        origin.update?.(prevState);
+      }
+      return;
     }
 
     // If this is a response message, run the `on` handler for that.
