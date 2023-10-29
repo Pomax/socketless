@@ -129,7 +129,7 @@ function generator(ClientClass, ServerClass) {
 
       Object.defineProperty(client, `reconnect`, {
         value: () => {
-          if (this.server) return;
+          if (client.server) return;
 
           const socketToServer = new WebSocket(serverURL, {
             rejectUnauthorized:
@@ -150,7 +150,11 @@ function generator(ClientClass, ServerClass) {
           }
 
           socketToServer.on(`error`, (err) => client.onError(err));
-          socketToServer.on(`close`, (...data) => client.onDisconnect(...data));
+          socketToServer.on(`close`, (...data) => {
+            const propagate = !!client.server;
+            client.server = undefined;
+            if (propagate) client.onDisconnect(...data);
+          });
           socketToServer.on(`message`, registerForId);
         },
         writable: false,
