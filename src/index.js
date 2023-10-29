@@ -127,30 +127,39 @@ function generator(ClientClass, ServerClass) {
         enumerable: false,
       });
 
-      const socketToServer = new WebSocket(serverURL, {
-        rejectUnauthorized: allow_self_signed_certs !== ALLOW_SELF_SIGNED_CERTS,
+      Object.defineProperty(client, `reconnect`, {
+        value: () => {
+          if (this.server) return;
+
+          const socketToServer = new WebSocket(serverURL, {
+            rejectUnauthorized:
+              allow_self_signed_certs !== ALLOW_SELF_SIGNED_CERTS,
+          });
+
+          function registerForId(data) {
+            try {
+              const { name, payload } = JSON.parse(data);
+              if (name === `handshake:setid`) {
+                socketToServer.off(`message`, registerForId);
+                client.setState(payload);
+                client.connectServerSocket(socketToServer);
+              }
+            } catch (e) {
+              // ignore
+            }
+          }
+
+          socketToServer.on(`error`, (err) => client.onError(err));
+          socketToServer.on(`close`, (...data) => client.onDisconnect(...data));
+          socketToServer.on(`message`, registerForId);
+        },
+        writable: false,
+        configurable: false,
+        enumerable: false,
       });
 
-      socketToServer.on(`error`, (err) => client.onError(err));
+      client.reconnect();
 
-      socketToServer.on(`close`, (...data) => client.onDisconnect(...data));
-
-      function registerForId(data) {
-        try {
-          const { name, payload } = JSON.parse(data);
-          if (name === `handshake:setid`) {
-            // console.log(`client: received handshake:setid`);
-            socketToServer.off(`message`, registerForId);
-            // console.log(`setting state:`, payload);
-            client.setState(payload);
-            // console.log(`calling connectServerSocket`);
-            client.connectServerSocket(socketToServer);
-          }
-        } catch (e) {
-          // ignore
-        }
-      }
-      socketToServer.on(`message`, registerForId);
       return client;
     },
 

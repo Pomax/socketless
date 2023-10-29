@@ -74,6 +74,7 @@ export function formClientClass(ClientClass) {
 
     disconnect() {
       this.server?.socket.close();
+      this.server = undefined;
     }
   };
 }
