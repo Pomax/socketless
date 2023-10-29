@@ -69,6 +69,7 @@ For security reasons, a constructor is strongly discouraged. If present, it will
 ### methods
 
 - `disconnect()`, a method to disconnect the client from the server.
+- `reconnect()`, a method to reconnect the client to the server.
 
 ### event handlers
 

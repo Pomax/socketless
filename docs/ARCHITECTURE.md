@@ -87,6 +87,7 @@ Client instances have access to the following pre-specified properties:
 - `this.browser`, a proxy of the browser, if this is a web client. Note that calls to functions on this.browser do _not_ time out, they stay waiting until the browser.
 - `this.state`, a state object that can be used to store client data. This object gets automatically synchronized to the browser, if this is a web client with a connected browser.
 - `this.disconnect()`, a method to disconnect this client from the server.
+- `this.reconnect()`, a method to reconnect the client to the server.
 
 Your client class may also implement any of the following event handlers:
 
