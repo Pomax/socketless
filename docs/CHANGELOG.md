@@ -8,6 +8,10 @@ Socketless _strictly_ adheres to [semver](https://semver.org)'s major.minor.patc
 
 # Current version history
 
+## v2.1.5 (31 October 2023)
+
+README.md update to make sure the initial example shows off everything rather than browserless client-server connections. This is important enough to merit a patch release.
+
 ## v2.1.4 (31 October 2023)
 
 bug fix when trying to connect to a server that isn't running. Previous this would throw a SyntaxError claiming that the URL provided was invalid, when the actual problem isn't that the URL is invalid, it's just not accessible. That's not an error: that's the internet.

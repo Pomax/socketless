@@ -11,7 +11,7 @@ Socketless is a websocket-based RPC-like framework for client/server implementat
 
 # Installation
 
-The current version of `socketless` is `v2.1.4` [(See the change-log for more information)](./docs/CHANGELOG.md).
+The current version of `socketless` is `v2.1.5` [(See the change-log for more information)](./docs/CHANGELOG.md).
 
 The `socketles` library can be installed from https://www.npmjs.com/package/socketless using your package manager of choice, and can be used in Deno by importing `"npm:socketless@2"`.
 
@@ -23,105 +23,129 @@ As the `socketless` library is code that by definition needs to run server-side,
 
 # A short example
 
-A short example is the easiest way to demonstrate how Socketless works.
-
-If we have the following client class:
+A short example is the easiest way to demonstrate how Socketless works. Normally, we'd put the client and server classes, as well as the code that links and runs client and server instances in their own files, but thing'll work fine if we don't, of course:
 
 ```js
-class ClientTimeManager {
-  tick(dateTime) {
-    console.log(`server date-time is ${dateTime}`);
+/**
+ * Make our server class announce client connections:
+ */
+export class ServerClass {
+  onConnect(client) {
+    console.log(`[server] A client connected!`);
+  }
+  // And give the server a little test function that both logs and returns a value:
+  async test() {
+    console.log(`[server] test!`);
+    return "success!";
   }
 }
 
-class ClientClass {
-  constructor() {
-    console.log("client> created");
-    this.timeManager = new ClientTimeManager();
+/**
+ * Then, make our client class announce its own connection, as well as browser connections:
+ */
+export class ClientClass {
+  onConnect() {
+    console.log(`[client] We connected to the server!`);
   }
-
-  async onConnect() {
-    console.log("client> connected to server");
-    setTimeout(() => this.server.disconnect(), 3000);
-    console.log("client> disconnecting in 3 seconds");
-  }
-
-  async register() {
-    this.name = `user${Date.now()}`;
-    this.registered = await this.server.setName(this.name);
-    console.log(`client> registered as ${this.name}: ${this.registered}`);
+  onBrowserConnect() {
+    console.log(`[client] A browser connected!`);
+    this.setState({ goodToGo: true });
   }
 }
-```
 
-And we have the following server class:
-
-```js
-class ServerClass {
-  constructor() {
-    console.log("server> created");
-    setInterval(
-      () =>
-        this.clients.forEach((client) => client.timeManager.tick(Date.now())),
-      1000
-    );
-  }
-
-  async onConnect(client) {
-    console.log(
-      `server> new connection, ${this.clients.length} clients connected`
-    );
-    client.register();
-  }
-
-  async onDisconnect(client) {
-    console.log(`server> client ${client.name} disconnected`);
-    if (this.clients.length === 0) {
-      console.log(`server> no clients connected, shutting down.`);
-      this.quit();
-    }
-  }
-
-  async setName(client, name) {
-    console.log(`server> client is now known as ${name}`);
-    client.name = name;
-  }
-}
-```
-
-Then we can make things "just work" by writing a server application that starts up a server, and then starts up a client to connect to that server:
-
-```js
-import { ClientClass } from "./client.js";
-import { ServerClass } from "./server.js";
+/**
+ * Then we can link those up as a `socketless` factory and run a client/server setup:
+ */
 import { linkClasses } from "socketless";
-
-const { createClient, createServer } = linkClasses(ClientClass, ServerClass);
+const { createWebClient, createServer } = linkClasses(ClientClass, ServerClass);
 const { server, webserver } = createServer();
-const PORT = process.env.PORT ?? 8000;
 
-webserver.listen(PORT, () => {
-  const client = createClient(`http://localhost:${PORT}`);
+// For demo purposes, let's use some hardcoded ports:
+const SERVER_PORT = 8000;
+const CLIENT_PORT = 3000;
+
+// So, first: create our server and start listening for connections...
+webserver.listen(SERVER_PORT, () => console.log(`Server running...`));
+
+// ...then create our client, pointed at our server's URL...
+const serverURL = `http://localhost:${SERVER_PORT}`;
+const publicDir = `public`;
+const { client, clientWebServer } = createWebClient(serverURL, publicDir);
+
+// ...and have that start listening for browser connections, too:
+clientWebServer.listen(CLIENT_PORT, () => {
+  console.log(`Client running...`);
+  const clientURL = `http://localhost:${CLIENT_PORT}`;
+  import(`open`).then(({ default: open }) => {
+    console.log(`Opening a browser...`);
+    open(clientURL);
+  });
 });
 ```
 
-By running the above code, we should see the following output on the console:
+Of course we'll need something for the browser to load so we'll create a minimal `index.html` and `setup.js` and stick them both in a `public` dir:
 
-```bash
-server> created
-client> created
-server> new connection, 1 clients connected
-client> connected to server
-client> disconnecting in 3 seconds
-server> client is now known as user1582572704133
-client> registered as user1582572704133: true
-client> server date-time is ....
-client> server date-time is ....
-server> client user1582572704133 disconnected
-server> no clients connected, shutting down.
+```html
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="utf-8" />
+    <title>Let's test our connections!</title>
+    <script src="setup.js" type="module" async></script>
+  </head>
+  <body>
+    <!-- we only need the dev tools console tab for now -->
+  </body>
+</html>
 ```
 
-Note that when the client is created, it's not passed the reference to the server, but instead it's given a URL to connect to: the client and server can, and typically will, run on completely different machines "anywhere on the internet". As long as the same versions of the client and server classes are used by all parties, there's nothing else you need to do.
+with our `setup.js` being a separate file because it's modern ES module code, so we can't inline that:
+
+```js
+/**
+ * We don't need to put a "socketless.js" in our public dir,
+ * this is a "magic import" provided by socketless itself:
+ */
+import { createBrowserClient } from "./socketless.js";
+
+/**
+ * And then we can build a browser UI thin client that will
+ * automatically connect to the real client:
+ */
+createBrowserClient(
+  class {
+    async init() {
+      console.log(`[browser] We're connected to our web client!`);
+      console.log(`[browser] Calling test:`, await this.server.test());
+    }
+    update(prevState) {
+      console.log(`[browser] State updated, goodToGo: ${this.state.goodToGo}`);
+    }
+  }
+);
+```
+
+Then we can run the above code, and see following output on the console:
+
+```
+Server running...
+Client running...
+[server] A client connected!
+[client] We connected to the server!
+Opening a browser...
+[client] A browser connected!
+[server] test!
+```
+
+And then if we check the browser's developer tools' `console` tab, we also see:
+
+```
+[browser] We're connected to our web client!           setup.js:14:15
+[browser] State updated, goodToGo: true                setup.js:18:15
+[browser] Calling test: success!                       setup.js:15:15
+```
+
+It's important to note that we don't create clients by passing them a direct reference to the `server` instance`, but instead it's given a URL to connect to: the client and server can, and typically will, run on completely different machines "anywhere on the internet". As long as the same versions of the client and server classes are used on both machines (because, say, you're running on the same branch of the same git repo) then there's nothing else you need to do...
 
 #### _It just works._
 
