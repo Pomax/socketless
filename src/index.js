@@ -131,10 +131,22 @@ function generator(ClientClass, ServerClass) {
         value: () => {
           if (client.server) return;
 
-          const socketToServer = new WebSocket(serverURL, {
-            rejectUnauthorized:
-              allow_self_signed_certs !== ALLOW_SELF_SIGNED_CERTS,
-          });
+          let socketToServer;
+          try {
+            socketToServer = new WebSocket(serverURL, {
+              rejectUnauthorized:
+                allow_self_signed_certs !== ALLOW_SELF_SIGNED_CERTS,
+            });
+          } catch (e) {
+            // Deal with a bug in ws's implementation of WebSocket, where
+            // it will throw an "invalid URL" error even though the actual
+            // problem is that the URL isn't accessible. The URL is valid,
+            // it just can't resolve. That's not an error. That's the internet.
+            if (e instanceof SyntaxError && e.message.includes(`Invalid URL`)) {
+              return;
+            }
+            throw e;
+          }
 
           function registerForId(data) {
             try {
