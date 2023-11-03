@@ -42,6 +42,11 @@ export function formClientClass(ClientClass) {
       });
     }
 
+    async init() {
+      super.init?.();
+      if (DEBUG) console.log(`[ClientBase] running init()`);
+    }
+
     async onError(error) {
       super.onError?.(error);
       if (DEBUG) console.log(`[ClientBase] some kind of error occurred.`);

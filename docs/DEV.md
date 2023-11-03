@@ -22,6 +22,22 @@ Some notes if you want to work on this code (in addition to the architecture doc
 
 RPC calls are compared to a list of "forbidden" calls in the router function, which are pulled from the server, client, and webclient classes using their static `disallowedCalls` property, declared in `src/classes.js` and `src/webclient/classes.js`.
 
+### Class hierarchies
+
+Server and classes are built as extensions on the user-provided class.
+
+- The `createServer` function uses a `ServerClass extends UserProvidedClass`
+- The `createClient` function uses a `ClientClass extends UserProvidedClass`
+- The `createWebClient` function uses a `WebClientClass extends <ClientClass used by createClient>`
+
+to ensure user-implemented functions get called, the `socketless` classes defined their functions in terms of the super class:
+
+```js
+async someSocketlessFunction() {
+  super.someSocketlessFunction?.();
+}
+```
+
 ### Function call routing
 
 Function calls are proxied through the `SocketProxy` class exported by `src/upgraded-socket.js`, and are resolved on step at a time using code similar to the following code block:

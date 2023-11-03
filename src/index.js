@@ -174,7 +174,11 @@ function generator(ClientClass, ServerClass) {
         enumerable: false,
       });
 
-      client.reconnect();
+      // call init first, *then* start trying to connect.
+      (async () => {
+        await client.init();
+        client.reconnect();
+      })();
 
       return client;
     },
@@ -302,6 +306,7 @@ function generator(ClientClass, ServerClass) {
       webserver.addRoute = router.addRouteHandler.bind(router);
       // @ts-ignore: idem ditto
       webserver.removeRoute = router.removeRoute.bind(router);
+
       return { client, clientWebServer: webserver };
     },
   };

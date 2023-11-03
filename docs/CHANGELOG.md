@@ -8,6 +8,10 @@ Socketless _strictly_ adheres to [semver](https://semver.org)'s major.minor.patc
 
 # Current version history
 
+## v2.2.0 (3 November 2023)
+
+Added `init()` to clients, to offer an alternative to the constructor with all instance properties available for use. This is particularly important for web clients where we may need a "startup state" that we cannot set in the constructor as the protected `this.state` instance property does not exist yet.
+
 ## v2.1.5 (31 October 2023)
 
 README.md update to make sure the initial example shows off everything rather than browserless client-server connections. This is important enough to merit a patch release.

@@ -4,6 +4,61 @@ import url from "url";
 const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
 
 describe("basic tests", () => {
+  describe("functional tests", () => {
+    /**
+     * Verify that the client init() function runs
+     */
+    it("runs client init()", (done) => {
+      let error = `did not run init`;
+      class ClientClass {
+        init() {
+          error = undefined;
+        }
+      }
+      class ServerClass {
+        onConnect() {
+          this.quit();
+        }
+        teardown() {
+          done(error);
+        }
+      }
+      const factory = linkClasses(ClientClass, ServerClass);
+      const { webserver } = factory.createServer();
+      webserver.listen(0, () => {
+        factory.createClient(`http://localhost:${webserver.address().port}`);
+      });
+    });
+
+    /**
+     * Verify that the client init() function runs when wrapped as web client
+     */
+    it("runs client init() when used as webclient", (done) => {
+      let error = `did not run init`;
+      class ClientClass {
+        init() {
+          error = undefined;
+        }
+      }
+      class ServerClass {
+        onConnect() {
+          this.quit();
+        }
+        teardown() {
+          done(error);
+        }
+      }
+      const factory = linkClasses(ClientClass, ServerClass);
+      const { webserver } = factory.createServer();
+      webserver.listen(0, () => {
+        factory.createWebClient(
+          `http://localhost:${webserver.address().port}`,
+          `.`,
+        );
+      });
+    });
+  });
+
   describe("connectivity tests", () => {
     /**
      * Basic client/server constellation

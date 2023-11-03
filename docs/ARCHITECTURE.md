@@ -91,6 +91,7 @@ Client instances have access to the following pre-specified properties:
 
 Your client class may also implement any of the following event handlers:
 
+- `init()`, a method that gets run immediately after construction, with all instance properties available.
 - `onError(error)`, triggers if there are websocket errors during connection negotiation.
 - `onConnect()`, triggered after the client connects to the server.
 - `onBrowserConnect()`, if this is a web client, triggered after a browser connects.

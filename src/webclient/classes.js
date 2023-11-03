@@ -43,6 +43,11 @@ export function formWebClientClass(ClientClass) {
       }
     }
 
+    async init() {
+      super.init?.();
+      if (DEBUG) console.log(`[WebClientBase] running init()`);
+    }
+
     connectBrowserSocket(browserSocket) {
       if (this.browser) {
         // We don't allow more than one browser to connect

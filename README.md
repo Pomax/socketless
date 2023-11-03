@@ -2,6 +2,9 @@
 
 Socketless is a websocket-based RPC-like framework for client/server implementations, written specifically so you never have to write any websocket or RPC code. As far as the clients and servers know, there is no network, code is just "normal function-based API code", with the only caveat being that function calls that need to return values will do so asynchronously. Just like any other `async`/`await` code you're used to writing.
 
+### The current version of `socketless` is `v2.2.0`
+[(See the change-log for more information)](./docs/CHANGELOG.md)
+
 # Table of contents
 
 - [Installation](#installation)
@@ -11,15 +14,13 @@ Socketless is a websocket-based RPC-like framework for client/server implementat
 
 # Installation
 
-The current version of `socketless` is `v2.1.5` [(See the change-log for more information)](./docs/CHANGELOG.md).
-
 The `socketles` library can be installed from https://www.npmjs.com/package/socketless using your package manager of choice, and can be used in Deno by importing `"npm:socketless@2"`.
 
 **Note**: This library is written and exposed as modern ESM code, and relies on enough modern JS language features that this library is only guaranteed to work on the current generation of browsers, and current LTS version of Node. No support for older/dead browsers or end-of-life versions of Node is offered.
 
 ## Using `socketless` in the browser
 
-As the `socketless` library is code that by definition needs to run server-side, it does not provide a precompiled single-file library in a `dist` directory, nor should you ever (need to) bundle `socketless` into a front-end bundle. Instead, the library has its own mechanism for letting browsers connect, explained in the ["how to..."](docs/HOWTO.md) docs.
+As the `socketless` library is code that by definition needs to run server-side, it does not provide a precompiled single-file library in a `dist` directory, nor should you ever (need to) bundle `socketless` into a front-end bundle. Instead, the library has its own mechanism for letting browsers connect, shown off in the following example and explained in more detail in the ["how to..."](docs/HOWTO.md) documentation.
 
 # A short example
 
@@ -39,7 +40,9 @@ export class ServerClass {
     return "success!";
   }
 }
+```
 
+```js
 /**
  * Then, make our client class announce its own connection, as well as browser connections:
  */
@@ -52,7 +55,9 @@ export class ClientClass {
     this.setState({ goodToGo: true });
   }
 }
+```
 
+```js
 /**
  * Then we can link those up as a `socketless` factory and run a client/server setup:
  */
@@ -83,7 +88,7 @@ clientWebServer.listen(CLIENT_PORT, () => {
 });
 ```
 
-Of course we'll need something for the browser to load so we'll create a minimal `index.html` and `setup.js` and stick them both in a `public` dir:
+Of course we'll need something for the browser to load so we'll create a minimal `index.html` and `setup.js` and stick them both in a `public` dir. First our index file:
 
 ```html
 <!doctype html>
@@ -99,7 +104,7 @@ Of course we'll need something for the browser to load so we'll create a minimal
 </html>
 ```
 
-with our `setup.js` being a separate file because it's modern ES module code, so we can't inline that:
+And then our browser JS:
 
 ```js
 /**

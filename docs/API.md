@@ -28,7 +28,7 @@ This yields a factory object with three functions:
 
 ## **Server classes**
 
-For security reasons, a constructor is strongly discouraged. If present, it will be called without arguments.
+Note that the instance properties for a server will not be available until after the constructor has finished running. Also note that if a constructor implementation exists, it will be called without any arguments.
 
 ### instance properties
 
@@ -58,7 +58,7 @@ Web servers are Node http(s) servers (even when using something like Express), w
 
 ## **Client classes**
 
-For security reasons, a constructor is strongly discouraged. If present, it will be called without arguments.
+As the instance properties for a client will not be available until _after_ the constructor has finished, having a constructor in the client class is strongly discouraged. If present, it will be called without arguments. Instead, if implemented, the client's `init` function will be called after construction to allow for initial setup with full access to all instance properties.
 
 ### instance properties
 
@@ -68,6 +68,7 @@ For security reasons, a constructor is strongly discouraged. If present, it will
 
 ### methods
 
+- `init()`, a method that gets run immediately after construction, with all instance properties available.
 - `disconnect()`, a method to disconnect the client from the server.
 - `reconnect()`, a method to reconnect the client to the server.
 
@@ -81,7 +82,7 @@ For security reasons, a constructor is strongly discouraged. If present, it will
 
 This is considered a `ClientClass`, with the additional properties and events that are only used when a client instance is created through the `createWebClient()` function.
 
-For security reasons, a constructor is strongly discouraged. If present, it will be called without arguments.
+As the instance properties for a web client will not be available until _after_ the constructor has finished, having a constructor in the web client class is strongly discouraged. If present, it will be called without arguments. Instead, if implemented, the web client's `init` function will be called after construction to allow for initial setup with full access to all instance properties.
 
 ### instance properties
 
@@ -92,6 +93,7 @@ Web client classes inherit the client instance properties, and add the following
 
 ### methods
 
+- `init()`, a method that gets run immediately after construction, with all instance properties available.
 - `disconnect()`, a method to disconnect the client from the server.
 
 ### event handlers

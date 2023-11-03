@@ -7,4 +7,4 @@ There are a number of documents in this directory! And you probably know how to 
 - the [API docs](API.md), or if you're super into working on the underlying code, maybe even the...
 - [Developer docs](DEV.md).
 
-You're pretty cool for actually looking for docs... you know that, right?
+And can I just say, It's pretty awesome that you're actually going through the documentation! [Let me know](https://github.com/Pomax/socketless/issues) if there's anything you can't find!
