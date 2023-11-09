@@ -2,8 +2,8 @@
 
 Socketless is a websocket-based RPC-like framework for client/server implementations, written specifically so you never have to write any websocket or RPC code. As far as the clients and servers know, there is no network, code is just "normal function-based API code", with the only caveat being that function calls that need to return values will do so asynchronously. Just like any other `async`/`await` code you're used to writing.
 
-### The current version of `socketless` is `v2.2.0`
-[(See the change-log for more information)](./docs/CHANGELOG.md)
+### The current version of `socketless` is `v2.3.0`
+[(See the changelog for more information)](./docs/CHANGELOG.md)
 
 # Table of contents
 

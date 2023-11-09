@@ -353,17 +353,20 @@ class ClientClass {
 }
 ```
 
-Instead, treat your server purely as an API layer between your "real" program, and your clients:
+Instead, treat your server purely as an API layer between your "real" program, and your clients, with out-of-class variables for the things you need to work with but don't want shared.
 
 ```js
 // Our actual program
 import { GameManager } from "src/game/game-manager.js";
-const gameManager = new GameManager();
-gameManager.init();
+let gameManager;
 
 // Our server is just an RPC gateway into that program,
 // exposing exactly *nothing* to clients:
 class ServerClass {
+  async init() {
+    gameManager = new GameManager();
+    gameManager.init();
+  }
   async onConnect(client) {
     gameManager.addUser(client.id);
   }
@@ -399,6 +402,24 @@ class ClientClass {
 ```
 
 Now clients cannot access the `gameManager` as a server property, and they won't be able to cheat!
+
+Also note that we did _not_ use the following code:
+
+```javascript
+// This is *not* what we want:
+import { GameManager } from "src/game/game-manager.js";
+let gameManager = new GameManager();
+    gameManager.init();
+
+class ServerClass {
+  async onConnect(client) {
+    ...
+  }
+  ...
+}
+```
+
+The reason for this is that `linkClasses` needs both classes in order for `socketless` to do its job, and you don't want any code that's only meaningful on the server to get run on the client purely by importing the server class (or vice versa). Instead of declaring and initializing out-of-class globals (or, "module globals" really), declare them out-of-class and then _assign_ them in the `init()` function.
 
 ## Clients
 

@@ -71,6 +71,7 @@ Server instances have access to the following pre-specified properties:
 
 Your server class may also implement any of the following event handlers:
 
+- `init()`, a method that gets run immediately after construction, with all instance properties available.
 - `onError(error)`, triggers if there are websocket errors during connection negotiation.
 - `onConnect(client)`, triggers after a client has connected.
 - `onDisconnect(client)`, triggers after a client has disconnected.

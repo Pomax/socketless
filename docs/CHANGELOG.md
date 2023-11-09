@@ -8,6 +8,10 @@ Socketless _strictly_ adheres to [semver](https://semver.org)'s major.minor.patc
 
 # Current version history
 
+## v2.3.0 (9 November 2023)
+
+Added an `init()` to servers as well, so that there's a place where allocations can be run such that they _only_  run for servers, rather than using globals and having those run on the client, too. (since both the client class and server class need to be loaded for `linkClasses` to work).
+
 ## v2.2.0 (3 November 2023)
 
 Added `init()` to clients, to offer an alternative to the constructor with all instance properties available for use. This is particularly important for web clients where we may need a "startup state" that we cannot set in the constructor as the protected `this.state` instance property does not exist yet.

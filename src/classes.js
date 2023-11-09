@@ -107,6 +107,11 @@ export function formServerClass(ServerClass) {
       this.webserver = webserver;
     }
 
+    async init() {
+      super.init?.();
+      if (DEBUG) console.log(`[ServerBase] running init()`);
+    }
+
     // When a client connects to the server, route it to
     // the server.addClient(client) function for handling.
     async connectClientSocket(socket) {

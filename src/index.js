@@ -94,6 +94,9 @@ function generator(ClientClass, ServerClass) {
         server.connectClientSocket(socket);
       });
 
+      // Kick off the server's init function
+      server.init();
+
       // and then return the web server for folks to .listen() etc.
       return { server, webserver };
     },
@@ -176,7 +179,7 @@ function generator(ClientClass, ServerClass) {
 
       // call init first, *then* start trying to connect.
       (async () => {
-        await client.init();
+        await client.init?.();
         client.reconnect();
       })();
 

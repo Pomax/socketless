@@ -36,6 +36,7 @@ Note that the instance properties for a server will not be available until after
 
 ### methods
 
+- `init()`, a method that gets run immediately after construction, with all instance properties available.
 - `quit()`, a method to close all connections and shut down the server.
 
 ### event handlers
