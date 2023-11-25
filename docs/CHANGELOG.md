@@ -8,6 +8,11 @@ Socketless _strictly_ adheres to [semver](https://semver.org)'s major.minor.patc
 
 # Current version history
 
+## v2.4.0 (25 November 2023)
+
+You can now import `createServer`, `createClient`, and `createWebClient` directly, without needing `linkClasses` (of course, `linkClasses` is still available, too).
+This version also fixes a bug in the web client where server throws would crash the client instead of forwarding the thrown error to the browser.
+
 ## v2.3.0 (9 November 2023)
 
 Added an `init()` to servers as well, so that there's a place where allocations can be run such that they _only_  run for servers, rather than using globals and having those run on the client, too. (since both the client class and server class need to be loaded for `linkClasses` to work).

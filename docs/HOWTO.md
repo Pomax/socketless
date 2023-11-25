@@ -4,16 +4,51 @@ The `socketless` library works by creating proxy objects so that code can be wri
 
 ## The basics
 
-The `socketless` library exports a single function, `linkClasses`, which is used to create a client and server factory:
+The `socketless` library exports a convenience function, `linkClasses`, which can be used to create a client and server factory:
 
 ```js
 import { linkClasses } from "socketless";
 import { ClientClass, ServerClass } from "./my/classes.js";
 const factory = linkClasses(ClientClass, ServerClass);
 const { createClient, createServer } = factory;
+
+const { server, webserver } = createServer();
+webserver.listen(8000, () => {
+  const client = createClient(`http://localhost:8000`);
+});
 ```
 
 And that's pretty much it all the boilerplate code `socketless` will contribute to your project.
+
+Alternatively, you can also directly import the `createServer` and `createClient` functions, but note that these require you to specify the client and server class as argument:
+
+```js
+import { createClient, createServer } from "socketless";
+import { ClientClass, ServerClass } from "./my/classes.js";
+
+const { server, webserver } = createServer(ServerClass);
+webserver.listen(8000, () => {
+  const client = createClient(ClientClass, `http://localhost:8000`);
+});
+```
+
+Generally, if you're creating servers and clients in the same script or codepath, `linkClasses` will be more convenient, whereas if you run server and client code in different processes or on different machines, using the dedicated functions means you don't have to load a class you don't need, i.e.:
+
+```js
+// a dedicated script
+import { createServer } from "socketless";
+import { ServerClass } from "./my/classes.js";
+createServer(ServerClass).webserver.listen(8000);
+```
+
+plus
+
+```js
+// separate client script
+import { createClient } from "socketless";
+import { ClientClass } from "./my/classes.js";
+createServer(ClientClass, `http://12.34.56.78:5678`);
+```
 
 ## The basics: the browser as thin-client
 
@@ -30,7 +65,7 @@ And that's all the `socketless` boilerplate for in the browser.
 
 ### Creating a server
 
-Creating a server is as easy as calling `createServer` and then listening for connections on its webserver:
+As we've seen, creating a server is as easy as calling `createServer` and then listening for connections on its webserver:
 
 ```js
 import { linkClasses } from "socketless";

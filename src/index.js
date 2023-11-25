@@ -266,27 +266,33 @@ export function createWebClient(
 
       // If it's not, proxy the call from the browser to the server
       else {
+        let proxyResult = {
+          name: responseName,
+          payload: undefined,
+          error: undefined,
+        };
+
+        // ... if there is a server, of course.
         if (client.server) {
           let target = client.server;
           const steps = eventName.split(`:`);
           while (steps.length) target = target[steps.shift()];
-          const result = await target(...payload);
-          // and then proxy the response back to the browser
-          socket.send(
-            JSON.stringify({
-              name: responseName,
-              payload: result,
-            }),
-          );
-        } else {
-          socket.send(
-            JSON.stringify({
-              name: responseName,
-              payload: undefined,
-              error: `Server not available`,
-            }),
-          );
+          // Proxy the result of the server call
+          try {
+            const result = await target(...payload);
+            proxyResult.payload = result;
+          } catch (e) {
+            // Or proxy the result of the server call throwing an error
+            proxyResult.error = e.message;
+          }
         }
+
+        // If there isn't, this is a proxy error
+        else {
+          proxyResult.error = `Server not available`;
+        }
+
+        socket.send(JSON.stringify(proxyResult));
       }
     });
 
