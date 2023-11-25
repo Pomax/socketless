@@ -8,23 +8,36 @@
 
 ### exported methods:
 
-- `linkClasses(ClientClass, ServerClass)`
 
-This yields a factory object with three functions:
-
-- `createServer([serverOrHttpsOptions])` yielding `{ server, webserver }`
+- `createServer(ServerClass, [serverOrHttpsOptions])` yielding `{ server, webserver }`
 
   The `serverOrHttpsOptions` argument may either be an instance of a plain Node `http` or `https` server, which includes things like Express servers (as obtained from `app.listen()`), or an options object that provides the HTTPs key and cert string values, using the form `{ key: string, cert: string }`.
 
-- `createClient(serverURL, [ALLOW_SELF_SIGNED_CERTS])` yielding `client`
+- `createClient(ClientClass, serverURL, [ALLOW_SELF_SIGNED_CERTS])` yielding `client`
 
   The `serverURL` may be either `http://`, `https://`, `ws://` or `wss://`, http URLs are automatically converted to websocket URLs. To allow secure connections that use self-signed certificates, the optional `ALLOW_SELF_SIGNED_CERTS` must be the exported symbol listed above.
 
-- `createWebClient(serverURL, publicDir, [httpsOptions], [ALLOW_SELF_SIGNED_CERTS])` yielding `{ client, clientWebServer}`
+- `createWebClient(ClientClass, serverURL, publicDir, [httpsOptions], [ALLOW_SELF_SIGNED_CERTS])` yielding `{ client, clientWebServer}`
 
   The `serverURL` may include an `?sid=...` query argument, in which case browsers must connect to the client's web server with that same argument. Failure to do so will result in a 404 when requesting `socketless.js`, and websocket connection requests to the client's server URL will not be honoured.
 
   The `httpsOptions` argument must be an options object that provides the HTTPs key and cert values in the form `{ key: string, cert: string }`. To allow secure connections that use self-signed certificates, the optional `ALLOW_SELF_SIGNED_CERTS` must be the exported symbol listed above.
+
+- `linkClasses(ClientClass, ServerClass)`
+
+This yields a factory object with three functions, useful for code that creates both servers and clients in the same script:
+
+- `createServer([serverOrHttpsOptions])` yielding `{ server, webserver }`
+
+  This is the same as the `createServer` function that `socketless` exports, but without needing to specify the `ServerClass` again.
+
+- `createClient(serverURL, [ALLOW_SELF_SIGNED_CERTS])` yielding `client`
+
+  This is the same as the `createClient` function that `socketless` exports, but with needing to specify the `ClientClass` again.
+
+- `createWebClient(serverURL, publicDir, [httpsOptions], [ALLOW_SELF_SIGNED_CERTS])` yielding `{ client, clientWebServer}`
+
+  This is the same as the `createWebClient` function that `socketless` exports, but with needing to specify the `ClientClass` again.
 
 ## **Server classes**
 

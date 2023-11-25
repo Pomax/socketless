@@ -1,5 +1,5 @@
 import puppeteer from "puppeteer";
-import { linkClasses } from "../src/index.js";
+import { linkClasses, createClient, createServer } from "../src/index.js";
 import url from "url";
 const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
 
@@ -23,10 +23,12 @@ describe("basic tests", () => {
           done(error);
         }
       }
-      const factory = linkClasses(ClientClass, ServerClass);
-      const { webserver } = factory.createServer();
+      const { webserver } = createServer(ServerClass);
       webserver.listen(0, () => {
-        factory.createClient(`http://localhost:${webserver.address().port}`);
+        createClient(
+          ClientClass,
+          `http://localhost:${webserver.address().port}`,
+        );
       });
     });
 
