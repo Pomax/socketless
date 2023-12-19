@@ -8,6 +8,10 @@ Socketless _strictly_ adheres to [semver](https://semver.org)'s major.minor.patc
 
 # Current version history
 
+## v2.5.0 (19 December 2023)
+
+A throw caused by returning from a server function that's passing a `client` as first argument, but does not have a function signature with a client as first argument, now has a much more useful error message.
+
 ## v2.4.0 (25 November 2023)
 
 You can now import `createServer`, `createClient`, and `createWebClient` directly, without needing `linkClasses` (of course, `linkClasses` is still available, too).

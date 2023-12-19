@@ -388,8 +388,17 @@ class SocketProxy extends Function {
       get: (_, prop) => {
         if (prop === "id") return this.id;
         if (prop === "socket") return this.socket;
-        // @ts-ignore: we're never invoking this with Symbol as second argument
-        return new SocketProxy(socket, receiver, remote, `${path}:${prop}`);
+        if (typeof prop === "symbol") {
+          throw new Error(
+            `unexpected symbol as prop - did you forget to add a "client" as first function argument?`,
+          );
+        }
+        return new SocketProxy(
+          socket,
+          receiver,
+          remote,
+          `${path}:${String(prop)}`,
+        );
       },
       apply: async (_, __, args) => {
         // We need to capture the current stack trace if we want to throw an
