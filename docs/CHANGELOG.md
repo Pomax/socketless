@@ -8,6 +8,10 @@ Socketless _strictly_ adheres to [semver](https://semver.org)'s major.minor.patc
 
 # Current version history
 
+## v3.0.0 (5 January 2023)
+
+Add a call to `server.init()` as part of the createServer process, because all the code was in place but that trigger was missing. This breaks backwards compatibility for any code that manually calls `init()` in the server class.
+
 ## v2.5.0 (19 December 2023)
 
 A throw caused by returning from a server function that's passing a `client` as first argument, but does not have a function signature with a client as first argument, now has a much more useful error message.
@@ -19,7 +23,7 @@ This version also fixes a bug in the web client where server throws would crash 
 
 ## v2.3.0 (9 November 2023)
 
-Added an `init()` to servers as well, so that there's a place where allocations can be run such that they _only_  run for servers, rather than using globals and having those run on the client, too. (since both the client class and server class need to be loaded for `linkClasses` to work).
+Added an `init()` to servers as well, so that there's a place where allocations can be run such that they _only_ run for servers, rather than using globals and having those run on the client, too. (since both the client class and server class need to be loaded for `linkClasses` to work).
 
 ## v2.2.0 (3 November 2023)
 
