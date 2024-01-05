@@ -79,6 +79,9 @@ export function createServer(ServerClass, serverOrHttpsOptions) {
   // create our actual RPC server object.
   const server = new ServerClass(ws, webserver);
 
+  // call server init
+  (async () => await server.init())();
+
   // And of course, when we receive a websocket connection, add that socket as a client.
   ws.on(`connection`, function (socket) {
     // console.log(`client.connectClientSocket`);
