@@ -8,7 +8,7 @@ Socketless _strictly_ adheres to [semver](https://semver.org)'s major.minor.patc
 
 # Current version history
 
-## v3.1.0 (8 January 2023)
+## v4.0.0 (8 January 2023)
 
 Added a `this.lock(...)` to the server that allows you to lock specific properties, with an unlock function that will be used to determine if a caller is allowed through. E.g.
 
@@ -19,11 +19,13 @@ class ServerClass {
       // object we want to lock down
       { run: () => { ... }},
       // "unlock" function
-      (client) => client.authenticated
+      (client) => authenticatedClients.includes(client)
     );
   }
 };
 ```
+
+This breaks backwards compatibility for any server code that uses a function by the same name already.
 
 ## v3.0.0 (5 January 2023)
 

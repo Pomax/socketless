@@ -50,6 +50,7 @@ Note that the instance properties for a server will not be available until after
 ### methods
 
 - `init()`, a method that gets run immediately after construction, with all instance properties available.
+- `lock(object, unlock = (client)=>boolean)`, a method to lock down server property access to only those clients for which the passed unlock function returns `true`.
 - `quit()`, a method to close all connections and shut down the server.
 
 ### event handlers
