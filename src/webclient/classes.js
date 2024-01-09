@@ -1,4 +1,4 @@
-import { proxySocket } from "../upgraded-socket.js";
+import { createSocketProxy } from "../upgraded-socket.js";
 import { WEBCLIENT, BROWSER, deepCopy } from "../utils.js";
 // @ts-ignore: Node-specific import
 import { createPatch } from "rfc6902";
@@ -54,7 +54,12 @@ export function formWebClientClass(ClientClass) {
         browserSocket.close();
       } else {
         // Note that there is no auth here. this is left up to devs to implement.
-        this.browser = proxySocket(WEBCLIENT, BROWSER, this, browserSocket);
+        this.browser = createSocketProxy(
+          WEBCLIENT,
+          BROWSER,
+          this,
+          browserSocket,
+        );
         this.browser.socket.__seq_num = 0;
         this.setState(this.state);
         this.onBrowserConnect(this.browser);

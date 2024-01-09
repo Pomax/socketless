@@ -20,7 +20,7 @@ import url from "url";
 const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
 
 import { CLIENT, WEBCLIENT, BROWSER, deepCopy } from "./utils.js";
-import { proxySocket } from "./upgraded-socket.js";
+import { createSocketProxy } from "./upgraded-socket.js";
 
 export function generateSocketless() {
   // ===============================================================
@@ -58,7 +58,7 @@ export function generateSocketless() {
       let socket = buildSocket();
 
       const buildProxyServer = () => {
-        return proxySocket("BROWSER", "WEBCLIENT", browserClient, socket);
+        return createSocketProxy("BROWSER", "WEBCLIENT", browserClient, socket);
       };
 
       let proxyServer = buildProxyServer();
