@@ -2,7 +2,7 @@
 
 Socketless is a websocket-based RPC-like framework for client/server implementations, written specifically so you never have to write any websocket or RPC code. As far as the clients and servers know, there is no network, code is just "normal function-based API code", with the only caveat being that function calls that need to return values will do so asynchronously. Just like any other `async`/`await` code you're used to writing.
 
-### The current version of `socketless` is `v3.1.0`
+### The current version of `socketless` is `v4.0.1`
 [(See the changelog for more information)](./docs/CHANGELOG.md)
 
 # Table of contents
@@ -14,7 +14,7 @@ Socketless is a websocket-based RPC-like framework for client/server implementat
 
 # Installation
 
-The `socketles` library can be installed from https://www.npmjs.com/package/socketless using your package manager of choice, and can be used in Deno by importing `"npm:socketless@2"`.
+The `socketles` library can be installed from https://www.npmjs.com/package/socketless using your package manager of choice, and can be used in Deno by importing `"npm:socketless@4"`.
 
 **Note**: This library is written and exposed as modern ESM code, and relies on enough modern JS language features that this library is only guaranteed to work on the current generation of browsers, and current LTS version of Node. No support for older/dead browsers or end-of-life versions of Node is offered.
 

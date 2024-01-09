@@ -8,7 +8,7 @@ Socketless _strictly_ adheres to [semver](https://semver.org)'s major.minor.patc
 
 # Current version history
 
-## v4.0.0 (8 January 2023)
+## v4.0.1 (8 January 2023)
 
 Added a `this.lock(...)` to the server that allows you to lock specific properties, with an unlock function that will be used to determine if a caller is allowed through. E.g.
 
