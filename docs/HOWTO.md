@@ -526,7 +526,7 @@ class ServerClass {
   authenticate(client, username, password) {
     if (!passesAuth(username, password)) return false;
     this.authenticatedClients.push(client);
-    return (client.authenticated = true);
+    return true;
   }
 }
 
@@ -543,6 +543,8 @@ class ClientClass {
   };
 }
 ```
+
+(though: remember that `client` is a proxy object, so even though you might be tempted to do something like `client.authenticated = true`, this will lead to all kinds of fun bugs)
 
 ## Clients
 
