@@ -63,6 +63,7 @@ const PROXY = Symbol(`proxy`);
 const RECEIVER = Symbol(`receiver`);
 const REMOTE = Symbol(`remote`);
 const HANDLERS = Symbol(`handlers`);
+const LOCK = Symbol(`function call lock`);
 
 /**
  * ...do docs go here?
@@ -224,16 +225,30 @@ class UpgradedSocket extends WebSocket {
 
     // We are: find the actual function to call.
     if (!error) {
+      // If this code runs on the server, the function needs to be
+      // called with the client proxy as first argument, and we may
+      // need to verify that this client "unlocks" an otherwise
+      // locked function.
+      let client;
+
+      if (receiver === `server`) {
+        client = this[PROXY];
+        payload.unshift(client);
+      }
+
       try {
         while (stages.length) {
           const stage = stages.shift();
           if (DEBUG) console.log(`checking ${stage}`);
           context = callable;
+          // is this a locked function that the client is not allowed in?
+          if (client && callable[LOCK] && !callable[LOCK](client)) {
+            throw new Error(
+              `no access permission on ${receiver}:${eventName} for ${remote}`,
+            );
+          }
           callable = callable[stage];
         }
-        // If this code runs on the server, the function needs to be
-        // called with the client proxy as first argument.
-        if (receiver === `server`) payload.unshift(this[PROXY]);
       } catch (e) {
         // "function not found" doesn't count as error "here".
         // Instead, we send that back to the caller.
@@ -447,7 +462,18 @@ class SocketProxy extends Function {
  * @param {*} socket The socket we're wrapping.
  * @returns
  */
-export function proxySocket(receiver, remote, origin, socket) {
+export function createSocketProxy(receiver, remote, origin, socket) {
   socket = UpgradedSocket.upgrade(socket, origin, receiver, remote);
   return (socket[PROXY] = new SocketProxy(socket, receiver, remote));
+}
+
+/**
+ * Lock down an object so that if it's being access by a remote client,
+ * unlock(client) has to return true, otherwise the call throws an error.
+ * @param {*} object
+ * @param {*} unlock
+ */
+export function lock(object, unlock = (_client) => false) {
+  object[LOCK] = unlock;
+  return object;
 }

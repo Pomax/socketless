@@ -20,7 +20,7 @@ const httpsOptions = await new Promise((resolve, reject) => {
 });
 
 describe("server tests", () => {
-  it("can create plain http server", (done) => {
+  it(`can create plain http server`, (done) => {
     class ServerClass {
       onDisconnect = () => (this.clients.length ? null : this.quit());
       teardown = () => done();
@@ -38,7 +38,7 @@ describe("server tests", () => {
     );
   });
 
-  it("can run with user-provided plain http server", (done) => {
+  it(`can run with user-provided plain http server`, (done) => {
     let error;
 
     class ServerClass {
@@ -63,7 +63,7 @@ describe("server tests", () => {
     );
   });
 
-  it("can create https server", (done) => {
+  it(`can create https server`, (done) => {
     class ServerClass {
       onDisconnect = () => (this.clients.length ? null : this.quit());
       teardown = () => done();
@@ -83,7 +83,7 @@ describe("server tests", () => {
     });
   });
 
-  it("rejects https server with self-signed certificate without ALLOW_SELF_SIGNED_CERTS", (done) => {
+  it(`rejects https server with self-signed certificate without ALLOW_SELF_SIGNED_CERTS`, (done) => {
     let error = `connection was allowed through`;
 
     class ServerClass {
@@ -106,7 +106,7 @@ describe("server tests", () => {
     });
   });
 
-  it("can run with user-provided https server", (done) => {
+  it(`can run with user-provided https server`, (done) => {
     let error;
 
     class ServerClass {
@@ -134,7 +134,7 @@ describe("server tests", () => {
     });
   });
 
-  it("can run with user-provided plain http Express server", (done) => {
+  it(`can run with user-provided plain http Express server`, (done) => {
     let error;
 
     class ServerClass {
@@ -171,7 +171,7 @@ describe("server tests", () => {
     });
   });
 
-  it("can run with user-provided https Express server", (done) => {
+  it(`can run with user-provided https Express server`, (done) => {
     let error;
 
     class ServerClass {
@@ -211,5 +211,78 @@ describe("server tests", () => {
         ALLOW_SELF_SIGNED_CERTS,
       );
     });
+  });
+
+  it(`disallows calls from uncleared clients`, (done) => {
+    let error = `client was allowed to call locked function`;
+
+    class ServerClass {
+      init() {
+        this.api = this.lock({
+          test: (client, ...args) => {
+            console.log(`this log should not be possible`);
+          },
+        });
+      }
+      onDisconnect = () => (this.clients.length ? null : this.quit());
+      teardown = () => done(error && new Error(error));
+    }
+
+    class ClientClass {
+      onConnect = async () => {
+        try {
+          await this.server.api.test(1, 2, 3);
+        } catch (e) {
+          if (
+            e.message === `no access permission on server:api:test for client`
+          ) {
+            error = undefined;
+          }
+        }
+        this.disconnect();
+      };
+    }
+
+    const factory = linkClasses(ClientClass, ServerClass);
+    const { webserver } = factory.createServer();
+    webserver.listen(0, () =>
+      factory.createClient(`http://localhost:${webserver.address().port}`),
+    );
+  });
+
+  it(`allows calls from cleared clients`, (done) => {
+    let error = `client is not allowed to call function`;
+
+    class ServerClass {
+      init() {
+        this.api = this.lock(
+          {
+            test: (client, ...args) => {
+              error = undefined;
+            },
+          },
+          (client) => this.clients.includes(client),
+        );
+      }
+      onDisconnect = () => (this.clients.length ? null : this.quit());
+      teardown = () => done(error && new Error(error));
+    }
+
+    class ClientClass {
+      onConnect = async () => {
+        try {
+          await this.server.api.test(1, 2, 3);
+        } catch (e) {
+          error = e.message;
+        }
+        this.disconnect();
+      };
+    }
+
+    const factory = linkClasses(ClientClass, ServerClass);
+    const { webserver } = factory.createServer();
+    webserver.listen(0, () =>
+      factory.createClient(`http://localhost:${webserver.address().port}`),
+    );
   });
 });

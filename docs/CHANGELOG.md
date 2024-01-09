@@ -8,6 +8,23 @@ Socketless _strictly_ adheres to [semver](https://semver.org)'s major.minor.patc
 
 # Current version history
 
+## v3.1.0 (8 January 2023)
+
+Added a `this.lock(...)` to the server that allows you to lock specific properties, with an unlock function that will be used to determine if a caller is allowed through. E.g.
+
+```javascript
+class ServerClass {
+  async init() {
+    this.test = this.lock(
+      // object we want to lock down
+      { run: () => { ... }},
+      // "unlock" function
+      (client) => client.authenticated
+    );
+  }
+};
+```
+
 ## v3.0.0 (5 January 2023)
 
 Add a call to `server.init()` as part of the createServer process, because all the code was in place but that trigger was missing. This breaks backwards compatibility for any code that manually calls `init()` in the server class.

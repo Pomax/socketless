@@ -331,9 +331,9 @@ class ClientClass {
 }
 ```
 
-### Keeping functions off the network
+### Keeping functions/properties off the network
 
-Any instance function that you want to explicitly "lock off" can simply be marked as [private function](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Classes/Private_class_fields):
+Any instance function that you want to explicitly "lock off" from client access can simply be marked as [private function](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Classes/Private_class_fields):
 
 ```js
 class ServerClass {
@@ -364,9 +364,9 @@ class ClientClass {
 }
 ```
 
-### Keeping properties off the network
+Note that while clients can only call functions, and so do not have access to primitive properties, they _can_ call functions _on_ those properties. As such, be careful how you expose data.
 
-Because all instance properties are visible to clients, they can just bypass your API and directly work with things you'd really rather they didn't:
+For example, **do not do this**:
 
 ```js
 class ServerClass {
@@ -455,6 +455,94 @@ class ServerClass {
 ```
 
 The reason for this is that `linkClasses` needs both classes in order for `socketless` to do its job, and you don't want any code that's only meaningful on the server to get run on the client purely by importing the server class (or vice versa). Instead of declaring and initializing out-of-class globals (or, "module globals" really), declare them out-of-class and then _assign_ them in the `init()` function.
+
+### Finer control: per-client access
+
+In order to allow you to control who can access which functions/properties, you can also `lock` server instance properties. Take the following code:
+
+```javascript
+class ServerClass {
+  init() {
+    this.test = {
+      run: (client, ...args) => {
+        console.log(`this log will never run`);
+      },
+    };
+  }
+}
+
+class ClientClass {
+  onConnect = async () => {
+    await this.server.test.run(1, 2, 3);
+  };
+}
+```
+
+If we want to restrict who may call the server's `test.run()` function, we can lock this function down, with a reference to an explicit unlock function that takes a `client` as argument and either returns `true` if that client is permitted access, or `false` if it is not:
+
+```javascript
+class ServerClass {
+  init() {
+    this.test = this.lock(
+      {
+        run: (client, ...args) => {
+          console.log(`this log will never run`);
+        },
+      },
+      (client) => this.allowClient(client)
+    );
+  }
+  allowClient() {
+    // universal "no permission"
+    return false;
+  }
+}
+
+class ClientClass {
+  onConnect = async () => {
+    try {
+      await this.server.test.run(1, 2, 3);
+    } catch (e) {
+      // This will catch "no access permission on server:test:run for client"
+    }
+  };
+}
+```
+
+With the above code, and an unlock function that indiscriminantly disallows access, we have effectively turned this property into a private property. However, if you want to only give access to clients that you know you can trust (e.g. they passed an authentication step), we can grant certain clients permission, while keeping others from calling functions:
+
+```javascript
+class ServerClass {
+  init() {
+    this.test = this.lock(
+      {
+        run: (client, ...args) => {
+          console.log(`this will run for authenticated clients`);
+        },
+      },
+      (client) => this.authenticatedClients.includes(client)
+    );
+  }
+  authenticate(client, username, password) {
+    if (!passesAuth(username, password)) return false;
+    this.authenticatedClients.push(client);
+    return (client.authenticated = true);
+  }
+}
+
+class ClientClass {
+  onConnect = async () => {
+    const authenticated = (this.authenticated = await this.server.authenticate(
+      `username`,
+      `password`
+    ));
+    if (authenticated) {
+      // this won't throw now, although a try/catch might still be a good idea!
+      await this.server.test.run(1, 2, 3);
+    }
+  };
+}
+```
 
 ## Clients
 

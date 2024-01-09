@@ -8,7 +8,7 @@ import { formClientClass, formServerClass } from "./classes.js";
 import { formWebClientClass } from "./webclient/classes.js";
 import { CustomRouter } from "./webclient/custom-router.js";
 import { makeRouteHandler } from "./webclient/route-handler.js";
-import { RESPONSE_SUFFIX, getResponseName } from "./upgraded-socket.js";
+import { RESPONSE_SUFFIX, getResponseName, lock } from "./upgraded-socket.js";
 
 // used to force the browser socket router to handle a response, even though
 // normally browser communication has to get send on to the server.
@@ -78,6 +78,14 @@ export function createServer(ServerClass, serverOrHttpsOptions) {
 
   // create our actual RPC server object.
   const server = new ServerClass(ws, webserver);
+
+  // And add the `lock` function to offer some security.
+  Object.defineProperty(server, `lock`, {
+    configurable: false,
+    enumerable: false,
+    writable: false,
+    value: (object, unlock = (_client) => false) => lock(object, unlock),
+  });
 
   // call server init
   (async () => await server.init())();
