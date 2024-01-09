@@ -282,6 +282,7 @@ describe("web client tests", () => {
         const clientURL = `http://localhost:${clientWebServer.address().port}`;
         const ws = new WebSocket(clientURL);
         ws.on(`error`, (err) => {
+          console.log(err.message);
           if (err.message === `socket hang up`) {
             error = undefined;
             client.quit();
