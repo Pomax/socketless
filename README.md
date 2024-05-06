@@ -150,7 +150,7 @@ And then if we check the browser's developer tools' `console` tab, we also see:
 [browser] Calling test: success!                       setup.js:15:15
 ```
 
-It's important to note that we don't create clients by passing them a direct reference to the `server` instance`, but instead it's given a URL to connect to: the client and server can, and typically will, run on completely different machines "anywhere on the internet". As long as the same versions of the client and server classes are used on both machines (because, say, you're running on the same branch of the same git repo) then there's nothing else you need to do...
+It's important to note that we don't create clients by passing them a direct reference to the `server` instance, but instead it's given a URL to connect to: the client and server can, and typically will, run on completely different machines "anywhere on the internet". As long as the same versions of the client and server classes are used on both machines (because, say, you're running on the same branch of the same git repo) then there's nothing else you need to do...
 
 #### _It just works._
 
