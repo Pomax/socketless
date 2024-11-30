@@ -3,7 +3,7 @@ import { CLIENT, SERVER } from "./utils.js";
 
 const DEBUG = false;
 
-const STATE_SYMBOL = Symbol();
+const STATE_SYMBOL = Symbol(`state symbol`);
 
 /**
  * ...docs go here...
@@ -90,21 +90,21 @@ export function formServerClass(ServerClass) {
   return class ServerBase extends ServerClass {
     clients = [];
     ws = undefined; // websocket server instance
-    webserver = undefined; // http(s) server instance
+    webServer = undefined; // http(s) server instance
 
     static get disallowedCalls() {
       // No functions in this class may be proxy-invoked
       const names = Object.getOwnPropertyNames(ServerBase.prototype);
       names.splice(names.indexOf(`constructor`), 1);
       // Nor should these server-specific properties be accessible to clients
-      names.push(`clients`, `ws`, `webserver`);
+      names.push(`clients`, `ws`, `webServer`);
       return names;
     }
 
-    constructor(ws, webserver) {
+    constructor(ws, webServer) {
       super();
       this.ws = ws;
-      this.webserver = webserver;
+      this.webServer = webServer;
     }
 
     async init() {
@@ -173,8 +173,8 @@ export function formServerClass(ServerClass) {
       await this.onQuit();
       this.clients.forEach((client) => client.disconnect());
       this.ws.close();
-      this.webserver.closeAllConnections();
-      this.webserver.close(() => this.teardown());
+      this.webServer.closeAllConnections();
+      this.webServer.close(() => this.teardown());
     }
 
     async onQuit() {

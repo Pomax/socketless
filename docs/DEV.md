@@ -15,9 +15,9 @@ run `npm test`, which will:
 Some notes if you want to work on this code (in addition to the architecture documentation):
 
 - general proxy handling is done in the `src/upgraded-socket.js` file.
-- For servers, the `ws` and `webserver` properties are tacked on in the `src/index.js` file, `createServer` function.
+- For servers, the `ws` and `webServer` properties are tacked on in the `src/index.js` file, `createServer` function.
 - For clients, the `params` property is tacked on in the `src/index.js` file, `createClient` function, and the `id` is established in the same function as part of the bare websocket `handshake:setid` handling.
-- for web clients, the `sid` authentication token is checked in the `src/index.js` file, `createWebClient` functions. Similarly, the `ws` and `webserver` properties are bound in the same function. In addition, the `syncState` call is defined there, as well. This is also where all `:response` messages get intercepted.
+- for web clients, the `sid` authentication token is checked in the `src/index.js` file, `createWebClient` functions. Similarly, the `ws` and `webServer` properties are bound in the same function. In addition, the `syncState` call is defined there, as well. This is also where all `:response` messages get intercepted.
 - State syncing on the browser side is handled in `src/upgraded-socket.js`, in the `router` function, in the `if (state && receiver === BROWSER)` block.
 
 RPC calls are compared to a list of "forbidden" calls in the router function, which are pulled from the server, client, and webclient classes using their static `disallowedCalls` property, declared in `src/classes.js` and `src/webclient/classes.js`.

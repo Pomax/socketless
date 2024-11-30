@@ -20,9 +20,9 @@ function clientTest(ClientClass, __done) {
   }
 
   const factory = linkClasses(ClientClass, ServerClass);
-  const { webserver } = factory.createServer();
-  webserver.listen(0, () => {
-    const serverURL = `http://localhost:${webserver.address().port}`;
+  const { webServer } = factory.createServer();
+  webServer.listen(0, () => {
+    const serverURL = `http://localhost:${webServer.address().port}`;
     const client = factory.createClient(serverURL);
     client.done = done;
   });
@@ -56,9 +56,9 @@ function serverTest(ServerClass, __done, WEB_TEST = false) {
   }
 
   const factory = linkClasses(ClientClass, Wrapper);
-  const { webserver } = factory.createServer();
-  webserver.listen(0, () => {
-    const serverURL = `http://localhost:${webserver.address().port}`;
+  const { webServer } = factory.createServer();
+  webServer.listen(0, () => {
+    const serverURL = `http://localhost:${webServer.address().port}`;
     if (WEB_TEST) {
       const web = factory.createWebClient(
         serverURL,
@@ -286,19 +286,19 @@ describe("illegal access tests", () => {
       clientTest(ClientClass, done);
     });
 
-    it("client cannot call server.webserver.close", (done) => {
+    it("client cannot call server.webServer.close", (done) => {
       class ClientClass {
         async onConnect() {
           try {
-            await this.server.webserver.close();
+            await this.server.webServer.close();
             return this.done(
               new Error(
-                `Client was able to call server.webserver.close function`,
+                `Client was able to call server.webServer.close function`,
               ),
             );
           } catch (e) {
             if (
-              e.message !== `Illegal call: webserver is a protected property`
+              e.message !== `Illegal call: webServer is a protected property`
             ) {
               return this.done(
                 new Error(`received incorrect error message "${e.message}"`),
@@ -598,19 +598,19 @@ describe("illegal access tests", () => {
       serverWebTest(ServerClass, done);
     });
 
-    it("server cannot call webclient.webserver.close", (done) => {
+    it("server cannot call webclient.webServer.close", (done) => {
       class ServerClass {
         async onConnect(client) {
           try {
-            await client.webserver.close();
+            await client.webServer.close();
             return this.done(
               new Error(
-                `Server was able to call webclient.webserver.close function`,
+                `Server was able to call webclient.webServer.close function`,
               ),
             );
           } catch (e) {
             if (
-              e.message !== `Illegal call: webserver is a protected property`
+              e.message !== `Illegal call: webServer is a protected property`
             ) {
               return this.done(
                 new Error(`received incorrect error message "${e.message}"`),

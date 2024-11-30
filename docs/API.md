@@ -9,7 +9,7 @@
 ### exported methods:
 
 
-- `createServer(ServerClass, [serverOrHttpsOptions])` yielding `{ server, webserver }`
+- `createServer(ServerClass, [serverOrHttpsOptions])` yielding `{ server, webServer }`
 
   The `serverOrHttpsOptions` argument may either be an instance of a plain Node `http` or `https` server, which includes things like Express servers (as obtained from `app.listen()`), or an options object that provides the HTTPs key and cert string values, using the form `{ key: string, cert: string }`.
 
@@ -27,7 +27,7 @@
 
 This yields a factory object with three functions, useful for code that creates both servers and clients in the same script:
 
-- `createServer([serverOrHttpsOptions])` yielding `{ server, webserver }`
+- `createServer([serverOrHttpsOptions])` yielding `{ server, webServer }`
 
   This is the same as the `createServer` function that `socketless` exports, but without needing to specify the `ServerClass` again.
 

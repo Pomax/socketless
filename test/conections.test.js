@@ -28,8 +28,8 @@ describe("connection tests", () => {
       onDisconnect() {
         // console.log(`client saw disconnect, doneOnQuit=${doneOnQuit}`);
         if (doneOnQuit) return;
-        const { webserver } = factory.createServer();
-        webserver.listen(8910, () => {
+        const { webServer } = factory.createServer();
+        webServer.listen(8910, () => {
           // console.log(`server up 2`);
           doneOnQuit = true;
           setTimeout(() => this.reconnect(), 200);
@@ -38,8 +38,8 @@ describe("connection tests", () => {
     }
 
     const factory = linkClasses(ClientClass, ServerClass);
-    const { webserver } = factory.createServer();
-    webserver.listen(8910, () => {
+    const { webServer } = factory.createServer();
+    webServer.listen(8910, () => {
       // console.log(`server up 1`);
       factory.createClient(`http://localhost:8910`);
     });
@@ -74,8 +74,8 @@ describe("connection tests", () => {
 
     // then start the server 500ms later
     setTimeout(() => {
-      const { webserver } = factory.createServer();
-      webserver.listen(8910);
+      const { webServer } = factory.createServer();
+      webServer.listen(8910);
     }, 500);
   });
 });

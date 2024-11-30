@@ -25,7 +25,13 @@ export function formWebClientClass(ClientClass) {
         names.splice(names.indexOf(name), 1),
       );
       // but of course don't allow access to the "special" properties
-      names.push(`browser`, `ws`, `webserver`);
+      names.push(
+        `browser`,
+        `ws`,
+        `webServer`,
+        // @deprecated
+        `webserver`,
+      );
       return names;
     }
 
@@ -127,8 +133,8 @@ export function formWebClientClass(ClientClass) {
       this.disconnect();
       await this.onQuit();
       this.ws.close();
-      this.webserver.closeAllConnections();
-      this.webserver.close(() => this.teardown());
+      this.webServer.closeAllConnections();
+      this.webServer.close(() => this.teardown());
     }
 
     async onQuit() {

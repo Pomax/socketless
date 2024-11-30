@@ -25,7 +25,7 @@ export const ALLOW_SELF_SIGNED_CERTS = Symbol("allow self-signed certificates");
  *            or an https options object for Node's built-in http(s)
  *            createServer functions. Or nothing, to create a plain
  *            http server rather than an https server.
- * @returns {{ server: ServerClass, webserver: http.Server }}
+ * @returns {{ server: ServerClass, webServer: http.Server, webserver: http.Server}}
  */
 export function createServer(ServerClass, serverOrHttpsOptions) {
   // rewrite the serverclass so it's hierarchically sound
@@ -40,8 +40,8 @@ export function createServer(ServerClass, serverOrHttpsOptions) {
   }
 
   // create a web server, if we don't already have one.
-  let webserver = httpServer;
-  if (!webserver) {
+  let webServer = httpServer;
+  if (!webServer) {
     const router = new CustomRouter(null);
     const routeHandling = (req, res) => {
       if (req.url.includes(`?`)) {
@@ -51,16 +51,16 @@ export function createServer(ServerClass, serverOrHttpsOptions) {
       }
       router.handle(req.url, req, res);
     };
-    webserver = httpsOptions
+    webServer = httpsOptions
       ? https.createServer(httpsOptions, routeHandling)
       : http.createServer(routeHandling);
 
     // Rebind the function that allows users to specify custom route handling:
 
     // @ts-ignore: we're adding a custom property to a Server instance, which TS doesn't like.
-    webserver.addRoute = router.addRouteHandler.bind(router);
+    webServer.addRoute = router.addRouteHandler.bind(router);
     // @ts-ignore: idem ditto
-    webserver.removeRoute = router.removeRoute.bind(router);
+    webServer.removeRoute = router.removeRoute.bind(router);
   }
 
   // create a websocket server, so we can handle websocket upgrade calls.
@@ -68,7 +68,7 @@ export function createServer(ServerClass, serverOrHttpsOptions) {
 
   ws.on(`error`, (err) => server.onError(err));
 
-  webserver.on(`upgrade`, (req, socket, head) => {
+  webServer.on(`upgrade`, (req, socket, head) => {
     // console.log(`http->ws upgrade call`);
     ws.handleUpgrade(req, socket, head, (websocket) => {
       // console.log(`upgraded http->ws`);
@@ -77,7 +77,7 @@ export function createServer(ServerClass, serverOrHttpsOptions) {
   });
 
   // create our actual RPC server object.
-  const server = new ServerClass(ws, webserver);
+  const server = new ServerClass(ws, webServer);
 
   // And add the `lock` function to offer some security.
   Object.defineProperty(server, `lock`, {
@@ -97,7 +97,12 @@ export function createServer(ServerClass, serverOrHttpsOptions) {
   });
 
   // and then return the web server for folks to .listen() etc.
-  return { server, webserver };
+  return {
+    server,
+    webServer,
+    // @deprecated
+    webserver: webServer,
+  };
 }
 
 /**
@@ -212,12 +217,12 @@ export function createWebClient(
 
   const router = new CustomRouter(client);
   let routeHandling = makeRouteHandler(client, publicDir, router);
-  const webserver = httpsOptions
+  const webServer = httpsOptions
     ? https.createServer(httpsOptions, routeHandling)
     : http.createServer(routeHandling);
 
   const ws = new WebSocketServer({ noServer: true });
-  webserver.on(`upgrade`, (req, socket, head) => {
+  webServer.on(`upgrade`, (req, socket, head) => {
     const url = req.url;
     let params = {
       get: (_) => undefined,
@@ -240,7 +245,7 @@ export function createWebClient(
   });
 
   client.ws = ws;
-  client.webserver = webserver;
+  client.webServer = webServer;
 
   ws.on(`connection`, (socket) => {
     // bind the socket to the browser and set up message parsing
@@ -316,16 +321,15 @@ export function createWebClient(
   // Rebind the function that allows users to specify custom route handling:
 
   // @ts-ignore: we're adding a custom property to a Server instance, which TS doesn't like.
-  webserver.addRoute = router.addRouteHandler.bind(router);
+  webServer.addRoute = router.addRouteHandler.bind(router);
   // @ts-ignore: idem ditto
-  webserver.removeRoute = router.removeRoute.bind(router);
+  webServer.removeRoute = router.removeRoute.bind(router);
 
-  return { client, clientWebServer: webserver };
+  return { client, clientWebServer: webServer };
 }
 
 /**
  * Create a client/server factory, given the client and server classes.
- * @deprecated
  */
 function generator(ClientClass, ServerClass) {
   const factory = {
