@@ -12,7 +12,7 @@ Socketless _strictly_ adheres to [semver](https://semver.org)'s major.minor.patc
 
 Changed the init sequence for browser clients. The code now waits to call `init()` on the web client until a socket connection has been established, _and_ the current state has been obtained from the client and locally bound.
 
-This changes gives code inside the `init()` function access to an up-to-date `this.state` variable, and allows web clients to immediately build the correct UI, rather than needing to first generate a "default" UI that cannot be updated to the correct view until `updateState` happens.
+This gives code inside the `init()` function access to an up-to-date `this.state` variable, and allows web clients to immediately build the correct UI, rather than needing to first generate a "default" UI that cannot be updated to the correct view until `updateState` happens.
 
 Related, the attempt at preventing modification of `this.state` was incomplete, and a rigorous protection mechanism proved to be too much code, slowing things down, for no real payoff, so instead the partial protection mechanism was removed. If your code tries to modify it, it will modify it. This is not considered a backward compatibility breaking change, as no real code could have relied on overwriting, or manually changing, the browser state value.
 
