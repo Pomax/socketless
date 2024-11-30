@@ -10,7 +10,7 @@
     "prettier": "prettier --write ./**/*.js",
     "test": "npm run test:ast && npm run prettier && npm run test:mocha",
     "test:ast": "tsc ./src/index.js --checkJs --noEmit --module nodenext",
-    "test:mocha": "mocha \"test/**/*.test.js\""
+    "test:mocha": "mocha \"test/**/*.test.js\" --exit"
   },
   "repository": {
     "type": "git",
