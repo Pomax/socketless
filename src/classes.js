@@ -97,7 +97,13 @@ export function formServerClass(ServerClass) {
       const names = Object.getOwnPropertyNames(ServerBase.prototype);
       names.splice(names.indexOf(`constructor`), 1);
       // Nor should these server-specific properties be accessible to clients
-      names.push(`clients`, `ws`, `webServer`);
+      names.push(
+        `clients`,
+        `ws`,
+        `webServer`,
+        // @deprecated
+        `webserver`
+      );
       return names;
     }
 
