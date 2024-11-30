@@ -18,7 +18,7 @@ Related, the attempt at preventing modification of `this.state` was incomplete, 
 
 Additionally, the `linkClasses` shorthand function is no longer deprecated, because it was convenient enough for enough people to keep using.
 
-Consistency-wise, the spelling of `webserver` has been changed to `webServer`. This is not a breaking change, but note that the old spelling _will_ be removed in the next major release.
+Consistency-wise, the spelling of `webserver` has been changed to `webServer`, while also keeping the old spelling to prevent existing code from breaking. This is not a breaking change, but note that the old spelling _will_ be removed in the next major release.
 
 
 # Previous versions
