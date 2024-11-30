@@ -63,14 +63,14 @@ export class ClientClass {
  */
 import { linkClasses } from "socketless";
 const { createWebClient, createServer } = linkClasses(ClientClass, ServerClass);
-const { server, webserver } = createServer();
+const { server, webServer } = createServer();
 
 // For demo purposes, let's use some hardcoded ports:
 const SERVER_PORT = 8000;
 const CLIENT_PORT = 3000;
 
 // So, first: create our server and start listening for connections...
-webserver.listen(SERVER_PORT, () => console.log(`Server running...`));
+webServer.listen(SERVER_PORT, () => console.log(`Server running...`));
 
 // ...then create our client, pointed at our server's URL...
 const serverURL = `http://localhost:${SERVER_PORT}`;

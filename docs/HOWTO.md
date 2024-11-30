@@ -12,8 +12,8 @@ import { ClientClass, ServerClass } from "./my/classes.js";
 const factory = linkClasses(ClientClass, ServerClass);
 const { createClient, createServer } = factory;
 
-const { server, webserver } = createServer();
-webserver.listen(8000, () => {
+const { server, webServer } = createServer();
+webServer.listen(8000, () => {
   const client = createClient(`http://localhost:8000`);
 });
 ```
@@ -26,8 +26,8 @@ Alternatively, you can also directly import the `createServer` and `createClient
 import { createClient, createServer } from "socketless";
 import { ClientClass, ServerClass } from "./my/classes.js";
 
-const { server, webserver } = createServer(ServerClass);
-webserver.listen(8000, () => {
+const { server, webServer } = createServer(ServerClass);
+webServer.listen(8000, () => {
   const client = createClient(ClientClass, `http://localhost:8000`);
 });
 ```
@@ -38,7 +38,7 @@ Generally, if you're creating servers and clients in the same script or codepath
 // a dedicated script
 import { createServer } from "socketless";
 import { ServerClass } from "./my/classes.js";
-createServer(ServerClass).webserver.listen(8000);
+createServer(ServerClass).webServer.listen(8000);
 ```
 
 plus
@@ -65,14 +65,14 @@ And that's all the `socketless` boilerplate for in the browser.
 
 ### Creating a server
 
-As we've seen, creating a server is as easy as calling `createServer` and then listening for connections on its webserver:
+As we've seen, creating a server is as easy as calling `createServer` and then listening for connections on its webServer:
 
 ```js
 import { linkClasses } from "socketless";
 import { ClientClass, ServerClass } from "./my/classes.js";
 const { createServer } = linkClasses(ClientClass, ServerClass);
 const PORT = process.env.PORT ?? 8000;
-createServer().webserver.listen(PORT, () => {
+createServer().webServer.listen(PORT, () => {
   console.log(`server is running on port ${PORT}`);
 });
 ```
@@ -89,12 +89,12 @@ By default, that web server will not serve any sort of HTTP traffic outside of w
 import { linkClasses } from "socketless";
 import { ClientClass, ServerClass } from "./my/classes.js";
 const factory = linkClasses(ClientClass, ServerClass);
-const { webserver } = factory.createServer();
-webserver.listen(0, () => {
-  console.log(`server is running on port ${webserver.address().port}`);
+const { webServer } = factory.createServer();
+webServer.listen(0, () => {
+  console.log(`server is running on port ${webServer.address().port}`);
 
   // Add a route handler for the root:
-  webserver.addRoute(`/`, (req, res) => {
+  webServer.addRoute(`/`, (req, res) => {
     res.writeHead(200, { "Content-Type": `text/html` });
     res.end(`<doctype html><html><body>It's a web page!</body></html>`);
   });
@@ -124,12 +124,12 @@ const checkAuthMiddleware = (req, res, next) => {
 };
 
 const factory = linkClasses(ClientClass, ServerClass)
-const { webserver } = factory.createServer()
-webserver.listen(0, () => {
-  console.log(`server is running on port ${webserver.address().port}`);
+const { webServer } = factory.createServer()
+webServer.listen(0, () => {
+  console.log(`server is running on port ${webServer.address().port}`);
 
   // Add a route handler for the root:
-  webserver.addRoute(`/`,
+  webServer.addRoute(`/`,
     quickLog,
     checkAuthMiddleware,
     userProfileMiddleware,
@@ -172,12 +172,12 @@ In order to make socketless run an HTTPS server, you can provide your own `key` 
 import { linkClasses } from "socketless";
 import { ClientClass, ServerClass } from "./my/classes.js";
 const factory = linkClasses(ClientClass, ServerClass);
-const { webserver } = factory.createServer({
+const { webServer } = factory.createServer({
   key: `...`,
   cert: `...`,
 });
-webserver.listen(0, () => {
-  console.log(`server is running on port ${webserver.address().port}`);
+webServer.listen(0, () => {
+  console.log(`server is running on port ${webServer.address().port}`);
 });
 ```
 
@@ -203,8 +203,8 @@ const httpsOptions = await new Promise((resolve, reject) => {
   );
 });
 
-const { webserver } = factory.createServer(httpsOptions);
-webserver.listen(443);
+const { webServer } = factory.createServer(httpsOptions);
+webServer.listen(443);
 ```
 
 However, if you're using self-signed certs, you're going to run into a bunch of delightful security gotchas, so you'll want to make sure to create your clients with the `ALLOW_SELF_SIGNED_CERT` flag. We'll talk more about that in the clients section.
@@ -226,8 +226,8 @@ app.get(`/`, (_, res) => {
   res.render(`index`, { title: `our page` });
 });
 
-const webserver = app.listen(0, async () => {
-  factory.createServer(webserver);
+const webServer = app.listen(0, async () => {
+  factory.createServer(webServer);
 });
 ```
 
@@ -726,10 +726,10 @@ As an example:
 ```js
 const { ClientClass, ServerClass } = ...
 const factory = linkClasses(ClientClass, ServerClass);
-const { webserver } = factory.createServer();
+const { webServer } = factory.createServer();
 
-webserver.listen(0, () => {
-  const port = webserver.address().port;
+webServer.listen(0, () => {
+  const port = webServer.address().port;
   const serverURL = `http://localhost:${port}`;
 
   // generate a random, secret identifier and pass that into the web client:
@@ -741,7 +741,7 @@ webserver.listen(0, () => {
 
   let clientURL = `pending...`;
 
-  webserver.addRoute(`/`, (req, res) => {
+  webServer.addRoute(`/`, (req, res) => {
     res.writeHead(200, { "Content-Type": `text/html` });
     res.end(`<!doctype html>
       <html>
@@ -813,14 +813,14 @@ class ClientClass {
   ...
   async onBrowserConnect(browser) {
     this.state.quitURL = `/${uuid.v4()}`
-    this.webserver.addRoute(this.state.quitURL, (req, res) => {
+    this.webServer.addRoute(this.state.quitURL, (req, res) => {
       res.end("Thank you, come again!", () => {
         this.quit();
       });
     });
   }
   async onBrowserDisconnect(browser) {
-    this.webserver.removeRoute(this.state.quitURL);
+    this.webServer.removeRoute(this.state.quitURL);
   }
   ...
 }

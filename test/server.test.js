@@ -31,10 +31,10 @@ describe("server tests", () => {
     }
 
     const factory = linkClasses(ClientClass, ServerClass);
-    const { webserver } = factory.createServer();
+    const { webServer } = factory.createServer();
 
-    webserver.listen(0, () =>
-      factory.createClient(`http://localhost:${webserver.address().port}`),
+    webServer.listen(0, () =>
+      factory.createClient(`http://localhost:${webServer.address().port}`),
     );
   });
 
@@ -52,14 +52,14 @@ describe("server tests", () => {
 
     const factory = linkClasses(ClientClass, ServerClass);
     const server = http.createServer();
-    const { webserver } = factory.createServer(server);
+    const { webServer } = factory.createServer(server);
 
-    if (server !== webserver) {
+    if (server !== webServer) {
       error = "different servers?";
     }
 
-    webserver.listen(0, () =>
-      factory.createClient(`http://localhost:${webserver.address().port}`),
+    webServer.listen(0, () =>
+      factory.createClient(`http://localhost:${webServer.address().port}`),
     );
   });
 
@@ -74,10 +74,10 @@ describe("server tests", () => {
     }
 
     const factory = linkClasses(ClientClass, ServerClass);
-    const { webserver } = factory.createServer(httpsOptions);
-    webserver.listen(0, () => {
+    const { webServer } = factory.createServer(httpsOptions);
+    webServer.listen(0, () => {
       factory.createClient(
-        `https://localhost:${webserver.address().port}`,
+        `https://localhost:${webServer.address().port}`,
         ALLOW_SELF_SIGNED_CERTS,
       );
     });
@@ -100,9 +100,9 @@ describe("server tests", () => {
     }
 
     const factory = linkClasses(ClientClass, ServerClass);
-    const { server, webserver } = factory.createServer(httpsOptions);
-    webserver.listen(0, () => {
-      factory.createClient(`https://localhost:${webserver.address().port}`);
+    const { server, webServer } = factory.createServer(httpsOptions);
+    webServer.listen(0, () => {
+      factory.createClient(`https://localhost:${webServer.address().port}`);
     });
   });
 
@@ -120,15 +120,15 @@ describe("server tests", () => {
 
     const factory = linkClasses(ClientClass, ServerClass);
     const server = https.createServer(httpsOptions);
-    const { webserver } = factory.createServer(server);
+    const { webServer } = factory.createServer(server);
 
-    if (server !== webserver) {
+    if (server !== webServer) {
       error = "different servers?";
     }
 
-    webserver.listen(0, () => {
+    webServer.listen(0, () => {
       factory.createClient(
-        `https://localhost:${webserver.address().port}`,
+        `https://localhost:${webServer.address().port}`,
         ALLOW_SELF_SIGNED_CERTS,
       );
     });
@@ -244,9 +244,9 @@ describe("server tests", () => {
     }
 
     const factory = linkClasses(ClientClass, ServerClass);
-    const { webserver } = factory.createServer();
-    webserver.listen(0, () =>
-      factory.createClient(`http://localhost:${webserver.address().port}`),
+    const { webServer } = factory.createServer();
+    webServer.listen(0, () =>
+      factory.createClient(`http://localhost:${webServer.address().port}`),
     );
   });
 
@@ -280,9 +280,9 @@ describe("server tests", () => {
     }
 
     const factory = linkClasses(ClientClass, ServerClass);
-    const { webserver } = factory.createServer();
-    webserver.listen(0, () =>
-      factory.createClient(`http://localhost:${webserver.address().port}`),
+    const { webServer } = factory.createServer();
+    webServer.listen(0, () =>
+      factory.createClient(`http://localhost:${webServer.address().port}`),
     );
   });
 });

@@ -97,9 +97,24 @@ export function generateSocketless() {
         value: proxyServer,
       });
 
-      browserClient.connected = true;
-      browserClient.state = {};
-      browserClient.init?.();
+      // create a proxy for the (webclient tunnel to the) server:
+      Object.defineProperty(browserClient, "quit", {
+        ...propertyConfig,
+        value: () => {
+          // @ts-ignore to prevent "Property quit does not exist on type SocketProxy" errors
+          proxyServer.quit();
+        },
+      });
+
+      // Don't call init() until we're properly connected
+      // and know the current client state.
+      socket.onopen = async () => {
+        browserClient.connected = true;
+        // @ts-ignore to prevent "Property syncState does not exist on type SocketProxy" errors
+        browserClient.state = (await proxyServer.syncState()) || {};
+        browserClient.init?.();
+      };
+
       return browserClient;
     }
       .toString()

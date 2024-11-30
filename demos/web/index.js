@@ -9,10 +9,10 @@ const factory = linkClasses(ClientClass, ServerClass);
 
 // Set up the server:
 const NUMBER_OF_PLAYERS = 2;
-const { webserver } = factory.createServer();
-webserver.listen(8000, () => {
+const { webServer } = factory.createServer();
+webServer.listen(8000, () => {
   const localhost = `http://localhost`;
-  const URL = `${localhost}:${webserver.address().port}`;
+  const URL = `${localhost}:${webServer.address().port}`;
   console.log(`- server listening on ${URL}`);
 
   // Set up the clients:
@@ -35,7 +35,7 @@ webserver.listen(8000, () => {
 
   // And add a route handler so that when we connect to the server
   // with a browser, we get a list of web clients and their URLs.
-  webserver.addRoute(
+  webServer.addRoute(
     `/`,
     // middleware: just a page request notifier
     (req, res, next) => {

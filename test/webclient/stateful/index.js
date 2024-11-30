@@ -1,8 +1,8 @@
 import { createBrowserClient } from "./socketless.js";
 
 class BrowserClient {
-  constructor() {
-    this.current = 0;
+  init() {
+    this.current = this.state.v || 0;
   }
   update(prevState) {
     if (this.state.v === this.current + 1) {

@@ -1,11 +1,11 @@
 import { createBrowserClient } from "./socketless.js";
 
-console.log(`building`);
-
 class BrowserClient {
-  update(prevState) {
+  init() {
     // attempt to modify state
-    this.state.a.b = "d";
+    console.log(`will this work?`);
+    this.state = {};
+    console.log(`this worked?`);
   }
 }
 

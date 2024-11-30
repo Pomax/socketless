@@ -14,6 +14,7 @@ export function deepCopy(obj) {
   try {
     return JSON.parse(JSON.stringify(obj));
   } catch (e) {
+    if (typeof obj === "undefined") return undefined;
     console.error(`Could not round-trip object via JSON:`, obj);
     throw e;
   }

@@ -6,7 +6,22 @@ Socketless _strictly_ adheres to [semver](https://semver.org)'s major.minor.patc
 - minor version changes indicate new functionality that does not break backward compatibility,
 - major version changes indicate backward-incompatible external API changes, no matter how small.
 
-# Current version history
+# Current version
+
+## v4.1.0 (30 November 2024)
+
+Changed the init sequence for browser clients. The code now waits to call `init()` on the web client until a socket connection has been established, _and_ the current state has been obtained from the client and locally bound.
+
+This gives code inside the `init()` function access to an up-to-date `this.state` variable, and allows web clients to immediately build the correct UI, rather than needing to first generate a "default" UI that cannot be updated to the correct view until `updateState` happens.
+
+Related, the attempt at preventing modification of `this.state` was incomplete, and a rigorous protection mechanism proved to be too much code, slowing things down, for no real payoff, so instead the partial protection mechanism was removed. If your code tries to modify it, it will modify it. This is not considered a backward compatibility breaking change, as no real code could have relied on overwriting, or manually changing, the browser state value.
+
+Additionally, the `linkClasses` shorthand function is no longer deprecated, because it was convenient enough for enough people to keep using.
+
+Consistency-wise, the spelling of `webserver` has been changed to `webServer`, while also keeping the old spelling to prevent existing code from breaking. This is not a breaking change, but note that the old spelling _will_ be removed in the next major release.
+
+
+# Previous versions
 
 ## v4.0.1 (8 January 2023)
 
