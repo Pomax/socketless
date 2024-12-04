@@ -11,10 +11,10 @@ export const WEBCLIENT = `webclient`;
 export const BROWSER = `browser`;
 
 export function deepCopy(obj) {
+  if (obj === undefined) return obj;
   try {
     return JSON.parse(JSON.stringify(obj));
   } catch (e) {
-    if (typeof obj === "undefined") return undefined;
     console.error(`Could not round-trip object via JSON:`, obj);
     throw e;
   }
