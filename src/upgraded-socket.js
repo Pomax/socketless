@@ -280,7 +280,7 @@ class UpgradedSocket extends WebSocket {
         if (reason.includes(`(reading 'bind')`)) {
           reason = `function is undefined.`;
         } else {
-          reason = `function threw instead of returning (${reason})`;
+          reason = `function threw instead of returning:\n${e.stack})`;
         }
         error = `Cannot call [[${receiver}]].${eventName.replaceAll(
           `:`,
