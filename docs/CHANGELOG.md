@@ -8,6 +8,12 @@ Socketless _strictly_ adheres to [semver](https://semver.org)'s major.minor.patc
 
 # Current version
 
+## v4.1.1 (5 December 2024)
+
+Added the error stack trace for remote throws, so that the caller can _actually_ see where things errored on the receiving side.
+
+# Previous versions
+
 ## v4.1.0 (30 November 2024)
 
 Changed the init sequence for browser clients. The code now waits to call `init()` on the web client until a socket connection has been established, _and_ the current state has been obtained from the client and locally bound.
@@ -19,9 +25,6 @@ Related, the attempt at preventing modification of `this.state` was incomplete, 
 Additionally, the `linkClasses` shorthand function is no longer deprecated, because it was convenient enough for enough people to keep using.
 
 Consistency-wise, the spelling of `webserver` has been changed to `webServer`, while also keeping the old spelling to prevent existing code from breaking. This is not a breaking change, but note that the old spelling _will_ be removed in the next major release.
-
-
-# Previous versions
 
 ## v4.0.1 (8 January 2023)
 
