@@ -8,7 +8,7 @@ Socketless _strictly_ adheres to [semver](https://semver.org)'s major.minor.patc
 
 # Current version
 
-## v4.1.1 (5 December 2024)
+## v4.2.0 (5 December 2024)
 
 Added the error stack trace for remote throws, so that the caller can _actually_ see where things errored on the receiving side.
 
