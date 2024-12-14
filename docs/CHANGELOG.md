@@ -8,11 +8,17 @@ Socketless _strictly_ adheres to [semver](https://semver.org)'s major.minor.patc
 
 # Current version
 
+## v4.3.0 (13 December 2024)
+
+Fixed `this.quit()` and `this.disconnect()` not working in the browser.
+
+Added the ability to call client functions directly from the browser, for logic that does not involve the server, such as toggling client-side flags from the browser.
+
+# Previous versions
+
 ## v4.2.0 (5 December 2024)
 
 Added the error stack trace for remote throws, so that the caller can _actually_ see where things errored on the receiving side.
-
-# Previous versions
 
 ## v4.1.0 (30 November 2024)
 

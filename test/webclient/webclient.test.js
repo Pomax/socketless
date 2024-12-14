@@ -1,6 +1,9 @@
-import why from "why-is-node-running";
 import { WebSocket } from "ws";
-import { linkClasses, ALLOW_SELF_SIGNED_CERTS } from "../../src/index.js";
+import {
+  linkClasses,
+  createWebClient,
+  ALLOW_SELF_SIGNED_CERTS,
+} from "../../src/index.js";
 
 import puppeteer from "puppeteer";
 import url from "url";
@@ -62,9 +65,6 @@ function getClasses(done, getError) {
 }
 
 describe("web client tests", () => {
-  /**
-   * ...docs go here...
-   */
   it("should run on a basic http setup", (done) => {
     let error;
     const { ClientClass, ServerClass } = getClasses(done, () => error);
@@ -101,9 +101,6 @@ describe("web client tests", () => {
     });
   });
 
-  /**
-   * ...
-   */
   it("should run on a https for the server, but basic http for the web client", (done) => {
     let error;
     const { ClientClass, ServerClass } = getClasses(done, () => error);
@@ -143,9 +140,6 @@ describe("web client tests", () => {
     });
   });
 
-  /**
-   * ...
-   */
   it("should run on https for both the server and the webclient", (done) => {
     let error;
     const { ClientClass, ServerClass } = getClasses(done, () => error);
@@ -187,9 +181,6 @@ describe("web client tests", () => {
     });
   });
 
-  /**
-   * ...docs go here...
-   */
   it("should reject socketless connections on SID mismatch", (done) => {
     let error = `connection was allowed through`;
     const { ClientClass, ServerClass } = getClasses(done, () => error);
@@ -225,9 +216,6 @@ describe("web client tests", () => {
     });
   });
 
-  /**
-   * ...docs go here...
-   */
   it("should honour socketless connections on SID match", (done) => {
     let error;
     const { ClientClass, ServerClass } = getClasses(done, () => error);
@@ -261,37 +249,35 @@ describe("web client tests", () => {
     });
   });
 
-  /**
-   * ...docs go here...
-   */
   it("should reject bare websocket connection on SID mismatch", (done) => {
     let error = `connection was allowed through`;
     const { ClientClass, ServerClass } = getClasses(done, () => error);
     const factory = linkClasses(ClientClass, ServerClass);
     const { webServer } = factory.createServer();
+
     webServer.listen(0, () => {
       const sid = "testing";
       const PORT = webServer.address().port;
       const serverURL = `http://localhost:${PORT}`;
-      const { clientWebServer } = factory.createWebClient(
+      const { client, clientWebServer } = factory.createWebClient(
         `${serverURL}?sid=${sid}`,
         `${__dirname}/dedicated`,
       );
 
       clientWebServer.listen(0, async () => {
         const clientURL = `http://localhost:${clientWebServer.address().port}`;
-        const ws = new WebSocket(clientURL);
-        ws.on(`error`, (err) => {
-          error = undefined;
-          done();
-        });
+
+        setTimeout(() => {
+          const ws = new WebSocket(clientURL);
+          ws.on(`error`, (err) => {
+            error = undefined;
+            client.quit();
+          });
+        }, 100);
       });
     });
   });
 
-  /**
-   * ...docs go here...
-   */
   it("should allow bare websocket connection if SID matches", (done) => {
     let error;
     const { ClientClass, ServerClass } = getClasses(done, () => error);
@@ -377,86 +363,25 @@ describe("web client tests", () => {
     });
   });
 
-  /**
-  * There is no clean way to do this without a radical rewrite.
-  *
-  it("state should be immutable at the browser", (done) => {
-    let error = `browser was able to modify state`;
-
-    class ServerClass {
-      onDisconnect() {
-        if (this.clients.length === 0) {
-          this.quit();
-        }
-      }
-      teardown() {
-        done(error);
-      }
-    }
-
-    class ClientClass {
-      onBrowserConnect() {
-        this.setState({
-          a: {
-            b: "c",
-          },
-        });
-      }
-    }
-
-    const factory = linkClasses(ClientClass, ServerClass);
-    const { webServer } = factory.createServer();
-
-    webServer.listen(0, () => {
-      const PORT = webServer.address().port;
-      const serverURL = `http://localhost:${PORT}`;
-      const { client, clientWebServer } = factory.createWebClient(
-        serverURL,
-        `${__dirname}/statemod`,
-      );
-
-      clientWebServer.listen(0, async () => {
-        const clientURL = `http://localhost:${clientWebServer.address().port}`;
-        const browser = await puppeteer.launch({ headless: `new` });
-        const page = await browser.newPage();
-        addConsole(page);
-        page.on("pageerror", async (msg) => {
-          msg = msg.message;
-          if (msg.includes(`Cannot assign to read only property`)) {
-            error = ``;
-            await browser.close();
-            client.quit();
-          }
-        });
-        await page.goto(clientURL);
-      });
-    });
-  });
-  */
-
-  it("should not crash calling a server function without a server", (done) => {
+  it("should allow browser connection without server", (done) => {
     let browser;
-    class ServerClass {}
-    class ClientClass {
-      teardown() {
-        done();
-      }
-    }
-    const factory = linkClasses(ClientClass, ServerClass);
-    const { client, clientWebServer } = factory.createWebClient(
+
+    const { clientWebServer } = createWebClient(
+      class {
+        async teardown() {
+          await browser.close();
+          done();
+        }
+      },
       `http://localhost:8000`,
       `${__dirname}/standalone`,
     );
-
-    clientWebServer.addRoute(`/quit`, async (req, res) => {
-      await client.quit();
-      await browser.close();
-    });
 
     clientWebServer.listen(0, async () => {
       const clientURL = `http://localhost:${clientWebServer.address().port}`;
       browser = await puppeteer.launch({ headless: `new` });
       const page = await browser.newPage();
+      page.on("console", (msg) => console.log(`[browser log]`, msg.text()));
       await page.goto(clientURL);
     });
   });

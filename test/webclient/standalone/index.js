@@ -5,7 +5,7 @@ class BrowserClient {
     try {
       await this.server.nonexistent();
     } catch (e) {
-      window.location = `/quit`;
+      this.quit();
     }
   }
 }

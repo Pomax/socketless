@@ -10,7 +10,7 @@
     "prettier": "prettier --write ./**/*.js",
     "test": "npm run test:ast && npm run prettier && npm run test:mocha",
     "test:ast": "tsc ./src/index.js --checkJs --noEmit --module nodenext",
-    "test:mocha": "mocha \"test/**/*.test.js\" --exit"
+    "test:mocha": "mocha \"test/**/*.test.js\""
   },
   "repository": {
     "type": "git",
@@ -43,7 +43,6 @@
     "pem": "^1.14.8",
     "prettier": "^3.0.3",
     "puppeteer": "^21.3.6",
-    "typescript": "^5.2.2",
-    "why-is-node-running": "^2.2.2"
+    "typescript": "^5.2.2"
   }
 }

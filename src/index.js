@@ -288,8 +288,10 @@ export function createWebClient(
           error: undefined,
         };
 
+        const clientOnly = [`quit`, `disconnect`].includes(eventName);
+
         // ... if there is a server, of course.
-        if (client.server) {
+        if (!clientOnly && client.server) {
           let target = client.server;
           const steps = eventName.split(`:`);
           while (steps.length) target = target[steps.shift()];
@@ -306,6 +308,28 @@ export function createWebClient(
         // If there isn't, this is a proxy error
         else {
           proxyResult.error = `Server not available`;
+        }
+
+        // If we're dealing with a known client-only function call, or
+        // we have an error, and it's an "undefined" error, see if we
+        // can resolve this as a local call for the client:
+        if (
+          clientOnly ||
+          (!eventName.includes(`:`) &&
+            proxyResult.error &&
+            proxyResult.error.includes(`function is undefined`))
+        ) {
+          // We only allow the browser to call instance-level client class functions:
+          const target = client[eventName]?.bind(client);
+          if (target && typeof target === `function`) {
+            try {
+              const result = await target(...payload);
+              proxyResult.payload = result;
+              proxyResult.error = undefined;
+            } catch (e) {
+              proxyResult.error = e.message;
+            }
+          }
         }
 
         socket.send(JSON.stringify(proxyResult));

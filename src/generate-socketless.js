@@ -52,26 +52,26 @@ export function generateSocketless() {
       const browserClient = new BrowserClientClass();
 
       const buildSocket = () => {
-        return new WebSocket(window.location.toString().replace("http", "ws"));
+        return new WebSocket(window.location.toString().replace(`http`, `ws`));
       };
 
       let socket = buildSocket();
 
       const buildProxyServer = () => {
-        return createSocketProxy("BROWSER", "WEBCLIENT", browserClient, socket);
+        return createSocketProxy(`BROWSER`, `WEBCLIENT`, browserClient, socket);
       };
 
       let proxyServer = buildProxyServer();
 
       // create the web socket connection - note that if there are any query arguments,
       // those will get passed into the websocket upgrade request, too.
-      Object.defineProperty(browserClient, "socket", {
+      Object.defineProperty(browserClient, `socket`, {
         ...propertyConfig,
         value: socket,
       });
 
       // convenience function to "gracefully" disconnect from a web client:
-      Object.defineProperty(browserClient, "disconnect", {
+      Object.defineProperty(browserClient, `disconnect`, {
         ...propertyConfig,
         value: () => {
           browserClient.connected = false;
@@ -82,7 +82,7 @@ export function generateSocketless() {
       });
 
       // convenience function to reconnect to the web client:
-      Object.defineProperty(browserClient, "reconnect", {
+      Object.defineProperty(browserClient, `reconnect`, {
         ...propertyConfig,
         value: () => {
           socket = buildSocket();
@@ -92,13 +92,13 @@ export function generateSocketless() {
       });
 
       // create a proxy for the (webclient tunnel to the) server:
-      Object.defineProperty(browserClient, "server", {
+      Object.defineProperty(browserClient, `server`, {
         ...propertyConfig,
         value: proxyServer,
       });
 
       // create a proxy for the (webclient tunnel to the) server:
-      Object.defineProperty(browserClient, "quit", {
+      Object.defineProperty(browserClient, `quit`, {
         ...propertyConfig,
         value: () => {
           // @ts-ignore to prevent "Property quit does not exist on type SocketProxy" errors

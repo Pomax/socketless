@@ -102,7 +102,7 @@ export function formServerClass(ServerClass) {
         `ws`,
         `webServer`,
         // @deprecated
-        `webserver`
+        `webserver`,
       );
       return names;
     }
