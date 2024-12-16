@@ -385,4 +385,35 @@ describe("web client tests", () => {
       await page.goto(clientURL);
     });
   });
+
+  it("should lock the browser state to prevent modification", (done) => {
+    let browser;
+    let error = undefined;
+
+    const { client, clientWebServer } = createWebClient(
+      class {
+        async teardown() {
+          await browser.close();
+          done(error);
+        }
+        async updateValue() {
+          this.setState({ a: { b: { c: 1 } } });
+        }
+      },
+      `http://localhost:8000`,
+      `${__dirname}/statemod`,
+    );
+
+    clientWebServer.listen(0, async () => {
+      const clientURL = `http://localhost:${clientWebServer.address().port}`;
+      browser = await puppeteer.launch({ headless: `new` });
+      const page = await browser.newPage();
+      page.on("console", (msg) => console.log(`[browser log]`, msg.text()));
+      page.on("pageerror", (msg) => {
+        error = new Error(`[browser error: ${msg}]`);
+        client.quit();
+      });
+      await page.goto(clientURL);
+    });
+  });
 });

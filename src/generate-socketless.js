@@ -44,6 +44,14 @@ export function generateSocketless() {
   const socketless =
     `export ` +
     function createBrowserClient(BrowserClientClass) {
+      const lockObject = (input) => {
+        Object.keys(input).forEach((key) => {
+          if (typeof input[key] === "object" && !Object.isFrozen(input[key]))
+            lockObject(input[key]);
+        });
+        return Object.freeze(input);
+      };
+
       const propertyConfig = {
         writable: false,
         configurable: false,
@@ -106,12 +114,27 @@ export function generateSocketless() {
         },
       });
 
+      // make the .state property immutable
+      Object.defineProperty(browserClient, `state`, {
+        get: () => browserClient.__state_backing,
+        set: () => {
+          throw new Error(`state is a protected value.`);
+        },
+      });
+
+      // make the .state property immutable
+      Object.defineProperty(browserClient, `getStateCopy`, {
+        ...propertyConfig,
+        value: () => structuredClone(browserClient.__state_backing),
+      });
+
       // Don't call init() until we're properly connected
       // and know the current client state.
       socket.onopen = async () => {
         browserClient.connected = true;
         // @ts-ignore to prevent "Property syncState does not exist on type SocketProxy" errors
-        browserClient.state = (await proxyServer.syncState()) || {};
+        browserClient.__state_backing = (await proxyServer.syncState()) || {};
+        lockObject(browserClient.__state_backing);
         browserClient.init?.();
       };
 

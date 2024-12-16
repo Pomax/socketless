@@ -159,7 +159,7 @@ class UpgradedSocket extends WebSocket {
     if (state && receiver === BROWSER) {
       if (DEBUG) console.log(`handling state update in the browser`, state);
       if (DEBUG) console.log(`origin object:`, { origin });
-      const prevState = deepCopy(origin.state);
+      const prevState = structuredClone(origin.__state_backing);
       if (diff) {
         if (DEBUG) console.log(`received diff`, state);
         const patch = state;
@@ -167,7 +167,7 @@ class UpgradedSocket extends WebSocket {
         // verify we're still in sync by comparing messaging sequence numbers
         if (seq_num === origin.__seq_num + 1) {
           origin.__seq_num = seq_num;
-          target = deepCopy(prevState);
+          target = prevState;
           if (DEBUG) console.log(`applying patch to`, target);
           // @ts-ignore: this only runs in the browser, where rfc6902 is a global.
           rfc6902.applyPatch(target, patch);
@@ -185,7 +185,7 @@ class UpgradedSocket extends WebSocket {
       // overwrite the old state with the new state after the update.
       if (state) {
         lockObject(state);
-        origin.state = state;
+        origin.__state_backing = state;
         origin.update?.(prevState);
       }
       return;

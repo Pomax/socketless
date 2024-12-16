@@ -8,13 +8,17 @@ Socketless _strictly_ adheres to [semver](https://semver.org)'s major.minor.patc
 
 # Current version
 
+## v5.0.0 (release pending)
+
+Reimplemented state locking on the browser side, as the diff code breaks _really hard_ when users are allowed to modify the state directly. To work with a mutable state, a special `this.getStateCopy()` function has been introduced that creates a mutable deep copy of the current state using the JS [structuredClone()](https://developer.mozilla.org/en-US/docs/Web/API/Window/structuredClone) function.
+
+# Previous versions
+
 ## v4.3.0 (13 December 2024)
 
 Fixed `this.quit()` and `this.disconnect()` not working in the browser.
 
 Added the ability to call client functions directly from the browser, for logic that does not involve the server, such as toggling client-side flags from the browser.
-
-# Previous versions
 
 ## v4.2.0 (5 December 2024)
 

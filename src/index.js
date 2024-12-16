@@ -315,6 +315,7 @@ export function createWebClient(
         // can resolve this as a local call for the client:
         if (
           clientOnly ||
+          proxyResult.error === `Server not available` ||
           (!eventName.includes(`:`) &&
             proxyResult.error &&
             proxyResult.error.includes(`function is undefined`))
