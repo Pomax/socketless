@@ -12,6 +12,8 @@ Socketless _strictly_ adheres to [semver](https://semver.org)'s major.minor.patc
 
 Reimplemented state locking on the browser side, as the diff code breaks _really hard_ when users are allowed to modify the state directly. To work with a mutable state, a special `this.getStateCopy()` function has been introduced that creates a mutable deep copy of the current state using the JS [structuredClone()](https://developer.mozilla.org/en-US/docs/Web/API/Window/structuredClone) function.
 
+The code for calling client functions from the browser by using `this.server.functionName` was also improved to make sure that functionality works even when the client is not connected to a server (which should not be necessary for a pure browser<->client call).
+
 # Previous versions
 
 ## v4.3.0 (13 December 2024)
