@@ -128,6 +128,28 @@ export function generateSocketless() {
         value: () => structuredClone(browserClient.__state_backing),
       });
 
+      // parse any query params to the type they should most
+      // like be, based on JSON parsing rules:
+      const params = Object.fromEntries(
+        location.search
+          .replace(/^\?/, ``)
+          .split(`&`)
+          .map((s) => {
+            let [key, value] = s.split(`=`);
+            try {
+              value = JSON.parse(decodeURIComponent(value));
+            } catch (e) {}
+            return [key, value];
+          }),
+      );
+
+      // then expose those as a read-only `this.params`
+      Object.defineProperty(browserClient, `params`, {
+        configurable: false,
+        get: () => params,
+        set: () => {},
+      });
+
       // Don't call init() until we're properly connected
       // and know the current client state.
       socket.onopen = async () => {

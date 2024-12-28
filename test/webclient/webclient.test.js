@@ -21,8 +21,11 @@ const httpsOptions = await new Promise((resolve, reject) => {
   );
 });
 
-function addConsole(page) {
+async function getPage(browser) {
+  const page = await browser.newPage();
   page.on("console", (msg) => console.log(`[browser log: ${msg.text()}]`));
+  page.on("pageerror", (msg) => (error = new Error(`[browser error]`, msg)));
+  return page;
 }
 
 /**
@@ -88,11 +91,7 @@ describe("web client tests", () => {
       clientWebServer.listen(0, async () => {
         const clientURL = `http://localhost:${clientWebServer.address().port}`;
         const browser = await puppeteer.launch({ headless: `new` });
-        const page = await browser.newPage();
-        page.on("pageerror", (msg) => {
-          error = new Error(`[browser error: ${msg}]`);
-        });
-        addConsole(page);
+        const page = await getPage(browser);
         await page.goto(clientURL);
         await page.waitForSelector(`.testfield`);
         await page.click(`#quit`);
@@ -126,12 +125,7 @@ describe("web client tests", () => {
       clientWebServer.listen(0, async () => {
         const url = `http://localhost:${clientWebServer.address().port}`;
         const browser = await puppeteer.launch({ headless: `new` });
-        const page = await browser.newPage();
-        page.on(
-          "pageerror",
-          (msg) => (error = new Error(`[browser error]`, msg)),
-        );
-        page.on("console", (msg) => console.log(`[browser log]`, msg.text()));
+        const page = await getPage(browser);
         await page.goto(url);
         await page.waitForSelector(`.testfield`);
         await page.click(`#quit`);
@@ -167,12 +161,7 @@ describe("web client tests", () => {
           headless: `new`,
           ignoreHTTPSErrors: true,
         });
-        const page = await browser.newPage();
-        page.on(
-          "pageerror",
-          (msg) => (error = new Error(`[browser error]`, msg)),
-        );
-        page.on("console", (msg) => console.log(`[browser log]`, msg.text()));
+        const page = await getPage(browser);
         await page.goto(`https://localhost:${clientWebServer.address().port}`);
         await page.waitForSelector(`.testfield`);
         await page.click(`#quit`);
@@ -198,7 +187,7 @@ describe("web client tests", () => {
       clientWebServer.listen(0, async () => {
         const clientURL = `http://localhost:${clientWebServer.address().port}`;
         const browser = await puppeteer.launch({ headless: `new` });
-        const page = await browser.newPage();
+        const page = await getPage(browser);
         page.on("console", (msg) => {
           msg = msg.text();
           if (
@@ -240,7 +229,7 @@ describe("web client tests", () => {
       clientWebServer.listen(0, async () => {
         const clientURL = `http://localhost:${clientWebServer.address().port}`;
         const browser = await puppeteer.launch({ headless: `new` });
-        const page = await browser.newPage();
+        const page = await getPage(browser);
         await page.goto(`${clientURL}?sid=${sid}`);
         await page.waitForSelector(`.testfield`);
         await page.click(`#quit`);
@@ -348,12 +337,7 @@ describe("web client tests", () => {
       clientWebServer.listen(0, async () => {
         const clientURL = `http://localhost:${clientWebServer.address().port}`;
         const browser = await puppeteer.launch({ headless: `new` });
-        const page = await browser.newPage();
-        page.on(
-          "pageerror",
-          (msg) => (error = new Error(`[browser error]`, msg)),
-        );
-        page.on("console", (msg) => console.log(`[browser log]`, msg.text()));
+        const page = await getPage(browser);
         await page.goto(clientURL);
         await page.waitForSelector(`body.done`);
         await browser.close();
@@ -380,8 +364,7 @@ describe("web client tests", () => {
     clientWebServer.listen(0, async () => {
       const clientURL = `http://localhost:${clientWebServer.address().port}`;
       browser = await puppeteer.launch({ headless: `new` });
-      const page = await browser.newPage();
-      page.on("console", (msg) => console.log(`[browser log]`, msg.text()));
+      const page = await getPage(browser);
       await page.goto(clientURL);
     });
   });
@@ -407,13 +390,57 @@ describe("web client tests", () => {
     clientWebServer.listen(0, async () => {
       const clientURL = `http://localhost:${clientWebServer.address().port}`;
       browser = await puppeteer.launch({ headless: `new` });
-      const page = await browser.newPage();
-      page.on("console", (msg) => console.log(`[browser log]`, msg.text()));
-      page.on("pageerror", (msg) => {
-        error = new Error(`[browser error: ${msg}]`);
-        client.quit();
-      });
+      const page = await getPage(browser);
       await page.goto(clientURL);
+    });
+  });
+
+  it("should parse query args in the browser", () => {
+    return new Promise(async (resolve, reject) => {
+      let browser;
+      let error = `test did not run`;
+
+      const { client, clientWebServer } = createWebClient(
+        class {
+          async pass() {
+            error = undefined;
+            this.quit();
+          }
+          async fail(reason) {
+            error = reason;
+            this.quit();
+          }
+          async teardown() {
+            await browser.close();
+            if (error) reject(new Error(error));
+            else resolve();
+          }
+        },
+        `http://localhost:8000`,
+        `${__dirname}/params`,
+      );
+
+      const targetsFile = import.meta.url.replace(
+        `webclient.test.js`,
+        `params/targets.js`,
+      );
+
+      const { targets } = await import(targetsFile);
+
+      const query = Object.entries(targets)
+        .map(([key, value]) => {
+          return `${key}=${JSON.stringify(value)}`;
+        })
+        .join(`&`);
+
+      clientWebServer.listen(0, async () => {
+        const clientURL = `http://localhost:${
+          clientWebServer.address().port
+        }?${query}`;
+        browser = await puppeteer.launch({ headless: `new` });
+        const page = await getPage(browser);
+        await page.goto(clientURL);
+      });
     });
   });
 });
