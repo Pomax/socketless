@@ -79,7 +79,7 @@ class UpgradedSocket extends WebSocket {
   // @ts-ignore: we don't need to call super() if we error out.
   constructor() {
     throw new Error(
-      "Cannot create UpgradedSocket instances. Use UpgradedSocket.upgrade(name, origin, socket) instead."
+      "Cannot create UpgradedSocket instances. Use UpgradedSocket.upgrade(name, origin, socket) instead.",
     );
   }
 
@@ -160,7 +160,7 @@ class UpgradedSocket extends WebSocket {
       if (DEBUG) console.log(`handling state update in the browser`, state);
       if (DEBUG) console.log(`origin object:`, { origin });
 
-      const prevState = structuredClone(origin.__state_backing);
+      const prevState = origin.__state_backing;
       let changeFlags = undefined;
 
       if (diff) {
@@ -170,7 +170,7 @@ class UpgradedSocket extends WebSocket {
         // verify we're still in sync by comparing messaging sequence numbers
         if (seq_num === origin.__seq_num + 1) {
           origin.__seq_num = seq_num;
-          target = prevState;
+          target = structuredClone(prevState);
           if (DEBUG) console.log(`applying patch to`, target);
           // convert patch to "diff flag" object
           changeFlags = {};
@@ -260,7 +260,7 @@ class UpgradedSocket extends WebSocket {
           // is this a locked function that the client is not allowed in?
           if (client && callable[LOCK] && !callable[LOCK](client)) {
             throw new Error(
-              `no access permission on ${receiver}:${eventName} for ${remote}`
+              `no access permission on ${receiver}:${eventName} for ${remote}`,
             );
           }
           callable = callable[stage];
@@ -289,7 +289,7 @@ class UpgradedSocket extends WebSocket {
         if (DEBUG)
           console.error(
             `function invocation for ${eventName} failed on ${receiver}, payload:`,
-            payload
+            payload,
           );
         if (DEBUG) console.error(e);
         let reason = e.message;
@@ -300,7 +300,7 @@ class UpgradedSocket extends WebSocket {
         }
         error = `Cannot call [[${receiver}]].${eventName.replaceAll(
           `:`,
-          `.`
+          `.`,
         )}, ${reason}`;
       }
     }
@@ -313,7 +313,7 @@ class UpgradedSocket extends WebSocket {
         error,
       });
     super.send(
-      JSON.stringify({ name: responseName, payload: response, error })
+      JSON.stringify({ name: responseName, payload: response, error }),
     );
   }
 
@@ -371,7 +371,7 @@ class UpgradedSocket extends WebSocket {
       this.__on(responseName, (data) => {
         if (DEBUG)
           console.log(
-            `[${receiver}] handling response for ${eventName} from [${remote}]:`
+            `[${receiver}] handling response for ${eventName} from [${remote}]:`,
           );
         handler(data);
       });
@@ -380,13 +380,13 @@ class UpgradedSocket extends WebSocket {
       const sendEvent = () => {
         if (DEBUG)
           console.log(
-            `(raw) sending ${eventName} from ${receiver} to ${remote}`
+            `(raw) sending ${eventName} from ${receiver} to ${remote}`,
           );
         super.send(
           JSON.stringify({
             name: eventName,
             payload: data,
-          })
+          }),
         );
       };
 
@@ -421,14 +421,14 @@ class SocketProxy extends Function {
         if (prop === "socket") return this.socket;
         if (typeof prop === "symbol") {
           throw new Error(
-            `unexpected symbol as prop - did you forget to add a "client" as first function argument?`
+            `unexpected symbol as prop - did you forget to add a "client" as first function argument?`,
           );
         }
         return new SocketProxy(
           socket,
           receiver,
           remote,
-          `${path}:${String(prop)}`
+          `${path}:${String(prop)}`,
         );
       },
       apply: async (_, __, args) => {
