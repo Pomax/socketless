@@ -315,17 +315,20 @@ describe("web client tests", () => {
       }
     }
 
+    let arr = [];
+
     class ClientClass {
       onBrowserConnect() {
         const run = () => {
           const v = list.shift();
+          arr.push(v);
           this.setState({
             a: {
               b: {
                 c: "test",
                 d: Math.random(),
               },
-              e: Math.random(),
+              e: arr,
             },
             v,
           });

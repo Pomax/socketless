@@ -176,9 +176,14 @@ class UpgradedSocket extends WebSocket {
           changeFlags = {};
           patch.forEach(({ path }) => {
             let lvl = changeFlags;
-            const parts = path.split(`/`); // path starts with a leading slash
-            parts.shift();
-            while (parts.length > 1) lvl = lvl[parts.shift()] ??= {};
+            const parts = path.split(`/`);
+            parts.shift(); // path starts with a leading slash
+            const push = parts.at(-1) === `-`; // is this an array push?
+            if (push) parts.pop();
+            while (parts.length > 1) {
+              const part = parts.shift();
+              lvl = lvl[part] ??= {};
+            }
             lvl[parts[0]] = true;
           });
           // @ts-ignore: this only runs in the browser, where rfc6902 is a global.
