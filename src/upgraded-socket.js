@@ -159,7 +159,10 @@ class UpgradedSocket extends WebSocket {
     if (state && receiver === BROWSER) {
       if (DEBUG) console.log(`handling state update in the browser`, state);
       if (DEBUG) console.log(`origin object:`, { origin });
+
       const prevState = structuredClone(origin.__state_backing);
+      let diffFlags = undefined;
+
       if (diff) {
         if (DEBUG) console.log(`received diff`, state);
         const patch = state;
@@ -169,6 +172,15 @@ class UpgradedSocket extends WebSocket {
           origin.__seq_num = seq_num;
           target = prevState;
           if (DEBUG) console.log(`applying patch to`, target);
+          // convert patch to "diff flag" object
+          diffFlags = {};
+          patch.forEach(({ path }) => {
+            let lvl = diffFlags;
+            const parts = path.split(`/`); // path starts with a leading slash
+            parts.shift();
+            while (parts.length > 1) lvl = lvl[parts.shift()] ??= {};
+            lvl[parts[0]] = true;
+          });
           // @ts-ignore: this only runs in the browser, where rfc6902 is a global.
           rfc6902.applyPatch(target, patch);
         } else {
@@ -186,7 +198,7 @@ class UpgradedSocket extends WebSocket {
       if (state) {
         lockObject(state);
         origin.__state_backing = state;
-        origin.update?.(prevState);
+        origin.update?.(prevState, diffFlags);
       }
       return;
     }

@@ -21,10 +21,13 @@ const httpsOptions = await new Promise((resolve, reject) => {
   );
 });
 
-async function getPage(browser) {
+async function getPage(browser, onError) {
   const page = await browser.newPage();
   page.on("console", (msg) => console.log(`[browser log: ${msg.text()}]`));
-  page.on("pageerror", (msg) => (error = new Error(`[browser error]`, msg)));
+  page.on("pageerror", (msg) => {
+    console.log(`[browser error]`, msg);
+    onError?.(new Error(msg));
+  });
   return page;
 }
 
@@ -316,7 +319,16 @@ describe("web client tests", () => {
       onBrowserConnect() {
         const run = () => {
           const v = list.shift();
-          this.setState({ v });
+          this.setState({
+            a: {
+              b: {
+                c: "test",
+                d: Math.random(),
+              },
+              e: Math.random(),
+            },
+            v,
+          });
           if (v) setTimeout(run, 50);
         };
         run();
@@ -337,7 +349,13 @@ describe("web client tests", () => {
       clientWebServer.listen(0, async () => {
         const clientURL = `http://localhost:${clientWebServer.address().port}`;
         const browser = await puppeteer.launch({ headless: `new` });
-        const page = await getPage(browser);
+
+        const page = await getPage(browser, async (msg) => {
+          await browser.close();
+          error = msg;
+          client.quit();
+        });
+
         await page.goto(clientURL);
         await page.waitForSelector(`body.done`);
         await browser.close();
