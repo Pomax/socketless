@@ -161,7 +161,7 @@ class UpgradedSocket extends WebSocket {
       if (DEBUG) console.log(`origin object:`, { origin });
 
       const prevState = structuredClone(origin.__state_backing);
-      let diffFlags = undefined;
+      let changeFlags = undefined;
 
       if (diff) {
         if (DEBUG) console.log(`received diff`, state);
@@ -173,9 +173,9 @@ class UpgradedSocket extends WebSocket {
           target = prevState;
           if (DEBUG) console.log(`applying patch to`, target);
           // convert patch to "diff flag" object
-          diffFlags = {};
+          changeFlags = {};
           patch.forEach(({ path }) => {
-            let lvl = diffFlags;
+            let lvl = changeFlags;
             const parts = path.split(`/`); // path starts with a leading slash
             parts.shift();
             while (parts.length > 1) lvl = lvl[parts.shift()] ??= {};
@@ -198,7 +198,7 @@ class UpgradedSocket extends WebSocket {
       if (state) {
         lockObject(state);
         origin.__state_backing = state;
-        origin.update?.(prevState, diffFlags);
+        origin.update?.(prevState, changeFlags);
       }
       return;
     }

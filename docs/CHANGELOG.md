@@ -14,6 +14,46 @@ Reimplemented state locking on the browser side, as the diff code breaks _really
 
 The code for calling client functions from the browser by using `this.server.functionName` was also improved to make sure that functionality works even when the client is not connected to a server (which should not be necessary for a pure browser<->client call).
 
+Browser code has access to two new bits of functionality: a new `this.params` has been added so that folks don't need to manually parse URL query arguments, and then type-convert them. Instead of, all query arguments are added into `this.params` with whatever type a `JSON.parse` pass can turn them into (e.g. numbers will be actual numbers, booleans will be actual booleans, JSON gets turned into objects, etc). Additionally, the `update(prevState)` function has been updated with a second argument that's called `diffFlags` internally, which is an object with `true` values for any (nested) property that got updated between `prevState` and `this.state`, so that UI code can hook into not just the current state, but also the current state _transitions_. E.g.:
+
+```js
+// The current state only tells us "that" a player drew a card,
+// but it won't tell us anything about whether that just happened,
+// or some other part of the state updated. Let's check our diff flags:
+if (changes.game?.currentHand?.currentPlayer?.latestDraw) {
+  // We now know this value just got updated, so we can now check
+  // what its current value is and decide what to do based on that:
+  if (this.state.game.currentHand.currentPlayer.latestDraw) {
+    // If the latest draw value is not undefined, the player drew a
+    // card, and we should play an audio clip as cue to the user:
+    playAudio(`drawCard.mp3`);
+  }
+}
+```
+
+Rather than having to manually compare values using either incredibly unwieldy code:
+
+```js
+if (
+  prevState.game?.currentHand?.currentPlayer?.latestDraw !==
+    this.state.game.currentHand.currentPlayer.latestDraw &&
+  this.state.game.currentHand.currentPlayer.latestDraw
+) {
+  playAudio(`drawCard.mp3`);
+}
+```
+
+or by capturing those things in throw-away variables:
+
+```js
+const { latestDraw: previousValue } =
+  prevState.game?.currentHand?.currentPlayer || {};
+const { latestDraw } = this.state.game?.currentHand?.currentPlayer || {};
+if (previousValue !== latestDraw && latestDraw) {
+  playAudio(`drawCard.mp3`);
+}
+```
+
 # Previous versions
 
 ## v4.3.0 (13 December 2024)

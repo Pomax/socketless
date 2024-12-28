@@ -4,17 +4,17 @@ class BrowserClient {
   init() {
     this.current = this.state.v || 0;
   }
-  update(prevState, diffFlags) {
-    if (diffFlags) {
-      if (!diffFlags.a.e) {
+  update(prevState, changeFlags) {
+    if (changeFlags) {
+      if (!changeFlags.a.e) {
         throw new Error(`missing diff flag for "a.e"`);
       }
 
-      if (!diffFlags.a.b.d) {
+      if (!changeFlags.a.b.d) {
         throw new Error(`missing diff flag for "a.b.d"`);
       }
 
-      if (!diffFlags.v) {
+      if (!changeFlags.v) {
         throw new Error(`missing diff flag for "v"`);
       }
     }
