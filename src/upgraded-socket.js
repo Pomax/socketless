@@ -24,7 +24,7 @@
  */
 
 import { WebSocket } from "ws";
-import { CLIENT, BROWSER, deepCopy } from "./utils.js";
+import { CLIENT, BROWSER, diffToChangeFlags } from "./utils.js";
 
 const DEBUG = false;
 
@@ -156,66 +156,50 @@ class UpgradedSocket extends WebSocket {
       });
 
     // Client-state synchronization mechanism for the browser:
-    if (state && receiver === BROWSER) {
+    if (receiver === BROWSER && (state || diff)) {
       if (DEBUG) console.log(`handling state update in the browser`, state);
       if (DEBUG) console.log(`origin object:`, { origin });
 
-      origin.__seq_num ??= 0;
       const prevState = origin.__state_backing;
       let changeFlags = undefined;
 
+      // TODO: we should be able to set this somewhere else so that
+      //       we don't have to constantly null-coalesce here.
+      origin.__seq_num ??= 0;
+
       if (diff) {
-        if (DEBUG) console.log(`received diff`, state);
-        const patch = state;
+        if (DEBUG) console.log(`received diff`, diff);
         let target;
         // verify we're still in sync by comparing messaging sequence numbers
         if (seq_num === origin.__seq_num + 1) {
           origin.__seq_num = seq_num;
           target = structuredClone(prevState);
           if (DEBUG) console.log(`applying patch to`, target);
-          // convert patch to "diff flag" object
-          // TODO: is there a way we can refactor this so we're not
-          //       duplicating the changeflag code from generate-socketless?
-          changeFlags = {};
-          patch.forEach(({ path, value }) => {
-            let lvl = changeFlags;
-            const parts = path.split(`/`);
-            parts.shift(); // path starts with a leading slash
-            if (parts.at(-1) === `-`) parts.pop(); // is this an array push?
-            while (parts.length > 1) {
-              const part = parts.shift();
-              lvl = lvl[part] ??= {};
-            }
-            if (typeof value === `object`) {
-              lvl[parts[0]] = JSON.parse(
-                JSON.stringify(value, (k, v) => {
-                  if (typeof v !== `object` || v instanceof Array) return true;
-                  return v;
-                }),
-              );
-            } else {
-              lvl[parts[0]] = true;
-            }
-          });
+          changeFlags = diffToChangeFlags(diff);
+          if (DEBUG) console.log(`changeFlags:`, changeFlags);
           // @ts-ignore: this only runs in the browser, where rfc6902 is a global.
-          rfc6902.applyPatch(target, patch);
-        } else {
-          // if we get here, we're not in sync, and we need to request a full
-          // state object instead of trying to apply differential updates.
+          rfc6902.applyPatch(target, diff);
+        }
+
+        // if we get here, we're not in sync, and we need to request a full
+        // state object instead of trying to apply differential updates.
+        else {
           if (DEBUG) console.log(`seq_num mismatch, syncing state`);
           const fullState = await this.__send(`syncState`);
           origin.__seq_num = 0;
           target = fullState;
         }
+
         state = target;
       }
-      // Run the update with the new state as argument first, then
-      // overwrite the old state with the new state after the update.
+
+      // If we have a state, run an update pass:
       if (state) {
         lockObject(state);
         origin.__state_backing = state;
         origin.update?.(prevState, changeFlags);
       }
+
       return;
     }
 

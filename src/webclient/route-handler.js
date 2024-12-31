@@ -4,6 +4,7 @@ import fs from "node:fs";
 import { join } from "node:path";
 
 import { generateSocketless } from "../generate-socketless.js";
+const socketlessDotJS = generateSocketless();
 
 const DEBUG = false;
 
@@ -95,7 +96,7 @@ export function makeRouteHandler(client, publicDir, customRouter) {
         );
       }
       response.writeHead(200, { "Content-Type": getContentType(`.js`) });
-      return response.end(generateSocketless(), `utf-8`);
+      return response.end(socketlessDotJS, `utf-8`);
     }
 
     // custom route handing

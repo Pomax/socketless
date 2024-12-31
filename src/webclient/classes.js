@@ -91,9 +91,8 @@ export function formWebClientClass(ClientClass) {
         const diff = createPatch(this.__oldState ?? {}, this.state);
         if (diff.length > 0) {
           const payload = {
-            state: diff,
+            diff,
             seq_num: ++this.browser.socket.__seq_num,
-            diff: true,
           };
           if (DEBUG)
             console.log(

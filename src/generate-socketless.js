@@ -19,7 +19,14 @@ import path from "path";
 import url from "url";
 const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
 
-import { CLIENT, WEBCLIENT, BROWSER, deepCopy } from "./utils.js";
+import {
+  CLIENT,
+  WEBCLIENT,
+  BROWSER,
+  deepCopy,
+  diffToChangeFlags,
+  convertToChangeFlags,
+} from "./utils.js";
 import { createSocketProxy } from "./upgraded-socket.js";
 
 export function generateSocketless() {
@@ -34,8 +41,15 @@ export function generateSocketless() {
     .replace(`import { WebSocket } from "ws";`, ``)
     // and we don't need this import:
     .replace(
-      `import { CLIENT, BROWSER, deepCopy } from "./utils.js";`,
-      `const BROWSER = "${BROWSER}";\nconst CLIENT = "${CLIENT}";\nconst deepCopy = ${deepCopy.toString()}`,
+      // This has to match the utils import in upgraded-socket.js (obviously)
+      `import { CLIENT, BROWSER, diffToChangeFlags } from "./utils.js";`,
+      `
+const BROWSER = "${BROWSER}";
+const CLIENT = "${CLIENT}";
+const deepCopy = ${deepCopy.toString()};
+const diffToChangeFlags = ${diffToChangeFlags.toString()};
+const convertToChangeFlags = ${convertToChangeFlags.toString()};
+`
     );
 
   // ===============================================================
@@ -140,7 +154,7 @@ export function generateSocketless() {
               value = JSON.parse(decodeURIComponent(value));
             } catch (e) {}
             return [key, value];
-          }),
+          })
       );
 
       // then expose those as a read-only `this.params`
@@ -149,35 +163,6 @@ export function generateSocketless() {
         get: () => params,
         set: () => {},
       });
-
-      // TODO: is there a way we can refactor this so we're not
-      //       duplicating the changeflag code from upgraded-socket?
-      function getChangeFlags(initialState) {
-        // @ts-ignore
-        const diff = rfc6902.createPatch({}, initialState);
-        const changeFlags = {};
-        diff.forEach(({ path, value }) => {
-          let lvl = changeFlags;
-          const parts = path.split(`/`);
-          parts.shift(); // path starts with a leading slash
-          if (parts.at(-1) === `-`) parts.pop(); // is this an array push?
-          while (parts.length > 1) {
-            const part = parts.shift();
-            lvl = lvl[part] ??= {};
-          }
-          if (typeof value === `object`) {
-            lvl[parts[0]] = JSON.parse(
-              JSON.stringify(value, (k, v) => {
-                if (typeof v !== `object` || v instanceof Array) return true;
-                return v;
-              }),
-            );
-          } else {
-            lvl[parts[0]] = true;
-          }
-        });
-        return changeFlags;
-      }
 
       // Don't call init() until we're properly connected
       // and know the current client state.
@@ -188,7 +173,7 @@ export function generateSocketless() {
         lockObject(browserClient.__state_backing);
         browserClient.init?.();
         /* prettier-ignore */
-        browserClient.update?.({}, getChangeFlags(browserClient.__state_backing));
+        browserClient.update?.({}, convertToChangeFlags(browserClient.__state_backing));
       };
 
       return browserClient;
@@ -211,7 +196,7 @@ export function generateSocketless() {
   const rfc6902Path = path.join(
     __dirname,
     __dirname.includes(`node_modules`) ? `../../..` : `..`,
-    `node_modules/rfc6902/dist/rfc6902.min.js`,
+    `node_modules/rfc6902/dist/rfc6902.min.js`
   );
   const rfc6902 = fs.readFileSync(rfc6902Path).toString(`utf-8`);
 
