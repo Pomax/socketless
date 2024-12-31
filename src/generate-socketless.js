@@ -42,14 +42,14 @@ export function generateSocketless() {
     // and we don't need this import:
     .replace(
       // This has to match the utils import in upgraded-socket.js (obviously)
-      `import { CLIENT, BROWSER, diffToChangeFlags } from "./utils.js";`,
+      `import { CLIENT, BROWSER, deepCopy, diffToChangeFlags } from "./utils.js";`,
       `
 const BROWSER = "${BROWSER}";
 const CLIENT = "${CLIENT}";
 const deepCopy = ${deepCopy.toString()};
 const diffToChangeFlags = ${diffToChangeFlags.toString()};
 const convertToChangeFlags = ${convertToChangeFlags.toString()};
-`
+`,
     );
 
   // ===============================================================
@@ -139,7 +139,7 @@ const convertToChangeFlags = ${convertToChangeFlags.toString()};
       // make the .state property immutable
       Object.defineProperty(browserClient, `getStateCopy`, {
         ...propertyConfig,
-        value: () => structuredClone(browserClient.__state_backing),
+        value: () => deepCopy(browserClient.__state_backing),
       });
 
       // parse any query params to the type they should most
@@ -154,7 +154,7 @@ const convertToChangeFlags = ${convertToChangeFlags.toString()};
               value = JSON.parse(decodeURIComponent(value));
             } catch (e) {}
             return [key, value];
-          })
+          }),
       );
 
       // then expose those as a read-only `this.params`
@@ -196,7 +196,7 @@ const convertToChangeFlags = ${convertToChangeFlags.toString()};
   const rfc6902Path = path.join(
     __dirname,
     __dirname.includes(`node_modules`) ? `../../..` : `..`,
-    `node_modules/rfc6902/dist/rfc6902.min.js`
+    `node_modules/rfc6902/dist/rfc6902.min.js`,
   );
   const rfc6902 = fs.readFileSync(rfc6902Path).toString(`utf-8`);
 

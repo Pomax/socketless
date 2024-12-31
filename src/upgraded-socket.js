@@ -24,7 +24,7 @@
  */
 
 import { WebSocket } from "ws";
-import { CLIENT, BROWSER, diffToChangeFlags } from "./utils.js";
+import { CLIENT, BROWSER, deepCopy, diffToChangeFlags } from "./utils.js";
 
 const DEBUG = false;
 
@@ -173,7 +173,7 @@ class UpgradedSocket extends WebSocket {
         // verify we're still in sync by comparing messaging sequence numbers
         if (seq_num === origin.__seq_num + 1) {
           origin.__seq_num = seq_num;
-          target = structuredClone(prevState);
+          target = deepCopy(prevState);
           if (DEBUG) console.log(`applying patch to`, target);
           changeFlags = diffToChangeFlags(diff);
           if (DEBUG) console.log(`changeFlags:`, changeFlags);
