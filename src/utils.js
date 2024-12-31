@@ -6,6 +6,7 @@ export const BROWSER = `browser`;
 export function deepCopy(obj) {
   if (obj === undefined) return obj;
   try {
+    // Counter-intuitively, this is faster than structuredClone()
     return JSON.parse(JSON.stringify(obj));
   } catch (e) {
     console.error(`Could not round-trip object via JSON:`, obj);
@@ -38,7 +39,7 @@ export function diffToChangeFlags(diff) {
         JSON.stringify(value, (k, v) => {
           if (typeof v !== `object` || v instanceof Array) return true;
           return v;
-        }),
+        })
       );
     } else {
       lvl[parts[0]] = true;
