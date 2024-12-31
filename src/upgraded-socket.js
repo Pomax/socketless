@@ -160,6 +160,7 @@ class UpgradedSocket extends WebSocket {
       if (DEBUG) console.log(`handling state update in the browser`, state);
       if (DEBUG) console.log(`origin object:`, { origin });
 
+      origin.__seq_num ??= 0;
       const prevState = origin.__state_backing;
       let changeFlags = undefined;
 
@@ -173,8 +174,10 @@ class UpgradedSocket extends WebSocket {
           target = structuredClone(prevState);
           if (DEBUG) console.log(`applying patch to`, target);
           // convert patch to "diff flag" object
+          // TODO: is there a way we can refactor this so we're not
+          //       duplicating the changeflag code from generate-socketless?
           changeFlags = {};
-          patch.forEach(({ path }) => {
+          patch.forEach(({ path, value }) => {
             let lvl = changeFlags;
             const parts = path.split(`/`);
             parts.shift(); // path starts with a leading slash
@@ -183,7 +186,16 @@ class UpgradedSocket extends WebSocket {
               const part = parts.shift();
               lvl = lvl[part] ??= {};
             }
-            lvl[parts[0]] = true;
+            if (typeof value === `object`) {
+              lvl[parts[0]] = JSON.parse(
+                JSON.stringify(value, (k, v) => {
+                  if (typeof v !== `object` || v instanceof Array) return true;
+                  return v;
+                }),
+              );
+            } else {
+              lvl[parts[0]] = true;
+            }
           });
           // @ts-ignore: this only runs in the browser, where rfc6902 is a global.
           rfc6902.applyPatch(target, patch);

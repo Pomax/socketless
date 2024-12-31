@@ -7,11 +7,13 @@ class BrowserClient {
     this.server.updateValue();
   }
 
-  update() {
+  update(prevState, changeFlags) {
     const { state } = this;
-    if (state.a.b.c !== 1) {
+
+    if (changeFlags.a && state.a.b.c !== 1) {
       throw new Error(`did not receive a.b.c?`);
     }
+
     // recheck tests for updated  state object
     this.runTests();
     this.quit();

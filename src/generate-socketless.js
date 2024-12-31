@@ -150,6 +150,35 @@ export function generateSocketless() {
         set: () => {},
       });
 
+      // TODO: is there a way we can refactor this so we're not
+      //       duplicating the changeflag code from upgraded-socket?
+      function getChangeFlags(initialState) {
+        // @ts-ignore
+        const diff = rfc6902.createPatch({}, initialState);
+        const changeFlags = {};
+        diff.forEach(({ path, value }) => {
+          let lvl = changeFlags;
+          const parts = path.split(`/`);
+          parts.shift(); // path starts with a leading slash
+          if (parts.at(-1) === `-`) parts.pop(); // is this an array push?
+          while (parts.length > 1) {
+            const part = parts.shift();
+            lvl = lvl[part] ??= {};
+          }
+          if (typeof value === `object`) {
+            lvl[parts[0]] = JSON.parse(
+              JSON.stringify(value, (k, v) => {
+                if (typeof v !== `object` || v instanceof Array) return true;
+                return v;
+              }),
+            );
+          } else {
+            lvl[parts[0]] = true;
+          }
+        });
+        return changeFlags;
+      }
+
       // Don't call init() until we're properly connected
       // and know the current client state.
       socket.onopen = async () => {
@@ -158,6 +187,8 @@ export function generateSocketless() {
         browserClient.__state_backing = (await proxyServer.syncState()) || {};
         lockObject(browserClient.__state_backing);
         browserClient.init?.();
+        /* prettier-ignore */
+        browserClient.update?.({}, getChangeFlags(browserClient.__state_backing));
       };
 
       return browserClient;

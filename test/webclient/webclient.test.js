@@ -94,7 +94,7 @@ describe("web client tests", () => {
       clientWebServer.listen(0, async () => {
         const clientURL = `http://localhost:${clientWebServer.address().port}`;
         const browser = await puppeteer.launch({ headless: `new` });
-        const page = await getPage(browser);
+        const page = await getPage(browser, (msg) => (error = msg));
         await page.goto(clientURL);
         await page.waitForSelector(`.testfield`);
         await page.click(`#quit`);
@@ -128,7 +128,7 @@ describe("web client tests", () => {
       clientWebServer.listen(0, async () => {
         const url = `http://localhost:${clientWebServer.address().port}`;
         const browser = await puppeteer.launch({ headless: `new` });
-        const page = await getPage(browser);
+        const page = await getPage(browser, (msg) => (error = msg));
         await page.goto(url);
         await page.waitForSelector(`.testfield`);
         await page.click(`#quit`);
@@ -164,7 +164,7 @@ describe("web client tests", () => {
           headless: `new`,
           ignoreHTTPSErrors: true,
         });
-        const page = await getPage(browser);
+        const page = await getPage(browser, (msg) => (error = msg));
         await page.goto(`https://localhost:${clientWebServer.address().port}`);
         await page.waitForSelector(`.testfield`);
         await page.click(`#quit`);
@@ -232,7 +232,7 @@ describe("web client tests", () => {
       clientWebServer.listen(0, async () => {
         const clientURL = `http://localhost:${clientWebServer.address().port}`;
         const browser = await puppeteer.launch({ headless: `new` });
-        const page = await getPage(browser);
+        const page = await getPage(browser, (msg) => (error = msg));
         await page.goto(`${clientURL}?sid=${sid}`);
         await page.waitForSelector(`.testfield`);
         await page.click(`#quit`);
@@ -411,7 +411,9 @@ describe("web client tests", () => {
     clientWebServer.listen(0, async () => {
       const clientURL = `http://localhost:${clientWebServer.address().port}`;
       browser = await puppeteer.launch({ headless: `new` });
-      const page = await getPage(browser);
+      const page = await getPage(browser, (msg) => {
+        error = msg;
+      });
       await page.goto(clientURL);
     });
   });

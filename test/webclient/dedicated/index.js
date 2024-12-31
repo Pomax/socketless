@@ -19,8 +19,7 @@ import(`./socketless.js${location.search}`).then((lib) => {
       window.test = this;
     }
 
-    async update(newState) {
-      this.state = newState;
+    async update(prevState) {
       this.render();
     }
 

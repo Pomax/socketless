@@ -54,6 +54,8 @@ if (previousValue !== latestDraw && latestDraw) {
 }
 ```
 
+An associated backward compatibility breaking change will now also always call `update(prevState, changeFlags)` after calling `init()`, with a `prevState` that's an empty object, and a change flags object that reflect all leaves of the initial state (as each of those has of course changed).
+
 # Previous versions
 
 ## v4.3.0 (13 December 2024)

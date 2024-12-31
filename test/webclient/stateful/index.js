@@ -4,6 +4,7 @@ class BrowserClient {
   init() {
     this.current = this.state.v || 0;
   }
+
   update(prevState, changeFlags) {
     if (changeFlags) {
       if (!changeFlags.a.e) {
