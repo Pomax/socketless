@@ -33,51 +33,6 @@ describe("basic tests", () => {
     });
 
     /**
-     * Verify that the client updateState() function runs
-     * FIXME: this is a communication test, not a basic test
-     */
-    it("runs client updateState()", (done) => {
-      let calls = 0;
-      let error = `did not run updateState`;
-      class ClientClass {
-        async onUpdate() {
-          calls++;
-          if (calls === 2) {
-            if (this.state.update && this.state.dataArray[50] === `cake`) {
-              error = undefined;
-            }
-            this.disconnect();
-          }
-        }
-      }
-      class ServerClass {
-        async onConnect(client) {
-          const dataArray = [...new Array(100)]
-            .fill(0)
-            .map((_) => Math.random());
-          const data = { update: true, dataArray };
-          await client.updateState(data);
-
-          dataArray[50] = "cake";
-          await client.updateState(data);
-        }
-        onDisconnect() {
-          this.quit();
-        }
-        teardown() {
-          done(error);
-        }
-      }
-      const { webServer } = createServer(ServerClass);
-      webServer.listen(0, () => {
-        createClient(
-          ClientClass,
-          `http://localhost:${webServer.address().port}`,
-        );
-      });
-    });
-
-    /**
      * Verify that the client init() function runs when wrapped as web client
      */
     it("runs client init() when used as webclient", (done) => {

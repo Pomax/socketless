@@ -241,35 +241,6 @@ class UpgradedSocket extends WebSocket {
     let context = origin;
     let callable = origin;
 
-    // Special handling: is this a diff based state update?
-    if (receiver === CLIENT && eventName === `updateState`) {
-      // FIXME: THIS IS AN EXPERIMENTAL FEATURE
-      //
-      //        There are no sequence numbers, nor is there a
-      //        separate, dedicated state object on the client
-      //        side, so there's all kinds of opportunities for
-      //        weird behaviour for now.
-      const [patch, replace, seqNum] = payload;
-
-      // is this an out-of-order message?
-      origin.__last_state_update_seq_num ??= 0;
-      if (!replace && origin.__last_state_update_seq_num > seqNum) {
-        // If so, we can't apply a diff and we need a forced update
-        response = false;
-      } else {
-        // If not, run the update and see if
-        response = origin.updateState(patch, replace);
-        origin.__last_state_update_seq_num = seqNum;
-      }
-
-      // Rather than generating an error when we can't diff the state,
-      // we respond with a success/fail flag so that the server knows
-      // to send the full data in a different way.
-      return super.send(
-        JSON.stringify({ name: responseName, payload: response }),
-      );
-    }
-
     // We are: find the actual function to call.
     if (!error) {
       // If this code runs on the server, the function needs to be
@@ -432,7 +403,7 @@ class UpgradedSocket extends WebSocket {
  * A socket proxy for RPC purposes.
  */
 class SocketProxy extends Function {
-  constructor(socket, responseReceiver, remote, tracker, path = ``) {
+  constructor(socket, responseReceiver, remote, path = ``) {
     super();
     this[RESPONSE_RECEIVER] = responseReceiver;
     this[REMOTE] = remote;
@@ -452,7 +423,6 @@ class SocketProxy extends Function {
           socket,
           responseReceiver,
           remote,
-          tracker,
           `${path}:${String(prop)}`,
         );
       },
@@ -471,34 +441,8 @@ class SocketProxy extends Function {
         // Try to resolve the network call:
         const call = this.path.substring(1);
         const _args = args;
-
-        // Is this the special "updateState" call? If so, we may need to rewrite the args.
-        if (call === `updateState`) {
-          // FIXME: THIS IS AN EXPERIMENTAL FEATURE
-          //
-          //        There are no sequence numbers, nor is there a
-          //        separate, dedicated state object on the client
-          //        side, so there's all kinds of opportunities for
-          //        weird behaviour for now.
-          const [target] = args;
-          const patch = rfc6902.createPatch(tracker.get(), target);
-          tracker.update(target);
-          args = [patch, false, tracker.seqNum()];
-        }
-
         const timeout = this[REMOTE] === BROWSER ? Infinity : undefined;
-        let data = await this.socket.upgraded.send(call, args, timeout);
-
-        // Check whether we need to force the diff as a full state update:
-        if (call === `updateState` && args[1] !== true) {
-          if (data === true) {
-            data = false;
-          } else {
-            args = [_args[0], true];
-            data = await this.socket.upgraded.send(call, args, timeout);
-          }
-          // the final "data" value indicates whether or not a force occurred.
-        }
+        const data = await this.socket.upgraded.send(call, args, timeout);
 
         if (data instanceof RPCError) {
           // Fix up our error so it has the correct message and
@@ -532,25 +476,7 @@ class SocketProxy extends Function {
  */
 export function createSocketProxy(receiver, remote, origin, socket) {
   socket = UpgradedSocket.upgrade(socket, origin, receiver, remote);
-  const tracker = generateStateTracker();
-  return (socket[PROXY] = new SocketProxy(socket, receiver, remote, tracker));
-}
-
-function generateStateTracker() {
-  // FIXME: THIS IS AN EXPERIMENTAL FEATURE
-  //
-  //        There are no sequence numbers, nor is there a
-  //        separate, dedicated state object on the client
-  //        side, so there's all kinds of opportunities for
-  //        weird behaviour for now.
-  let __state = {};
-  let rid = ((Math.random() * 1e5) | 0) / 1e5;
-  let __seq_num = 0;
-  return {
-    get: () => __state,
-    update: (v) => (__state = deepCopy(v)),
-    seqNum: () => rid + __seq_num++,
-  };
+  return (socket[PROXY] = new SocketProxy(socket, receiver, remote));
 }
 
 /**
