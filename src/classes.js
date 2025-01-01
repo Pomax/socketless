@@ -76,6 +76,7 @@ export function formClientClass(ClientClass) {
 
       if (replace) {
         this.setState(patch);
+        this.onUpdate();
         return true;
       }
 
@@ -83,10 +84,16 @@ export function formClientClass(ClientClass) {
       const result = applyPatch(updated, patch);
       if (result.every((e) => e === null)) {
         this.setState(updated);
+        this.onUpdate();
         return true;
       }
 
       return false;
+    }
+
+    async onUpdate() {
+      super.onUpdate?.();
+      if (DEBUG) console.log(`[ClientBase] client onUpdate`);
     }
 
     setState(stateUpdates) {
@@ -95,12 +102,6 @@ export function formClientClass(ClientClass) {
       Object.entries(stateUpdates).forEach(
         ([key, value]) => (state[key] = value),
       );
-      this.onUpdate();
-    }
-
-    async onUpdate() {
-      super.onUpdate?.();
-      if (DEBUG) console.log(`[ClientBase] client onUpdate`);
     }
 
     connectServerSocket(serverSocket) {

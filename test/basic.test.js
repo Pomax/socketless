@@ -34,6 +34,7 @@ describe("basic tests", () => {
 
     /**
      * Verify that the client updateState() function runs
+     * FIXME: this is a communication test, not a basic test
      */
     it("runs client updateState()", (done) => {
       let calls = 0;
@@ -41,7 +42,7 @@ describe("basic tests", () => {
       class ClientClass {
         async onUpdate() {
           calls++;
-          if (calls > 2) {
+          if (calls === 2) {
             if (this.state.update && this.state.dataArray[50] === `cake`) {
               error = undefined;
             }

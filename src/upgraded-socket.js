@@ -249,8 +249,18 @@ class UpgradedSocket extends WebSocket {
       //        separate, dedicated state object on the client
       //        side, so there's all kinds of opportunities for
       //        weird behaviour for now.
-      const [patch, replace] = payload;
-      response = origin.updateState(patch, replace);
+      const [patch, replace, seqNum] = payload;
+
+      // is this an out-of-order message?
+      origin.__last_state_update_seq_num ??= 0;
+      if (!replace && origin.__last_state_update_seq_num > seqNum) {
+        // If so, we can't apply a diff and we need a forced update
+        response = false;
+      } else {
+        // If not, run the update and see if
+        response = origin.updateState(patch, replace);
+        origin.__last_state_update_seq_num = seqNum;
+      }
 
       // Rather than generating an error when we can't diff the state,
       // we respond with a success/fail flag so that the server knows
@@ -376,24 +386,18 @@ class UpgradedSocket extends WebSocket {
       let cleanup = (data = undefined) => {
         if (DEBUG) console.log(`[${receiver}] cleanup`);
         // clean up and become a noop so we can't be retriggered.
-        this.__off(responseName, handler);
+        unregisterHandler();
         cleanup = () => {};
         resolve(data);
       };
 
-      // In order to resolve the Promise, we will be listening
-      // for that eventName:response, and when we receive it,
-      // we'll immediately STOP listening for similar responses
-      // because we no longer care.
-      const handler = (data) => cleanup(data);
-
       // First, make sure we're ready to receive the response...
-      this.__on(responseName, (data) => {
+      const unregisterHandler = this.__on(responseName, (data) => {
         if (DEBUG)
           console.log(
             `[${receiver}] handling response for ${eventName} from [${remote}]:`,
           );
-        handler(data);
+        cleanup(data);
       });
 
       // And then, send the event off to the client.
@@ -428,7 +432,7 @@ class UpgradedSocket extends WebSocket {
  * A socket proxy for RPC purposes.
  */
 class SocketProxy extends Function {
-  constructor(socket, responseReceiver, remote, state, path = ``) {
+  constructor(socket, responseReceiver, remote, tracker, path = ``) {
     super();
     this[RESPONSE_RECEIVER] = responseReceiver;
     this[REMOTE] = remote;
@@ -448,7 +452,7 @@ class SocketProxy extends Function {
           socket,
           responseReceiver,
           remote,
-          state,
+          tracker,
           `${path}:${String(prop)}`,
         );
       },
@@ -477,9 +481,9 @@ class SocketProxy extends Function {
           //        side, so there's all kinds of opportunities for
           //        weird behaviour for now.
           const [target] = args;
-          const patch = rfc6902.createPatch(state.get(), target);
-          state.update(target);
-          args = [patch, false];
+          const patch = rfc6902.createPatch(tracker.get(), target);
+          tracker.update(target);
+          args = [patch, false, tracker.seqNum()];
         }
 
         const timeout = this[REMOTE] === BROWSER ? Infinity : undefined;
@@ -528,7 +532,11 @@ class SocketProxy extends Function {
  */
 export function createSocketProxy(receiver, remote, origin, socket) {
   socket = UpgradedSocket.upgrade(socket, origin, receiver, remote);
+  const tracker = generateStateTracker();
+  return (socket[PROXY] = new SocketProxy(socket, receiver, remote, tracker));
+}
 
+function generateStateTracker() {
   // FIXME: THIS IS AN EXPERIMENTAL FEATURE
   //
   //        There are no sequence numbers, nor is there a
@@ -536,12 +544,13 @@ export function createSocketProxy(receiver, remote, origin, socket) {
   //        side, so there's all kinds of opportunities for
   //        weird behaviour for now.
   let __state = {};
-  const state = {
+  let rid = ((Math.random() * 1e5) | 0) / 1e5;
+  let __seq_num = 0;
+  return {
     get: () => __state,
     update: (v) => (__state = deepCopy(v)),
+    seqNum: () => rid + __seq_num++,
   };
-
-  return (socket[PROXY] = new SocketProxy(socket, receiver, remote, state));
 }
 
 /**
