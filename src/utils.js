@@ -39,7 +39,7 @@ export function diffToChangeFlags(diff) {
         JSON.stringify(value, (k, v) => {
           if (typeof v !== `object` || v instanceof Array) return true;
           return v;
-        })
+        }),
       );
     } else {
       lvl[parts[0]] = true;

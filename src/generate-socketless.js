@@ -38,7 +38,8 @@ export function generateSocketless() {
     .readFileSync(path.join(__dirname, `./upgraded-socket.js`))
     .toString(`utf-8`)
     // browsers have WebSocket built in
-    .replace(`import { WebSocket } from "ws";`, ``)
+    .replace(`import { WebSocket } from "ws";\n`, ``)
+    .replace(`import rfc6902 from "rfc6902";\n`, ``)
     // and we don't need this import:
     .replace(
       // This has to match the utils import in upgraded-socket.js (obviously)

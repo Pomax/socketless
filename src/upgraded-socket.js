@@ -24,6 +24,7 @@
  */
 
 import { WebSocket } from "ws";
+import rfc6902 from "rfc6902";
 import { CLIENT, BROWSER, deepCopy, diffToChangeFlags } from "./utils.js";
 
 const DEBUG = false;
@@ -60,7 +61,7 @@ export const getResponseName = (eventName) => `${eventName}${RESPONSE_SUFFIX}`;
 // use symbols so we don't pollute the socket prototype
 const ORIGIN = Symbol(`origin`);
 const PROXY = Symbol(`proxy`);
-const RECEIVER = Symbol(`receiver`);
+const RESPONSE_RECEIVER = Symbol(`receiver`);
 const REMOTE = Symbol(`remote`);
 const HANDLERS = Symbol(`handlers`);
 const LOCK = Symbol(`function call lock`);
@@ -71,7 +72,7 @@ const LOCK = Symbol(`function call lock`);
 class UpgradedSocket extends WebSocket {
   [ORIGIN] = undefined; // the socket owner who invoked the upgrade. See upgrade()
   [PROXY] = undefined; // the proxy object associated with this socket
-  [RECEIVER] = ``; // name of the receiving object
+  [RESPONSE_RECEIVER] = ``; // name of the receiving object
   [REMOTE] = ``; // name of the remote object
   [HANDLERS] = {}; // the list of event handlers. See upgrade()
 
@@ -90,7 +91,7 @@ class UpgradedSocket extends WebSocket {
     Object.setPrototypeOf(socket, UpgradedSocket.prototype);
     // make sure that messages go through the router:
     socket[ORIGIN] = origin;
-    socket[RECEIVER] = receiver;
+    socket[RESPONSE_RECEIVER] = receiver;
     socket[REMOTE] = remote;
     socket[HANDLERS] = {};
     const messageRouter = socket.router.bind(socket);
@@ -118,7 +119,11 @@ class UpgradedSocket extends WebSocket {
 
   // message router specifically for the message format used by the socketless code.
   async router(message, forced = false) {
-    const { [ORIGIN]: origin, [RECEIVER]: receiver, [REMOTE]: remote } = this;
+    const {
+      [ORIGIN]: origin,
+      [RESPONSE_RECEIVER]: receiver,
+      [REMOTE]: remote,
+    } = this;
 
     // Any calls from the browser to the webclient are that's already handled
     // by the websocket directly (see the createWebClient function in index.js,
@@ -142,6 +147,7 @@ class UpgradedSocket extends WebSocket {
     }
 
     const { name: eventName, payload, error: errorMsg, diff, seq_num } = data;
+    const responseName = getResponseName(eventName);
     let { state } = data;
     let throwable = errorMsg ? new RPCError(receiver, errorMsg) : undefined;
 
@@ -235,6 +241,25 @@ class UpgradedSocket extends WebSocket {
     let context = origin;
     let callable = origin;
 
+    // Special handling: is this a diff based state update?
+    if (receiver === CLIENT && eventName === `updateState`) {
+      // FIXME: THIS IS AN EXPERIMENTAL FEATURE
+      //
+      //        There are no sequence numbers, nor is there a
+      //        separate, dedicated state object on the client
+      //        side, so there's all kinds of opportunities for
+      //        weird behaviour for now.
+      const [patch, replace] = payload;
+      response = origin.updateState(patch, replace);
+
+      // Rather than generating an error when we can't diff the state,
+      // we respond with a success/fail flag so that the server knows
+      // to send the full data in a different way.
+      return super.send(
+        JSON.stringify({ name: responseName, payload: response }),
+      );
+    }
+
     // We are: find the actual function to call.
     if (!error) {
       // If this code runs on the server, the function needs to be
@@ -302,7 +327,6 @@ class UpgradedSocket extends WebSocket {
     }
 
     // Send off a response message with either the result, or the error.
-    const responseName = getResponseName(eventName);
     if (DEBUG)
       console.log(`[${receiver}] sending ${responseName}`, {
         payload: response,
@@ -342,7 +366,7 @@ class UpgradedSocket extends WebSocket {
    * listener for that response. The default timeout is 1000ms.
    */
   async __send(eventName, data = {}, timeout = 1000) {
-    const { [RECEIVER]: receiver, [REMOTE]: remote } = this;
+    const { [RESPONSE_RECEIVER]: receiver, [REMOTE]: remote } = this;
     if (DEBUG)
       console.log(`[${receiver}] sending [${eventName}] to [${remote}]:`, data);
     return await new Promise((resolve, reject) => {
@@ -404,9 +428,9 @@ class UpgradedSocket extends WebSocket {
  * A socket proxy for RPC purposes.
  */
 class SocketProxy extends Function {
-  constructor(socket, receiver, remote, path = ``) {
+  constructor(socket, responseReceiver, remote, state, path = ``) {
     super();
-    this[RECEIVER] = receiver;
+    this[RESPONSE_RECEIVER] = responseReceiver;
     this[REMOTE] = remote;
     this.id = uuid();
     this.path = path;
@@ -422,8 +446,9 @@ class SocketProxy extends Function {
         }
         return new SocketProxy(
           socket,
-          receiver,
+          responseReceiver,
           remote,
+          state,
           `${path}:${String(prop)}`,
         );
       },
@@ -441,8 +466,35 @@ class SocketProxy extends Function {
 
         // Try to resolve the network call:
         const call = this.path.substring(1);
+        const _args = args;
+
+        // Is this the special "updateState" call? If so, we may need to rewrite the args.
+        if (call === `updateState`) {
+          // FIXME: THIS IS AN EXPERIMENTAL FEATURE
+          //
+          //        There are no sequence numbers, nor is there a
+          //        separate, dedicated state object on the client
+          //        side, so there's all kinds of opportunities for
+          //        weird behaviour for now.
+          const [target] = args;
+          const patch = rfc6902.createPatch(state.get(), target);
+          state.update(target);
+          args = [patch, false];
+        }
+
         const timeout = this[REMOTE] === BROWSER ? Infinity : undefined;
-        const data = await this.socket.upgraded.send(call, args, timeout);
+        let data = await this.socket.upgraded.send(call, args, timeout);
+
+        // Check whether we need to force the diff as a full state update:
+        if (call === `updateState` && args[1] !== true) {
+          if (data === true) {
+            data = false;
+          } else {
+            args = [_args[0], true];
+            data = await this.socket.upgraded.send(call, args, timeout);
+          }
+          // the final "data" value indicates whether or not a force occurred.
+        }
 
         if (data instanceof RPCError) {
           // Fix up our error so it has the correct message and
@@ -476,7 +528,20 @@ class SocketProxy extends Function {
  */
 export function createSocketProxy(receiver, remote, origin, socket) {
   socket = UpgradedSocket.upgrade(socket, origin, receiver, remote);
-  return (socket[PROXY] = new SocketProxy(socket, receiver, remote));
+
+  // FIXME: THIS IS AN EXPERIMENTAL FEATURE
+  //
+  //        There are no sequence numbers, nor is there a
+  //        separate, dedicated state object on the client
+  //        side, so there's all kinds of opportunities for
+  //        weird behaviour for now.
+  let __state = {};
+  const state = {
+    get: () => __state,
+    update: (v) => (__state = deepCopy(v)),
+  };
+
+  return (socket[PROXY] = new SocketProxy(socket, receiver, remote, state));
 }
 
 /**

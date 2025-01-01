@@ -1,5 +1,7 @@
 import { createSocketProxy } from "./upgraded-socket.js";
 import { CLIENT, SERVER } from "./utils.js";
+import { applyPatch } from "rfc6902";
+import { deepCopy } from "./utils.js";
 
 const DEBUG = false;
 
@@ -63,12 +65,42 @@ export function formClientClass(ClientClass) {
         console.log(`[ClientBase] client ${this.state.id} disconnected.`);
     }
 
+    updateState(patch, replace) {
+      // FIXME: THIS IS AN EXPERIMENTAL FEATURE
+      //
+      //        There are no sequence numbers, nor is there a
+      //        separate, dedicated state object on the client
+      //        side, so there's all kinds of opportunities for
+      //        weird behaviour for now.
+      if (DEBUG) console.log(`[ClientBase] patching state`);
+
+      if (replace) {
+        this.setState(patch);
+        return true;
+      }
+
+      const updated = deepCopy(this.state);
+      const result = applyPatch(updated, patch);
+      if (result.every((e) => e === null)) {
+        this.setState(updated);
+        return true;
+      }
+
+      return false;
+    }
+
     setState(stateUpdates) {
       if (DEBUG) console.log(`[ClientBase] updating state`);
       const state = this[STATE_SYMBOL];
       Object.entries(stateUpdates).forEach(
         ([key, value]) => (state[key] = value),
       );
+      this.onUpdate();
+    }
+
+    async onUpdate() {
+      super.onUpdate?.();
+      if (DEBUG) console.log(`[ClientBase] client onUpdate`);
     }
 
     connectServerSocket(serverSocket) {

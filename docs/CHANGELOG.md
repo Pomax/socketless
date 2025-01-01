@@ -56,6 +56,24 @@ if (previousValue !== latestDraw && latestDraw) {
 
 An associated backward compatibility breaking change will now also always call `update(prevState, changeFlags)` after calling `init()`, with a `prevState` that's an empty object, and a change flags object that reflect all leaves of the initial state (as each of those has of course changed).
 
+### experimental features
+
+There is a new experimental feature for sending data JSON-diff based data from the server to the client, by calling `client.updateState()`. This is a backward compatible breaking change: any client code that uses an `updateState` property will need to be rewritten.
+
+This function can be used by the server in the following manner:
+
+```javascript
+// Send the "serverState" object using a diff set
+const forced = await client.updateState(serverState);
+
+// If that failed, e.g. due to desync, we can rerun the operation
+// but with the second argument set to true, but bypasses the diffing
+// procedure and sends a "full fat" object instead
+if (forced) {
+  console.log(`could not apply as diff, ran full sync`);
+}
+```
+
 # Previous versions
 
 ## v4.3.0 (13 December 2024)
