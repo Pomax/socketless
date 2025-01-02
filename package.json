@@ -9,7 +9,7 @@
     "demo:web": "cd demos && npm i && npm run web",
     "prettier": "prettier --write ./**/*.js",
     "test": "npm run test:ast && npm run prettier && npm run test:mocha",
-    "test:ast": "tsc ./src/index.js --checkJs --noEmit --module nodenext",
+    "test:ast": "tsc ./src/index.js --checkJs --noEmit --module nodenext --skipLibCheck",
     "test:mocha": "mocha \"test/**/*.test.js\""
   },
   "repository": {
@@ -30,19 +30,19 @@
   },
   "homepage": "https://github.com/Pomax/socketless#readme",
   "dependencies": {
-    "rfc6902": "^5.0.1",
-    "ws": "^8.14.2"
+    "rfc6902": "^5.1.2",
+    "ws": "^8.18.0"
   },
   "devDependencies": {
-    "chai": "^4.3.10",
-    "chai-as-promised": "^7.1.1",
-    "esbuild": "^0.19.4",
-    "express": "^4.18.2",
-    "mocha": "^10.2.0",
+    "chai": "^5.1.2",
+    "chai-as-promised": "^8.0.1",
+    "esbuild": "^0.24.2",
+    "express": "^4.21.2",
+    "mocha": "^11.0.1",
     "open": "^9.1.0",
     "pem": "^1.14.8",
-    "prettier": "^3.0.3",
+    "prettier": "^3.4.2",
     "puppeteer": "^21.3.6",
-    "typescript": "^5.2.2"
+    "typescript": "^5.7.2"
   }
 }
