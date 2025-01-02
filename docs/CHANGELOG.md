@@ -23,6 +23,7 @@ Browser code has access to two new bits of functionality: a new `this.params` ha
 With additional values for array manipulation:
 
 - `4` if this key is an array, and had an element pushed on,
+- `4` if this key is an array index, and this value is a newly inserted value
 - `5` if this key is an array index, representing an element that had its value replaced, and
 - `6` if this key is an array index, representing an element that got removed.
 

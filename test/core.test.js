@@ -11,6 +11,7 @@ describe("core library tests", () => {
         d: [1, 2, 3],
         e: [1, 2, 3],
         f: [1, 2, 3],
+        g: [1, 2, 3, 4],
       },
       {
         a: [],
@@ -18,6 +19,7 @@ describe("core library tests", () => {
         d: [1, 2, 3, 4],
         e: [1, 2, "a"],
         f: [1, 2],
+        g: [1, 2, 100, 3, 4],
       },
     );
 
@@ -28,6 +30,7 @@ describe("core library tests", () => {
       { op: "add", path: "/d/-", value: 4 },
       { op: "replace", path: "/e/2", value: "a" },
       { op: "remove", path: "/f/2" },
+      { op: "add", path: "/g/2", value: 100 },
     ]);
 
     const changeFlags = patchToChangeFlags(patch);
@@ -39,6 +42,7 @@ describe("core library tests", () => {
       d: 4,
       e: { 2: 5 },
       f: { 2: 6 },
+      g: { 2: 4 },
     });
   });
 });
