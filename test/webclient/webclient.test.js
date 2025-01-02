@@ -302,6 +302,13 @@ describe("web client tests", () => {
   it("should sync state between client and browser", (done) => {
     let error = `state did not sync correctly`;
 
+    // Note that this test is a bit doubling up, as we already
+    // test the changeFlags functionality in core.test.js, so we
+    // know what the changeFlags object should look like given
+    // the changes in state. However, we do want to make sure
+    // that the transport mechanism ends up sending the correct
+    // data, so the doubling up makes sense.
+
     const list = [1, 2, 3, 4, 5];
 
     class ServerClass {
@@ -325,9 +332,12 @@ describe("web client tests", () => {
           this.setState({
             a: {
               b: {
-                c: "test",
+                // remove "c" at some point
+                c: arr.length < 3 ? "test" : undefined,
+                // update "d" every iteration
                 d: Math.random(),
               },
+              // test for a growing array
               e: arr,
             },
             v,

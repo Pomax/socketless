@@ -19,17 +19,26 @@ export function convertToChangeFlags(initialState) {
   // @ts-ignore because this function only runs in browser context,
   //            which will have rfc6902 available as a global.
   const diff = rfc6902.createPatch({}, initialState);
-  return diffToChangeFlags(diff);
+  return patchToChangeFlags(diff);
 }
 
 // Convert an RFC6902 diff patch into a change flag object
-export function diffToChangeFlags(diff) {
+export function patchToChangeFlags(diff) {
   const changeFlags = {};
-  diff.forEach(({ path, value }) => {
+  const opCodes = {
+    add: 1,
+    replace: 2,
+    remove: 3,
+    addArray: 4,
+    replaceArray: 5,
+    removeArray: 6,
+  };
+  diff.forEach(({ op, path, value }) => {
     let lvl = changeFlags;
     const parts = path.split(`/`);
     parts.shift(); // path starts with a leading slash
-    if (parts.at(-1) === `-`) parts.pop(); // is this an array push?
+    let suffix = parts.at(-1) === `-` ? `Array` : ``;
+    if (suffix) parts.pop(); // is this an array push?
     while (parts.length > 1) {
       const part = parts.shift();
       lvl = lvl[part] ??= {};
@@ -37,12 +46,17 @@ export function diffToChangeFlags(diff) {
     if (typeof value === `object`) {
       lvl[parts[0]] = JSON.parse(
         JSON.stringify(value, (k, v) => {
-          if (typeof v !== `object` || v instanceof Array) return true;
+          if (typeof v !== `object` || v instanceof Array) {
+            return opCodes[op + suffix];
+          }
           return v;
         }),
       );
     } else {
-      lvl[parts[0]] = true;
+      const prop = parts[0];
+      // explicit coercion to check if this is an integer
+      if (parseInt(prop) == prop) suffix = `Array`;
+      lvl[parts[0]] = opCodes[op + suffix];
     }
   });
   return changeFlags;

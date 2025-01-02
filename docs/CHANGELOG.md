@@ -14,47 +14,68 @@ Reimplemented state locking on the browser side, as the diff code breaks _really
 
 The code for calling client functions from the browser by using `this.server.functionName` was also improved to make sure that functionality works even when the client is not connected to a server (which should not be necessary for a pure browser<->client call).
 
-Browser code has access to two new bits of functionality: a new `this.params` has been added so that folks don't need to manually parse URL query arguments, and then type-convert them. Instead of, all query arguments are added into `this.params` with whatever type a `JSON.parse` pass can turn them into (e.g. numbers will be actual numbers, booleans will be actual booleans, JSON gets turned into objects, etc). Additionally, the `update(prevState)` function has been updated with a second argument that's called `changeFlags` internally, which is an object with `true` values for any (nested) property that got updated between `prevState` and `this.state`, so that UI code can hook into not just the current state, but also the current state _transitions_. E.g.:
+Browser code has access to two new bits of functionality: a new `this.params` has been added so that folks don't need to manually parse URL query arguments, and then type-convert them. Instead of, all query arguments are added into `this.params` with whatever type a `JSON.parse` pass can turn them into (e.g. numbers will be actual numbers, booleans will be actual booleans, JSON gets turned into objects, etc). Additionally, the `update(prevState)` function has been updated with a second argument that's called `changeFlags` internally, which is an object with with three possible values per (nested) property that got updated between `prevState` and `this.state`:
+
+- `1` if this key was added since the last update,
+- `2` if this key's value was replaced with a new value, and
+- `3` if this key was removed.
+
+With additional values for array manipulation:
+
+- `4` if this key is an array, and had an element pushed on,
+- `5` if this key is an array index, representing an element that had its value replaced, and
+- `6` if this key is an array index, representing an element that got removed.
+
+so that UI code can hook into not just the current state, but also the current state _transitions_. E.g.:
 
 ```js
-// The current state only tells us "that" a player drew a card,
-// but it won't tell us anything about whether that just happened,
-// or some other part of the state updated. Let's check our diff flags:
-if (changes.game?.currentHand?.currentPlayer?.latestDraw) {
-  // We now know this value just got updated, so we can now check
-  // what its current value is and decide what to do based on that:
-  if (this.state.game.currentHand.currentPlayer.latestDraw) {
-    // If the latest draw value is not undefined, the player drew a
-    // card, and we should play an audio clip as cue to the user:
-    playAudio(`drawCard.mp3`);
-  }
+/*
+  The current state only tells us "that" a player drew a card,
+  but it won't tell us anything about whether that just happened,
+  or some other part of the state updated.
+
+  So, let's check our change flags, to see if an add or replace
+  happened, taking advantage of the fact that using "undefined"
+  in comparisons always results in false, so we won't do the wrong
+  thing if the value didn't change:
+*/
+if (changeFlags.game?.currentHand?.currentPlayer?.latestDraw === 1) {
+  // Provided we wrote code that clears the "latestDraw" property when
+  // a player stops being the current player, this is enough information
+  // to tell us that a player just drew a card, and we should play an
+  // audio cue for our users:
+  playAudio(`draw-card.mp3`);
+
+/*
+  Similarly, what if we also want to monitor the discard pile?
+*/
+if (changeFlags.game?.currentHand?.discards === 4) {
+  // We know the discard array exists, and that it had an element
+  // pushed onto it, so we can play the "a player discarded a card"
+  // audio cue:
+  playAudio(`discard-card.mp3`);
 }
 ```
 
-Rather than having to manually compare values using either incredibly unwieldy code:
+Rather than having to manually compare values for every test:
 
 ```js
-if (
-  prevState.game?.currentHand?.currentPlayer?.latestDraw !==
-    this.state.game.currentHand.currentPlayer.latestDraw &&
-  this.state.game.currentHand.currentPlayer.latestDraw
-) {
+// Is there a latestDraw, and is it different from before?
+const { currentPlayer: pp } = prevState.game?.currentHand ?? {};
+const { currentPlayer: cp } = this.state.game?.currentHand ?? {};
+if (cp.latestDraw && cp.latestDraw !== pp.latestDraw) {
+  playAudio(`drawCard.mp3`);
+}
+
+// are there discards, and did the number of elements grow?
+const { discards: pd } = prevState.game?.currentHand ?? {};
+const { discards: cd } = this.state.game?.currentHand ?? {};
+if (cd && pd && cd.length > pd.length) {
   playAudio(`drawCard.mp3`);
 }
 ```
 
-or by capturing those things in throw-away variables:
-
-```js
-const { latestDraw: previousValue } =
-  prevState.game?.currentHand?.currentPlayer || {};
-const { latestDraw } = this.state.game?.currentHand?.currentPlayer || {};
-if (previousValue !== latestDraw && latestDraw) {
-  playAudio(`drawCard.mp3`);
-}
-```
-
-An associated backward compatibility breaking change will now also always call `update(prevState, changeFlags)` after calling `init()`, with a `prevState` that's an empty object, and a change flags object that reflect all leaves of the initial state (as each of those has of course changed).
+An associated backward compatibility breaking change will now also always call `update(prevState, changeFlags)` after calling `init()`, with a `prevState` that's an empty object, and a change flags object that reflect all leaves of the initial state (as each of those count as some form of newly added value).
 
 ### experimental features
 

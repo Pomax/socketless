@@ -24,7 +24,7 @@ import {
   WEBCLIENT,
   BROWSER,
   deepCopy,
-  diffToChangeFlags,
+  patchToChangeFlags,
   convertToChangeFlags,
 } from "./utils.js";
 import { createSocketProxy } from "./upgraded-socket.js";
@@ -43,12 +43,12 @@ export function generateSocketless() {
     // and we don't need this import:
     .replace(
       // This has to match the utils import in upgraded-socket.js (obviously)
-      `import { CLIENT, BROWSER, deepCopy, diffToChangeFlags } from "./utils.js";`,
+      `import { CLIENT, BROWSER, deepCopy, patchToChangeFlags } from "./utils.js";`,
       `
 const BROWSER = "${BROWSER}";
 const CLIENT = "${CLIENT}";
 const deepCopy = ${deepCopy.toString()};
-const diffToChangeFlags = ${diffToChangeFlags.toString()};
+const patchToChangeFlags = ${patchToChangeFlags.toString()};
 const convertToChangeFlags = ${convertToChangeFlags.toString()};
 `,
     );

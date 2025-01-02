@@ -25,7 +25,7 @@
 
 import { WebSocket } from "ws";
 import rfc6902 from "rfc6902";
-import { CLIENT, BROWSER, deepCopy, diffToChangeFlags } from "./utils.js";
+import { CLIENT, BROWSER, deepCopy, patchToChangeFlags } from "./utils.js";
 
 const DEBUG = false;
 
@@ -181,7 +181,7 @@ class UpgradedSocket extends WebSocket {
           origin.__seq_num = seq_num;
           target = deepCopy(prevState);
           if (DEBUG) console.log(`applying patch to`, target);
-          changeFlags = diffToChangeFlags(diff);
+          changeFlags = patchToChangeFlags(diff);
           if (DEBUG) console.log(`changeFlags:`, changeFlags);
           // @ts-ignore: this only runs in the browser, where rfc6902 is a global.
           rfc6902.applyPatch(target, diff);
