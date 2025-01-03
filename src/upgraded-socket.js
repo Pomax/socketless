@@ -281,11 +281,13 @@ class UpgradedSocket extends WebSocket {
     if (!error) {
       try {
         response = (await callable.bind(context)(...payload)) ?? true;
-        // If this is a webclient, and there is a browser connected,
-        // also make sure to trigger a state sync, so that client code
-        // does not need to include setState calls all over the place.
+
+        // Are we a web client with a browser connected?
         if (receiver === CLIENT && origin.browser) {
-          origin.setState(origin.state);
+          // Should we forward the call to the browser?
+          if (origin.__pass_through && !eventName.includes(`:response`)) {
+            origin.browser.socket.upgraded.send(eventName, payload, Infinity);
+          }
         }
       } catch (e) {
         if (DEBUG)
@@ -350,6 +352,18 @@ class UpgradedSocket extends WebSocket {
     const { [RESPONSE_RECEIVER]: receiver, [REMOTE]: remote } = this;
     if (DEBUG)
       console.log(`[${receiver}] sending [${eventName}] to [${remote}]:`, data);
+
+    // Is this a fire-and-forget?
+    if (!isFinite(timeout)) {
+      return super.send(
+        JSON.stringify({
+          name: eventName,
+          payload: data,
+        }),
+      );
+    }
+
+    // If not, and we need to await the response, build a promise.
     return await new Promise((resolve, reject) => {
       const responseName = getResponseName(eventName);
 
@@ -385,16 +399,13 @@ class UpgradedSocket extends WebSocket {
         );
       };
 
-      // We may be trying to send before the socket is open in browser land,
+      // We may be trying to send before the socket is open in browser-land,
       // so if the socket's not ready, "queue" the event to fire on open.
       if (super.readyState === 1) sendEvent();
       else super.onopen = sendEvent;
 
-      // And make sure that if no response has occurred within
-      // `timeout` milliseconds, we clean up the listener.
-      if (isFinite(timeout)) {
-        setTimeout(() => cleanup(), timeout);
-      }
+      // And finally, set up the cleanup timer.
+      setTimeout(() => cleanup(), timeout);
     });
   }
 }
@@ -440,7 +451,6 @@ class SocketProxy extends Function {
 
         // Try to resolve the network call:
         const call = this.path.substring(1);
-        const _args = args;
         const timeout = this[REMOTE] === BROWSER ? Infinity : undefined;
         const data = await this.socket.upgraded.send(call, args, timeout);
 

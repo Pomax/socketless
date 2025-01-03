@@ -78,6 +78,39 @@ if (cd && pd && cd.length > pd.length) {
 
 An associated backward compatibility breaking change will now also always call `update(prevState, changeFlags)` after calling `init()`, with a `prevState` that's an empty object, and a change flags object that reflect all leaves of the initial state (as each of those count as some form of newly added value).
 
+Web clients can also now be told to forward server calls to the browser, so that for example a server calling `client.drawTile(12)` will automatically result in the client calling `this.browser.drawTile(12)`, without needing to rely on the `setState` mechanism. This feature is off by default, but can be toggled using `this.togglePassThrough()`. This function can be passed an explicit value, in which case it'll act as a "set" rather than a "toggle".
+
+In tandem with this change, the concept of "auto state syncing" after calls from the server to the client has been removed, as the only way to update the client's state is through `setState`, and so automatically running `setState(this.state)` made no sense. Instead, the above mechanism allows you to write code that simply _bypasses_ the state syncing mechanism so that in addition to this pattern:
+
+```js
+// In the client:
+drawTile (tile) {
+  this.setState({ latest: tile });
+}
+
+// In the browser:
+update(prevState, changeFlags) {
+  const { tile } = this.state;
+  // do something with tile
+}
+```
+
+You can now also use this pattern:
+
+```js
+// In the client:
+drawTile (tile) {
+  this.latest = tile;
+}
+
+// In the browser:
+drawTile(tile) {
+  // do something with tile
+}
+```
+
+Of course, this also means that you will need to take extra care when connecting a browser (as there is no state to sync, you are now responsible for ensuring the client and its UI are in sync!), and detecting desync between the client and browser.
+
 # Previous versions
 
 ## v4.3.0 (13 December 2024)

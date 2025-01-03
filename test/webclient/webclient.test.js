@@ -476,4 +476,110 @@ describe("web client tests", () => {
       });
     });
   });
+
+  it(`should pass client class through when flag is true`, () => {
+    let browser;
+
+    class ServerClass {
+      onDisconnect() {
+        if (this.clients.length === 0) {
+          this.quit();
+        }
+      }
+      teardown() {
+        browser.close();
+        done();
+      }
+      testCall(client) {
+        client.runPassThroughTest(`testing`);
+      }
+    }
+
+    class ClientClass {
+      init() {
+        this.togglePassThrough(true);
+      }
+      onBrowserConnect() {
+        this.server.testCall();
+      }
+      runPassThroughTest(text) {
+        // Do nothing, here. Instead have the browser handle this.
+      }
+      passthroughReceived() {
+        this.quit();
+      }
+    }
+
+    const factory = linkClasses(ClientClass, ServerClass);
+    const { webServer } = factory.createServer();
+
+    webServer.listen(0, () => {
+      const PORT = webServer.address().port;
+      const serverURL = `http://localhost:${PORT}`;
+      const { client, clientWebServer } = factory.createWebClient(
+        serverURL,
+        `${__dirname}/pass-through`,
+      );
+
+      clientWebServer.listen(0, async () => {
+        const clientURL = `http://localhost:${clientWebServer.address().port}`;
+        browser = await puppeteer.launch({ headless: `new` });
+        const page = await getPage(browser);
+        await page.goto(clientURL);
+      });
+    });
+  });
+
+  it(`should not pass client class through when flag is false`, () => {
+    let browser;
+    let error = undefined;
+
+    class ServerClass {
+      init() {
+        setTimeout(() => {
+          this.clients.forEach((c) => c.disconnect());
+          this.quit();
+        }, 1000);
+      }
+      teardown() {
+        done(error);
+      }
+      testCall(client) {
+        client.runPassThroughTest(`testing`);
+      }
+    }
+
+    class ClientClass {
+      onBrowserConnect() {
+        this.server.testCall();
+      }
+      onDisconnect() {
+        browser.close();
+        this.quit();
+      }
+      runPassThroughTest(text) {}
+      passthroughReceived() {
+        error = `function passed through despite flag being false`;
+      }
+    }
+
+    const factory = linkClasses(ClientClass, ServerClass);
+    const { webServer } = factory.createServer();
+
+    webServer.listen(0, () => {
+      const PORT = webServer.address().port;
+      const serverURL = `http://localhost:${PORT}`;
+      const { client, clientWebServer } = factory.createWebClient(
+        serverURL,
+        `${__dirname}/pass-through`,
+      );
+
+      clientWebServer.listen(0, async () => {
+        const clientURL = `http://localhost:${clientWebServer.address().port}`;
+        browser = await puppeteer.launch({ headless: `new` });
+        const page = await getPage(browser);
+        await page.goto(clientURL);
+      });
+    });
+  });
 });
