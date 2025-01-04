@@ -175,6 +175,8 @@ for (let i = 0; i < 4; i++) {
 
 And that's just for a tiny fraction of a game. If we use `syncData` rather than a function that "just sends whatever you give it", that footprint goes down to only 5kb, with the amount of data saved as a percentage of all message data only going up throughout the lifetime of your client-server constellation.
 
+In order to perform testing analysis, the `upgraded-socket` now also exports a few debugging functions: you can read the source to find out what those are and how they're used in tests.
+
 # Previous versions
 
 ## v4.3.0 (13 December 2024)
