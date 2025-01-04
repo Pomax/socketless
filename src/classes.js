@@ -1,7 +1,6 @@
 import { createSocketProxy } from "./upgraded-socket.js";
-import { CLIENT, SERVER } from "./utils.js";
+import { CLIENT, SERVER, deepCopy } from "./utils.js";
 import { applyPatch } from "rfc6902";
-import { deepCopy } from "./utils.js";
 
 const DEBUG = false;
 
@@ -12,11 +11,46 @@ const STATE_SYMBOL = Symbol(`state symbol`);
  */
 export function formClientClass(ClientClass) {
   return class ClientBase extends ClientClass {
+    // Special data silo for JSON-diff based syncing from the server,
+    // so that the client doesn't need to built a local data structure
+    // that is already being maintained by the server.
+    #server_sync_silo = {};
+    #server_sync_seq_num = 0;
+    #apply_server_sync_patch(patch, seqNum) {
+      if (seqNum === this.#server_sync_seq_num + 1) {
+        this.#server_sync_seq_num++;
+        applyPatch(this.#server_sync_silo, patch);
+        return true; // successful update
+      }
+      return false; // failed update
+    }
+    #set_server_sync_silo(data, seqNum) {
+      this.#server_sync_silo = deepCopy(data);
+      this.#server_sync_seq_num = seqNum;
+    }
+    async __data_sync({ data, patch, seqNum = 0, forced = false }) {
+      let result;
+      if (forced) {
+        result = this.#set_server_sync_silo(data, seqNum);
+      } else {
+        result = this.#apply_server_sync_patch(patch, seqNum);
+      }
+      process.nextTick(() => {
+        this.onSiloUpdate(deepCopy(this.#server_sync_silo), forced);
+      });
+      return result;
+    }
+
+    async onSiloUpdate(silo, forced) {
+      super.onSiloUpdate?.(silo, forced);
+      if (DEBUG) console.log(`[ClientBase] received silo update.`);
+    }
+
     static get disallowedCalls() {
       // No functions in this class may be proxy-invoked
       const names = Object.getOwnPropertyNames(ClientBase.prototype);
-      // (except for `disconnect`)
-      [`constructor`, `disconnect`].forEach((name) =>
+      // (except for `disconnect` and `__data_sync`)
+      [`constructor`, `disconnect`, `__data_sync`].forEach((name) =>
         names.splice(names.indexOf(name), 1),
       );
       // Nor should the following properties be accessible

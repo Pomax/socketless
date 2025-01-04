@@ -100,16 +100,80 @@ You can now also use this pattern:
 ```js
 // In the client:
 drawTile (tile) {
+  // bypass state in the client
   this.latest = tile;
 }
 
 // In the browser:
 drawTile(tile) {
-  // do something with tile
+  // this gets called after the client's function gets called
 }
 ```
 
 Of course, this also means that you will need to take extra care when connecting a browser (as there is no state to sync, you are now responsible for ensuring the client and its UI are in sync!), and detecting desync between the client and browser.
+
+Finally, server &rarr; client communication now also has a per-client siloed data object that can be used to sync a _server_ state to the client using JSON diffing rather than "full fat" data transmission. For example, the following code would transfer some 14KB's worth of data if we sent full fat objects:
+
+```javascript
+const players = [
+  { id: `da2c55c8-7e48-4cf7-8ac1-e09635bba536` },
+  { id: `992dc1f0-db6a-4f7d-88e0-f9e1945f2afa` },
+  { id: `51ad8d81-2033-4306-86b1-07640c4639ac` },
+  { id: `fb2e390a-484d-454e-a46a-13ac103167f4` },
+];
+
+const game = {
+  players: [],
+  currentHand: undefined,
+};
+
+const data = { players, game };
+await client.sendData(data);
+
+game.players[0] = players[0];
+await client.sendData(data);
+
+game.players[1] = players[1];
+await client.sendData(data);
+
+game.players[2] = players[2];
+await client.sendData(data);
+
+game.players[3] = players[3];
+await client.sendData(data);
+
+players[0].name = "test1";
+players[1].name = "test2";
+players[2].name = "test3";
+players[3].name = "test4";
+await client.sendData(data);
+
+players[0].tiles = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
+players[1].tiles = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
+players[2].tiles = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
+players[3].tiles = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
+game.currentHand = {
+  players,
+  wind: 0,
+};
+await client.sendData(data);
+
+for (let i = 0; i < 4; i++) {
+  game.currentHand.players[i].tiles = [
+    1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14,
+  ];
+  game.currentHand.players[i].latest = 14;
+  await client.syncData(data);
+
+  game.currentHand.players[i].tiles = [
+    1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,
+  ];
+  game.currentHand.players[i].latest = undefined;
+  await client.syncData(data);
+}
+```
+
+And that's just for a tiny fraction of a game. If we use `syncData` rather than a function that "just sends whatever you give it", that footprint goes down to only 5kb, with the amount of data saved as a percentage of all message data only going up throughout the lifetime of your client-server constellation.
 
 # Previous versions
 

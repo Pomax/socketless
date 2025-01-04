@@ -66,6 +66,29 @@ const REMOTE = Symbol(`remote`);
 const HANDLERS = Symbol(`handlers`);
 const LOCK = Symbol(`function call lock`);
 
+// debug and testing functions
+let bytesSent = 0;
+
+export function getBytesSent() {
+  return bytesSent;
+}
+
+export function resetBytesSent() {
+  bytesSent = 0;
+}
+
+let ALWAYS_FORCE_SYNC = false;
+
+export function toggleForcedSync(value = !ALWAYS_FORCE_SYNC) {
+  ALWAYS_FORCE_SYNC = !!value;
+}
+
+let TEST_FUNCTIONS_ENABLED = false;
+
+export function toggleTestFunctions(value = !TEST_FUNCTIONS_ENABLED) {
+  TEST_FUNCTIONS_ENABLED = !!value;
+}
+
 /**
  * ...do docs go here?
  */
@@ -94,14 +117,15 @@ class UpgradedSocket extends WebSocket {
     socket[RESPONSE_RECEIVER] = receiver;
     socket[REMOTE] = remote;
     socket[HANDLERS] = {};
+    // and that we have a data silo for server to client syncs
+    socket.__data_silo = { data: undefined, seqNum: 0 };
+    // then set up the call router
     const messageRouter = socket.router.bind(socket);
     if (socket.on) {
       socket.on(`message`, messageRouter);
     } else {
       socket.onmessage = messageRouter;
     }
-
-    // convenience return.
     return socket;
   }
 
@@ -361,6 +385,31 @@ class UpgradedSocket extends WebSocket {
           payload: data,
         }),
       );
+    }
+
+    // Special rewrite logic for the siloed server/client data sync.
+    // Note that this function can only be called by the server,
+    // targeting a remote client, which is why this rewrite is safe.
+    if (eventName === `syncData`) {
+      eventName = `__data_sync`;
+      // @ts-ignore
+      const { __data_silo } = this;
+      // initial forced sync?
+      const forceSync = TEST_FUNCTIONS_ENABLED && ALWAYS_FORCE_SYNC;
+      if (!__data_silo.data || forceSync) {
+        __data_silo.data = data;
+        return this.__send(eventName, [{ forced: true, data }]);
+      }
+      // regular diff
+      const patch = rfc6902.createPatch(__data_silo.data, data);
+      const seqNum = ++__data_silo.seqNum;
+      __data_silo.data = deepCopy(data);
+      const payload = [{ patch, seqNum }];
+      return this.__send(eventName, payload);
+    }
+
+    if (TEST_FUNCTIONS_ENABLED) {
+      bytesSent += JSON.stringify(data).length;
     }
 
     // If not, and we need to await the response, build a promise.
