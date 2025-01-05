@@ -347,7 +347,7 @@ describe("basic tests", () => {
         let error = `silo was not updated`;
 
         class ClientClass {
-          onSiloUpdate(data, forced) {
+          onSyncUpdate(data, forced) {
             error = undefined;
           }
           endTest() {

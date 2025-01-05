@@ -36,13 +36,13 @@ export function formClientClass(ClientClass) {
         result = this.#apply_server_sync_patch(patch, seqNum);
       }
       process.nextTick(() => {
-        this.onSiloUpdate(deepCopy(this.#server_sync_silo), forced);
+        this.onSyncUpdate(deepCopy(this.#server_sync_silo), forced);
       });
       return result;
     }
 
-    async onSiloUpdate(silo, forced) {
-      super.onSiloUpdate?.(silo, forced);
+    async onSyncUpdate(silo, forced) {
+      super.onSyncUpdate?.(silo, forced);
       if (DEBUG) console.log(`[ClientBase] received silo update.`);
     }
 

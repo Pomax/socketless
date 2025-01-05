@@ -173,9 +173,9 @@ for (let i = 0; i < 4; i++) {
 }
 ```
 
-And that's just for a tiny fraction of a game. If we use `syncData` rather than a function that "just sends whatever you give it", that footprint goes down to only 5kb, with the amount of data saved as a percentage of all message data only going up throughout the lifetime of your client-server constellation.
+And that's just for a tiny fraction of a game. This version of socketless introduces a new `syncData` function that can be called on clients for diff-based state syncs, which turns the above code into 5kb worth of data instead. In addition to the `syncData` function, client classes now also have an `onSyncUpdate` callback that gets invoked after a data sync, so that you can do things like "folding the siloed data into the generate client state", or doing work separately from the main state-related work.
 
-In order to perform testing analysis, the `upgraded-socket` now also exports a few debugging functions: you can read the source to find out what those are and how they're used in tests.
+Finally, in order to perform testing analysis, the `upgraded-socket` now also exports a few debugging functions: you can read the source to find out what those are and how they're used in tests.
 
 # Previous versions
 
