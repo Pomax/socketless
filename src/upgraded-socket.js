@@ -397,15 +397,16 @@ class UpgradedSocket extends WebSocket {
       // initial forced sync?
       const forceSync = TEST_FUNCTIONS_ENABLED && ALWAYS_FORCE_SYNC;
       if (!__data_silo.data || forceSync) {
-        __data_silo.data = data;
-        return this.__send(eventName, [{ forced: true, data }]);
+        __data_silo.data = data[0];
+        return this.__send(eventName, [
+          { forced: true, data: __data_silo.data },
+        ]);
       }
       // regular diff
       const patch = rfc6902.createPatch(__data_silo.data, data);
       const seqNum = ++__data_silo.seqNum;
       __data_silo.data = deepCopy(data);
-      const payload = [{ patch, seqNum }];
-      return this.__send(eventName, payload);
+      return this.__send(eventName, [{ patch, seqNum }]);
     }
 
     if (TEST_FUNCTIONS_ENABLED) {
