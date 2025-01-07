@@ -118,7 +118,7 @@ class UpgradedSocket extends WebSocket {
     socket[REMOTE] = remote;
     socket[HANDLERS] = {};
     // and that we have a data silo for server to client syncs
-    socket.__data_silo = { data: undefined, seqNum: 0 };
+    socket.__data_silo = { data: {}, seqNum: 0 };
     // then set up the call router
     const messageRouter = socket.router.bind(socket);
     if (socket.on) {
@@ -174,6 +174,16 @@ class UpgradedSocket extends WebSocket {
     const responseName = getResponseName(eventName);
     let { state } = data;
     let throwable = errorMsg ? new RPCError(receiver, errorMsg) : undefined;
+
+    if (eventName === `__data_sync:response`) {
+      if (payload === false) {
+        // @ts-ignore we know __data_silo exists.
+        const { __data_silo } = this;
+        const data = __data_silo.data;
+        const seqNum = ++__data_silo.seqNum;
+        return this.__send(`__data_sync`, [{ data, seqNum, forced: true }]);
+      }
+    }
 
     if (DEBUG)
       console.log(`[${receiver}]/[${remote}] router running given:`, {
@@ -394,18 +404,21 @@ class UpgradedSocket extends WebSocket {
       eventName = `__data_sync`;
       // @ts-ignore
       const { __data_silo } = this;
+      const reference = __data_silo.data;
+      const target = data[0];
+      __data_silo.data = deepCopy(target);
+
       // initial forced sync?
       const forceSync = TEST_FUNCTIONS_ENABLED && ALWAYS_FORCE_SYNC;
       if (!__data_silo.data || forceSync) {
-        __data_silo.data = data[0];
         return this.__send(eventName, [
           { forced: true, data: __data_silo.data },
         ]);
       }
+
       // regular diff
-      const patch = rfc6902.createPatch(__data_silo.data, data);
+      const patch = rfc6902.createPatch(reference, target);
       const seqNum = ++__data_silo.seqNum;
-      __data_silo.data = deepCopy(data);
       return this.__send(eventName, [{ patch, seqNum }]);
     }
 

@@ -17,16 +17,16 @@ export function formClientClass(ClientClass) {
     #server_sync_silo = {};
     #server_sync_seq_num = 0;
     #apply_server_sync_patch(patch, seqNum) {
-      if (seqNum === this.#server_sync_seq_num + 1) {
-        this.#server_sync_seq_num++;
-        applyPatch(this.#server_sync_silo, patch);
-        return true; // successful update
-      }
-      return false; // failed update
+      // out-of-order update?
+      if (seqNum !== this.#server_sync_seq_num + 1) return false;
+      this.#server_sync_seq_num++;
+      const results = applyPatch(this.#server_sync_silo, patch);
+      return results.every((e) => e === null);
     }
     #set_server_sync_silo(data, seqNum) {
       this.#server_sync_silo = deepCopy(data);
       this.#server_sync_seq_num = seqNum;
+      return true;
     }
     async __data_sync({ data, patch, seqNum = 0, forced = false }) {
       let result;
