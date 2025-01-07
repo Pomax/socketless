@@ -247,7 +247,13 @@ class UpgradedSocket extends WebSocket {
     if (eventName.endsWith(RESPONSE_SUFFIX)) {
       const { [HANDLERS]: handlers } = this;
       if (DEBUG) console.log(`[${receiver}] response message received`);
-      if (!handlers[eventName]) throw new Error(`no handlers for ${eventName}`);
+      if (!handlers[eventName]) {
+        if (remote === BROWSER) {
+          // we didn't expect responses from the browser.
+          return;
+        }
+        throw new Error(`no handlers for ${eventName}`);
+      }
       handlers[eventName].forEach((handler) => {
         handler(throwable ? throwable : payload);
       });
