@@ -315,14 +315,6 @@ class UpgradedSocket extends WebSocket {
     if (!error) {
       try {
         response = (await callable.bind(context)(...payload)) ?? true;
-
-        // Are we a web client with a browser connected?
-        if (receiver === CLIENT && origin.browser) {
-          // Should we forward the call to the browser?
-          if (origin.__pass_through && !eventName.includes(`:response`)) {
-            origin.browser.socket.upgraded.send(eventName, payload, Infinity);
-          }
-        }
       } catch (e) {
         if (DEBUG)
           console.error(

@@ -107,10 +107,6 @@ export function formClientClass(ClientClass) {
       );
     }
 
-    togglePassThrough(value = !this.__pass_through) {
-      this.__pass_through = !!value;
-    }
-
     connectServerSocket(serverSocket) {
       if (DEBUG) console.log(`[ClientBase]  connected to server`);
       this.server = createSocketProxy(CLIENT, SERVER, this, serverSocket);
