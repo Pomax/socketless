@@ -380,7 +380,7 @@ class UpgradedSocket extends WebSocket {
    * emit should wait before deciding there is no response forthcoming and to clean up the event
    * listener for that response. The default timeout is 1000ms.
    */
-  async __send(eventName, data = {}, timeout = 1000) {
+  async __send(eventName, data = [], timeout = 1000) {
     const { [RESPONSE_RECEIVER]: receiver, [REMOTE]: remote } = this;
     if (DEBUG)
       console.log(`[${receiver}] sending [${eventName}] to [${remote}]:`, data);
@@ -402,21 +402,19 @@ class UpgradedSocket extends WebSocket {
       eventName = `__data_sync`;
       // @ts-ignore
       const { __data_silo } = this;
+      const seqNum = ++__data_silo.seqNum;
       const reference = __data_silo.data;
-      const target = data[0];
+      const [target, forced] = data;
       __data_silo.data = deepCopy(target);
 
       // initial forced sync?
-      const forceSync = TEST_FUNCTIONS_ENABLED && ALWAYS_FORCE_SYNC;
+      const forceSync = forced || (TEST_FUNCTIONS_ENABLED && ALWAYS_FORCE_SYNC);
       if (!__data_silo.data || forceSync) {
-        return this.__send(eventName, [
-          { forced: true, data: __data_silo.data },
-        ]);
+        return this.__send(eventName, [{ data: target, seqNum, forced: true }]);
       }
 
       // regular diff
       const patch = rfc6902.createPatch(reference, target);
-      const seqNum = ++__data_silo.seqNum;
       return this.__send(eventName, [{ patch, seqNum }]);
     }
 
