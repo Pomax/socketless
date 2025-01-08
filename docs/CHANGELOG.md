@@ -80,70 +80,9 @@ An associated backward compatibility breaking change will now also always call `
 
 Related, "auto state syncing" after calls from the server to the client has been removed, as the only way to update the client's state is by calling `setState`, and automatically running `setState(this.state)` made no sense. If state updates are required, this should be explicit in the client code.
 
-Finally, server &rarr; client communication now also has a per-client siloed data object that can be used to sync a _server_ state to the client using JSON diffing rather than "full fat" data transmission. For example, the following code would transfer some 14KB's worth of data if we sent full fat objects:
+Also server &rarr; client communication now also has a per-client siloed data object that can be used to sync a _server state_ to the client using JSON diffing, through the use of the `this.clients[...].syncData(stateObject, forced?)` function. The first argument is the state object that the server is working with that should be reconstructed at the client. The optional `forced` argument, when `true`, will force the sync to be performed as a regular data transfer rather than as a JSON diff (which can be useful when there is a state change that is large enough to lead to slow patch creation).
 
-```javascript
-const players = [
-  { id: `da2c55c8-7e48-4cf7-8ac1-e09635bba536` },
-  { id: `992dc1f0-db6a-4f7d-88e0-f9e1945f2afa` },
-  { id: `51ad8d81-2033-4306-86b1-07640c4639ac` },
-  { id: `fb2e390a-484d-454e-a46a-13ac103167f4` },
-];
-
-const game = {
-  players: [],
-  currentHand: undefined,
-};
-
-const data = { players, game };
-await client.sendData(data);
-
-game.players[0] = players[0];
-await client.sendData(data);
-
-game.players[1] = players[1];
-await client.sendData(data);
-
-game.players[2] = players[2];
-await client.sendData(data);
-
-game.players[3] = players[3];
-await client.sendData(data);
-
-players[0].name = "test1";
-players[1].name = "test2";
-players[2].name = "test3";
-players[3].name = "test4";
-await client.sendData(data);
-
-players[0].tiles = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
-players[1].tiles = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
-players[2].tiles = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
-players[3].tiles = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
-game.currentHand = {
-  players,
-  wind: 0,
-};
-await client.sendData(data);
-
-for (let i = 0; i < 4; i++) {
-  game.currentHand.players[i].tiles = [
-    1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14,
-  ];
-  game.currentHand.players[i].latest = 14;
-  await client.syncData(data);
-
-  game.currentHand.players[i].tiles = [
-    1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,
-  ];
-  game.currentHand.players[i].latest = undefined;
-  await client.syncData(data);
-}
-```
-
-And that's just for a tiny fraction of a game. This version of socketless introduces a new `syncData` function that can be called on clients for diff-based state syncs, which turns the above code into 5kb worth of data instead. In addition to the `syncData` function, client classes now also have an `onSyncUpdate` callback that gets invoked after a data sync, so that you can do things like "folding the siloed data into the generate client state", or doing work separately from the main state-related work.
-
-Finally, in order to perform testing analysis, the `upgraded-socket` now also exports a few debugging functions: you can read the source to find out what those are and how they're used in tests.
+In addition to the `syncData` function, client classes can now also implement the `onSyncUpdate(serverState)` handler function, which gets invoked after a data sync, to do things like "folding the siloed data into the generate client state", or doing work separately from the client's own state-related work.
 
 # Previous versions
 
