@@ -1,6 +1,6 @@
 {
   "name": "socketless",
-  "version": "4.3.0",
+  "version": "4.4.0",
   "type": "module",
   "description": "A framework and methodology for writing web socket RPC programs, without writing a single line of web socket or RPC code.",
   "main": "src/index.js",
