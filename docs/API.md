@@ -110,6 +110,7 @@ Web client classes inherit the client instance properties, and add the following
 
 - `init()`, a method that gets run immediately after construction, with all instance properties available.
 - `disconnect()`, a method to disconnect the client from the server.
+- `syncState()`, a method for explicitly (re)fetching the current state from the underlying client.
 
 ### event handlers
 

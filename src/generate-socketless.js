@@ -120,6 +120,22 @@ const convertToChangeFlags = ${convertToChangeFlags.toString()};
         value: proxyServer,
       });
 
+      Object.defineProperty(browserClient, `syncState`, {
+        ...propertyConfig,
+        value: async () => {
+          // @ts-ignore to prevent "Property syncState does not exist on type SocketProxy" errors
+          const state = await proxyServer.syncState();
+          lockObject(state);
+          const prevState = browserClient.__state_backing;
+          browserClient.__state_backing = state;
+          console.log(`new state:`, state);
+          browserClient.update?.(
+            prevState,
+            convertToChangeFlags(browserClient.__state_backing),
+          );
+        },
+      });
+
       // create a proxy for the (webclient tunnel to the) server:
       Object.defineProperty(browserClient, `quit`, {
         ...propertyConfig,
