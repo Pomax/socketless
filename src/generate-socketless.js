@@ -128,7 +128,6 @@ const convertToChangeFlags = ${convertToChangeFlags.toString()};
           lockObject(state);
           const prevState = browserClient.__state_backing;
           browserClient.__state_backing = state;
-          console.log(`new state:`, state);
           browserClient.update?.(
             prevState,
             convertToChangeFlags(browserClient.__state_backing),

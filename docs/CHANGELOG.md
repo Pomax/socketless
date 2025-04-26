@@ -8,7 +8,7 @@ Socketless _strictly_ adheres to [semver](https://semver.org)'s major.minor.patc
 
 # Current version
 
-## v5.0.0 (release pending)
+## v5.0.0
 
 Reimplemented state locking on the browser side, as the diff code breaks _really hard_ when users are allowed to modify the state directly. To work with a mutable state, a special `this.getStateCopy()` function has been introduced that creates a mutable deep copy of the current state using the JS [structuredClone()](https://developer.mozilla.org/en-US/docs/Web/API/Window/structuredClone) function.
 
@@ -83,6 +83,21 @@ Related, "auto state syncing" after calls from the server to the client has been
 Also server &rarr; client communication now also has a per-client siloed data object that can be used to sync a _server state_ to the client using JSON diffing, through the use of the `this.clients[...].syncData(stateObject, forced?)` function. The first argument is the state object that the server is working with that should be reconstructed at the client. The optional `forced` argument, when `true`, will force the sync to be performed as a regular data transfer rather than as a JSON diff (which can be useful when there is a state change that is large enough to lead to slow patch creation).
 
 In addition to the `syncData` function, client classes can now also implement the `onSyncUpdate(serverState)` handler function, which gets invoked after a data sync, to do things like "folding the siloed data into the generate client state", or doing work separately from the client's own state-related work.
+
+Finally, browser clients now have a `this.syncState()` function that lets them ask the client to resend a state trigger, which is particularly useful for things like "reloading the UI on focus without reloading the page itself", e.g.
+
+```js
+...
+createBrowserClient(
+  class {
+    async init() {
+      addDocumentListener(`focus`, async () => {
+        await this.syncState();
+      });
+    }
+    ...
+  }
+```
 
 # Previous versions
 
