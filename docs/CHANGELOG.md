@@ -8,6 +8,52 @@ Socketless _strictly_ adheres to [semver](https://semver.org)'s major.minor.patc
 
 # Current version
 
+## v5.1.0 (27 April 2025)
+
+Added a `setAuthHandler` to the web servers, which takes an `async` function with argument `request` that can be used to ensure that URLs only resolve for authorized users. For instance:
+
+```js
+webServer.setAuthHandler(async (req) => {
+  // only allow unrestricted access to our root URL
+  if (req.url === `/`) return true;
+
+  // As well as the login route, as long as that's a POST request:
+  if (req.url === `/login` && req.method.toLowerCase() === `post`) return true;
+
+  // Otherwise, verify that there is a auth cookie by examining the request headers:
+  const cookies = req.headers.cookie?.split(`;`);
+  if (!cookies) return false;
+
+  const entries = cookies.map((s) => s.split("=").map((v) => v.trim()));
+  const { authToken } = Object.fromEntries(entries);
+  return validAuthToken(authToken);
+});
+
+webServer.addRoute(`/login`, (req, res) => {
+  let content = ``;
+  const token = req.method.toLowerCase() === `post` && verifyLogin(req);
+  if (token) {
+    // If the login was deemed good, set an auth token cookie
+    res.writeHead(302, {
+      "Set-Cookie": `authToken=${token}`
+      url: `${req.protocol}://${req.get('host')}/lobby`;
+    });
+    content = `logged in`;
+  } else {
+    // If not, clear cookies and cache and let the user know
+    res.writeHead(403, {
+      "Clear-Site-Data": `"cache", "cookies"`,
+    });
+    content = `forbidden`;
+  }
+  res.end(content);
+})
+```
+
+This allows custom locking both for the regular server, as well as webclient servers, which means this allows the main server to set login tokens that can then be used by client webservers to verify that browser connections are from a logged in user rather than "anyone with the URL".
+
+# Previous versions
+
 ## v5.0.0 (26 April 2025)
 
 Reimplemented state locking on the browser side, as the diff code breaks _really hard_ when users are allowed to modify the state directly. To work with a mutable state, a special `this.getStateCopy()` function has been introduced that creates a mutable deep copy of the current state using the JS [structuredClone()](https://developer.mozilla.org/en-US/docs/Web/API/Window/structuredClone) function.
@@ -98,8 +144,6 @@ createBrowserClient(
     ...
   }
 ```
-
-# Previous versions
 
 ## v4.3.0 (13 December 2024)
 

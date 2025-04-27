@@ -25,6 +25,14 @@ export class CustomRouter {
   }
 
   /**
+   * Add an auth handler for determining whether a request
+   * is even allowed through
+   */
+  setAuthHandler(fn) {
+    this.authHandler = fn;
+  }
+
+  /**
    * Return false if no route for the specified URL can
    * be found. Otherwise, run the route handler, and then
    * return true, to signal the route got handled.

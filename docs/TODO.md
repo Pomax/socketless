@@ -59,9 +59,11 @@ create several new demos
 
 # Open issues
 
-- the browser's `this.socket` feels like it should not be necessary and exposed, _or_ it should be a `this.client` and be a proxy socket?
+- [ ] ws reconnections should be able to deaal with "finding the original client this was for".
+- [ ] the browser's `this.socket` feels like it should not be necessary and exposed, _or_ it should be a `this.client` and be a proxy socket?
 - [x] add middleware back in for the webclient?
 - [x] update addRoute to allow middleware?
+  - for now I've added a setAuthHandler, but a more generic middleware solution might still be nice.
 
 - [] should clients have a `.reconnect()` so the browser can control the client's connection to the server?
 - [] should the browser have a .quit() that shuts down the client completely?

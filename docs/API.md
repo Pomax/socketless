@@ -70,6 +70,8 @@ Web servers are Node http(s) servers (even when using something like Express), w
   - `finalHandler` is a function with signature `(req, res) => { ... }` and is required as last function in the route handling.
   - The `req` argument is a Node `http.ClientRequest` object, but with query arguments split out as `req.params`, and POST/PUT body content split out as `req.body`. Note that the body will be plain string data.
   - The `res` argument is a Node `http.ClientResponse` object.
+- `.removeRoute(relativeURL)` removes a previously added route (allowing for transient/session based URLs)
+- `.setAuthHandler(handlerFunction)` lets you specify a function that is of the form `async function(request) { return true or false }` and can be used to restrict access to server content based on "whatever you need" (but typically things like url arguments or cookies).
 
 ## **Client classes**
 

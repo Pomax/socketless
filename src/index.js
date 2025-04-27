@@ -61,6 +61,8 @@ export function createServer(ServerClass, serverOrHttpsOptions) {
     webServer.addRoute = router.addRouteHandler.bind(router);
     // @ts-ignore: idem ditto
     webServer.removeRoute = router.removeRoute.bind(router);
+    // @ts-ignore: idem ditto
+    webServer.setAuthHandler = router.setAuthHandler.bind(router);
   }
 
   // create a websocket server, so we can handle websocket upgrade calls.
@@ -349,6 +351,8 @@ export function createWebClient(
   webServer.addRoute = router.addRouteHandler.bind(router);
   // @ts-ignore: idem ditto
   webServer.removeRoute = router.removeRoute.bind(router);
+  // @ts-ignore: idem ditto
+  webServer.setAuthHandler = router.setAuthHandler.bind(router);
 
   return { client, clientWebServer: webServer };
 }

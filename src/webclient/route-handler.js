@@ -16,6 +16,7 @@ const CONTENT_TYPES = {
   ".png": `image/png`,
 };
 
+const ContentType = "Content-Type";
 const DEFAULT_CONTENT_TYPE = `text/plain`;
 
 // ...docs go here...
@@ -46,7 +47,7 @@ function generate404(location, response, reason = ``) {
     console.error(
       reason ?? `Can't serve ${location}, so it probably doesn't exist`,
     );
-  response.writeHead(404, { "Content-Type": getContentType(`.html`) });
+  response.writeHead(404, { [ContentType]: getContentType(`.html`) });
   response.end(`<doctype html><html><body>resource not found</body></html>`);
 }
 
@@ -55,6 +56,14 @@ function generate404(location, response, reason = ``) {
  */
 export function makeRouteHandler(client, publicDir, customRouter) {
   return async (request, response) => {
+    // First off: is this request even allowed through, based on 
+    // whether there's an active auth handler or not?
+    const { authHandler } = customRouter;
+    if (authHandler && !(await authHandler(request))) {
+      response.writeHead(403, { [ContentType]: DEFAULT_CONTENT_TYPE });
+      return response.end(`Forbidden`, `utf-8`);
+    }
+    
     // Split off the query parameters as request.params
     request.params = {
       get: (_) => undefined,
@@ -81,7 +90,7 @@ export function makeRouteHandler(client, publicDir, customRouter) {
 
     // this should never have been default behaviour
     if (url === `/favicon.ico`) {
-      response.writeHead(200, { "Content-Type": `text/plain` });
+      response.writeHead(200, { [ContentType]: `text/plain` });
       return response.end(``, `utf-8`);
     }
 
@@ -95,7 +104,7 @@ export function makeRouteHandler(client, publicDir, customRouter) {
           `sid mismatch, not serving socketless.js`,
         );
       }
-      response.writeHead(200, { "Content-Type": getContentType(`.js`) });
+      response.writeHead(200, { [ContentType]: getContentType(`.js`) });
       return response.end(socketlessDotJS, `utf-8`);
     }
 
@@ -105,10 +114,10 @@ export function makeRouteHandler(client, publicDir, customRouter) {
     // convert the URL request into a file path
     var location = sanitizeLocation(request.url, publicDir);
 
-    // Serve file or send a 404
+    // Serve either the static resource, or 404 page.
     fs.readFile(location, (error, content) => {
       if (error) return generate404(location, response);
-      response.writeHead(200, { "Content-Type": getContentType(location) });
+      response.writeHead(200, { [ContentType]: getContentType(location) });
       response.end(content, `utf-8`);
     });
   };

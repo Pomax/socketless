@@ -164,6 +164,50 @@ And should you ever need to remove a specific route handler, then `removeRoute(u
 
 Now, this HTTP server can of course be presented to the outside world over HTTPS using an intermediary like [NGINX](https://www.nginx.com), but you could also...
 
+##### The `.setAuthHandler` function
+
+Additionally, we can restrict access to routes by setting an auth handler, which takes an `async` function with argument `request` that can be used to ensure that URLs only resolve for authorized users. For instance:
+
+```js
+webServer.addRoute(`/login`, (req, res) => {
+  let content = ``;
+  const token = req.method.toLowerCase() === `post` && verifyLogin(req);
+  if (token) {
+    // If the login was deemed good, set an auth token cookie
+    res.writeHead(302, {
+      "Set-Cookie": `authToken=${token}`
+      url: `${req.protocol}://${req.get('host')}/lobby`;
+    });
+    content = `logged in`;
+  } else {
+    // If not, clear cookies and cache and let the user know
+    res.writeHead(403, {
+      "Clear-Site-Data": `"cache", "cookies"`,
+    });
+    content = `forbidden`;
+  }
+  res.end(content);
+});
+
+webServer.setAuthHandler(async (req) => {
+  // only allow unrestricted access to our root URL
+  if (req.url === `/`) return true;
+
+  // As well as the login route, as long as that's a POST request:
+  if (req.url === `/login` && req.method.toLowerCase() === `post`) return true;
+
+  // Otherwise, verify that there is a auth cookie by examining the request headers:
+  const cookies = req.headers.cookie?.split(`;`);
+  if (!cookies) return false;
+
+  const entries = cookies.map((s) => s.split("=").map((v) => v.trim()));
+  const { authToken } = Object.fromEntries(entries);
+  return validAuthToken(authToken);
+});
+```
+
+This allows custom locking both for the regular server, as well as webclient servers, which means this allows the main server to set login tokens that can then be used by client webservers to verify that browser connections are from a logged in user rather than "anyone with the URL".
+
 #### 2. use HTTPS by providing your own certificate
 
 In order to make socketless run an HTTPS server, you can provide your own `key` and `cert` to the factory function:
