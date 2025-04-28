@@ -109,7 +109,7 @@ export function formClientClass(ClientClass) {
 
     connectServerSocket(serverSocket) {
       if (DEBUG) console.log(`[ClientBase]  connected to server`);
-      this.server = createSocketProxy(CLIENT, SERVER, this, serverSocket);
+      this.server = createSocketProxy(serverSocket, this, CLIENT, SERVER);
       this.onConnect();
     }
 
@@ -158,7 +158,7 @@ export function formServerClass(ServerClass) {
     // the server.addClient(client) function for handling.
     async connectClientSocket(socket) {
       if (DEBUG) console.log(`[ServerBase] client connecting to server...`);
-      const client = createSocketProxy(SERVER, CLIENT, this, socket);
+      const client = createSocketProxy(socket, this, SERVER, CLIENT);
 
       // send the client its server id
       if (DEBUG) console.log(`[ServerBase] sending connection id`);

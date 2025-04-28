@@ -8,6 +8,12 @@ Socketless _strictly_ adheres to [semver](https://semver.org)'s major.minor.patc
 
 # Current version
 
+## v5.2.0 (27 April 2025)
+
+This version adds a `this.client` for web browser clients, to communicate with their underlying client without forwarding those calls on to the server.
+
+# Previous versions
+
 ## v5.1.0 (27 April 2025)
 
 Added a `setAuthHandler` to the web servers, which takes an `async` function with argument `request` that can be used to ensure that URLs only resolve for authorized users. For instance:
@@ -51,8 +57,6 @@ webServer.addRoute(`/login`, (req, res) => {
 ```
 
 This allows custom locking both for the regular server, as well as webclient servers, which means this allows the main server to set login tokens that can then be used by client webservers to verify that browser connections are from a logged in user rather than "anyone with the URL".
-
-# Previous versions
 
 ## v5.0.0 (26 April 2025)
 

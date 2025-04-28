@@ -134,6 +134,7 @@ A constructor is strongly discouraged, initialization should be handled in `init
 ### instance properties
 
 - `this.server`, a local proxy for the server, supporting the API defined in your ServerClass.
+- `this.client`, a local proxy for the underlying client, supporting the API defined in your ClientClass.
 - `this.socket`, the plain websocket connection to the client that the browser connected to.
 - `this.state`, a state object that reflects the connected web client's current state.
 - `this.connected`, a flag that indicates whether we're connected to our web client.

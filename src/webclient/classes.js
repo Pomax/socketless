@@ -61,10 +61,10 @@ export function formWebClientClass(ClientClass) {
       } else {
         // Note that there is no auth here. this is left up to devs to implement.
         this.browser = createSocketProxy(
+          browserSocket,
+          this,
           WEBCLIENT,
           BROWSER,
-          this,
-          browserSocket,
         );
         this.browser.socket.__seq_num = 0;
         this.setState(this.state);

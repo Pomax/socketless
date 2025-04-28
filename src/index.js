@@ -254,7 +254,12 @@ export function createWebClient(
     client.connectBrowserSocket(socket);
     socket.on(`message`, async (message) => {
       message = message.toString();
-      const { name: eventName, payload, error } = JSON.parse(message);
+      const {
+        name: eventName,
+        payload,
+        error,
+        noForward,
+      } = JSON.parse(message);
 
       if (error) {
         throw new Error(error);
@@ -290,9 +295,10 @@ export function createWebClient(
           error: undefined,
         };
 
-        const clientOnly = [`quit`, `disconnect`].includes(eventName);
+        const clientOnly =
+          noForward || [`quit`, `disconnect`].includes(eventName);
 
-        // ... if there is a server, of course.
+        // ... if there is a server, of course. And it's not a "client-only" call.
         if (!clientOnly && client.server) {
           let target = client.server;
           const steps = eventName.split(`:`);

@@ -380,7 +380,7 @@ class UpgradedSocket extends WebSocket {
    * emit should wait before deciding there is no response forthcoming and to clean up the event
    * listener for that response. The default timeout is 1000ms.
    */
-  async __send(eventName, data = [], timeout = 1000) {
+  async __send(eventName, data = [], timeout = 1000, noForward) {
     const { [RESPONSE_RECEIVER]: receiver, [REMOTE]: remote } = this;
     if (DEBUG)
       console.log(`[${receiver}] sending [${eventName}] to [${remote}]:`, data);
@@ -391,6 +391,7 @@ class UpgradedSocket extends WebSocket {
         JSON.stringify({
           name: eventName,
           payload: data,
+          noForward,
         }),
       );
     }
@@ -454,6 +455,7 @@ class UpgradedSocket extends WebSocket {
           JSON.stringify({
             name: eventName,
             payload: data,
+            noForward,
           }),
         );
       };
@@ -473,13 +475,14 @@ class UpgradedSocket extends WebSocket {
  * A socket proxy for RPC purposes.
  */
 class SocketProxy extends Function {
-  constructor(socket, responseReceiver, remote, path = ``) {
+  constructor(socket, responseReceiver, remote, path = ``, noForward = false) {
     super();
     this[RESPONSE_RECEIVER] = responseReceiver;
     this[REMOTE] = remote;
     this.id = uuid();
-    this.path = path;
     this.socket = socket;
+    this.path = path;
+    this.noForward = noForward;
     return new Proxy(this, {
       get: (_, prop) => {
         if (prop === "id") return this.id;
@@ -494,6 +497,7 @@ class SocketProxy extends Function {
           responseReceiver,
           remote,
           `${path}:${String(prop)}`,
+          noForward,
         );
       },
       apply: async (_, __, args) => {
@@ -511,7 +515,12 @@ class SocketProxy extends Function {
         // Try to resolve the network call:
         const call = this.path.substring(1);
         const timeout = this[REMOTE] === BROWSER ? Infinity : undefined;
-        const data = await this.socket.upgraded.send(call, args, timeout);
+        const data = await this.socket.upgraded.send(
+          call,
+          args,
+          timeout,
+          this.noForward,
+        );
 
         if (data instanceof RPCError) {
           // Fix up our error so it has the correct message and
@@ -537,15 +546,27 @@ class SocketProxy extends Function {
  * Create a proxied socket where the caller literally doesn't need
  * to care, they just need to call functions as if they're locals.
  *
- * @param {string} receiver The name of the receiver for this socket
- * @param {string} remote The name of the remote for this socket
- * @param {*} origin The calling object, used for things like "illegal fnames", state management, etc.
  * @param {*} socket The socket we're wrapping.
+ * @param {*} origin The object that's using this socket proxy, and handles things like "illegal fnames", state management, etc.
+ * @param {string} receiver The name for the side of the socket that will receive call replies.
+ * @param {string} remote The name for the side of the socket that we send calls off to.
  * @returns
  */
-export function createSocketProxy(receiver, remote, origin, socket) {
+export function createSocketProxy(
+  socket,
+  origin,
+  receiver,
+  remote,
+  noForward = false,
+) {
   socket = UpgradedSocket.upgrade(socket, origin, receiver, remote);
-  return (socket[PROXY] = new SocketProxy(socket, receiver, remote));
+  return (socket[PROXY] = new SocketProxy(
+    socket,
+    receiver,
+    remote,
+    undefined,
+    noForward,
+  ));
 }
 
 /**

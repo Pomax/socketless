@@ -81,10 +81,22 @@ const convertToChangeFlags = ${convertToChangeFlags.toString()};
       let socket = buildSocket();
 
       const buildProxyServer = () => {
-        return createSocketProxy(`BROWSER`, `WEBCLIENT`, browserClient, socket);
+        return createSocketProxy(socket, browserClient, `BROWSER`, `WEBCLIENT`);
       };
 
       let proxyServer = buildProxyServer();
+
+      const buildProxyClient = () => {
+        return createSocketProxy(
+          socket,
+          browserClient,
+          `BROWSER`,
+          `WEBCLIENT`,
+          true,
+        );
+      };
+
+      let proxyClient = buildProxyClient();
 
       // create the web socket connection - note that if there are any query arguments,
       // those will get passed into the websocket upgrade request, too.
@@ -101,6 +113,7 @@ const convertToChangeFlags = ${convertToChangeFlags.toString()};
           socket.close();
           socket = undefined;
           proxyServer = undefined;
+          proxyClient = undefined;
         },
       });
 
@@ -110,6 +123,7 @@ const convertToChangeFlags = ${convertToChangeFlags.toString()};
         value: () => {
           socket = buildSocket();
           proxyServer = buildProxyServer();
+          proxyClient = buildProxyClient();
           browserClient.connected = true;
         },
       });
@@ -118,6 +132,12 @@ const convertToChangeFlags = ${convertToChangeFlags.toString()};
       Object.defineProperty(browserClient, `server`, {
         ...propertyConfig,
         value: proxyServer,
+      });
+
+      // create a proxy for the (webclient tunnel to the) server:
+      Object.defineProperty(browserClient, `client`, {
+        ...propertyConfig,
+        value: proxyClient,
       });
 
       Object.defineProperty(browserClient, `syncState`, {
