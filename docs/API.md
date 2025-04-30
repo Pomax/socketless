@@ -108,6 +108,10 @@ Web client classes inherit the client instance properties, and add the following
 - `this.state`, a state object that gets (one-way) synced to the browser whenever modified.
 - `this.browser`, a local proxy for the browser, supporting the API defined in your BrowserClientClass.
 
+### special state properties
+
+if a web client specifies an `authenticated` property in their state, then browser connections will either be sent `{ authenticated: false}`, if that property has the value `false`, or the full state if that property has the value `true` (or has been removed). This allows clients to first verify whether a browser connection has the right permissions to even receive state information (e.g. for login-based systems you don't want the client to actually send out data except to the user whose client it is)
+
 ### methods
 
 - `init()`, a method that gets run immediately after construction, with all instance properties available.

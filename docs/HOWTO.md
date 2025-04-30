@@ -208,6 +208,52 @@ webServer.setAuthHandler(async (req) => {
 
 This allows custom locking both for the regular server, as well as webclient servers, which means this allows the main server to set login tokens that can then be used by client webservers to verify that browser connections are from a logged in user rather than "anyone with the URL".
 
+##### Requiring browser authentication
+
+If the client specifies an `authenticated` property in its state, connecting browsers will only be sent either `{ authenticated: false }` as part of the state syncing process for as long as that property is set to `false`. If the property is set to `true`, or is removed, state syncing with transmit the normal, full state. This allows web clients to make sure that only browser connections that have provided valid credentials receive (potentially) privileged information.
+
+As a minimal example:
+
+```js
+class ClientClass {
+  init() {
+    this.setState({
+      authenticated: false,
+      a: 1,
+      b: 2,
+      c: 3,
+    });
+  }
+  async authenticate(username, password) {
+    if (await this.server.verifyUser(username, password)) {
+      this.setState({
+        authenticated: true,
+      });
+    }
+  }
+}
+```
+
+This sets up a client with an initial state that includes the `authenticated` property, set to `false`, signaling that it needs browsers to authenticate before it will send any real state data.
+
+A browser class for this client can check for the `authenticated` flag, and if present _and `false`_ (because if it's not present, the client simply doesn't require authentication) then it can call the `authenticate` function, which will automatically trigger a new state update when it sets `authenticated` to true.
+
+```js
+class BrowserClient {
+  update() {
+    const { authenticated } = this.state;
+    if (authenticated === false) {
+      // Note that we CANNOT use if (!authenticated) { ... } here, because
+      // if there is no `authenticated` flag then the client simply doesn't
+      // require any form of authentication!
+      const username = prompt(`Please type in your username`)?.trim();
+      const password = prompt(`Please type in your password`)?.trim();
+      return this.client.authenticate(username, password);
+    }
+  }
+}
+```
+
 #### 2. use HTTPS by providing your own certificate
 
 In order to make socketless run an HTTPS server, you can provide your own `key` and `cert` to the factory function:

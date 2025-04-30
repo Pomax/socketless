@@ -22,17 +22,16 @@ class ClientClass {
       c: 3,
     });
   }
-  authenticate(username, password) {
-    const authenticated = UserManager.verify(username, password);
-    if (authenticated) {
+  async authenticate(username, password) {
+    if (await this.server.verifyUser(username, password)) {
       this.setState({
-        authenticated: true
+        authenticated: true,
       });
     }
   }
-  // ...
 }
 ```
+
 This sets up a client with an initial state that includes the `authenticated` property, set to `false`, signaling that it needs browsers to authenticate before it will send any real state data.
 
 A browser class for this client can check for the `authenticated` flag, and if present _and `false`_ (because if it's not present, the client simply doesn't require authentication) then it can call the `authenticate` function, which will automatically trigger a new state update when it sets `authenticated` to true.
@@ -43,14 +42,12 @@ class BrowserClient {
     const { authenticated } = this.state;
     if (authenticated === false) {
       // Note that we CANNOT use if (!authenticated) { ... } here, because
-      // if there is no `authenticated` flag, then the client simply doesn't
+      // if there is no `authenticated` flag then the client simply doesn't
       // require any form of authentication!
       const username = prompt(`Please type in your username`)?.trim();
       const password = prompt(`Please type in your password`)?.trim();
       return this.client.authenticate(username, password);
     }
-
-    // ...
   }
 }
 ```
