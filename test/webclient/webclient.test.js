@@ -476,4 +476,70 @@ describe("web client tests", () => {
       });
     });
   });
+
+  it("client with auth requirement should not send state until authed", (done) => {
+    let browser;
+    let error = `authentication did not succeed`;
+
+    // Note that this test is a bit doubling up, as we already
+    // test the changeFlags functionality in core.test.js, so we
+    // know what the changeFlags object should look like given
+    // the changes in state. However, we do want to make sure
+    // that the transport mechanism ends up sending the correct
+    // data, so the doubling up makes sense.
+
+    class ServerClass {
+      onDisconnect() {
+        if (this.clients.length === 0) {
+          this.quit();
+        }
+      }
+      teardown() {
+        done(error);
+      }
+    }
+
+    class ClientClass {
+      init() {
+        this.setState({ authenticated: false, a: 1, b: 2, c: 3 });
+      }
+      authenticate(user, password, token) {
+        if (user === `user` && password === `password` && token === `12345`) {
+          this.setState({ authenticated: true });
+        }
+      }
+      async setResult(A, B, C) {
+        const { a, b, c } = this.state;
+        if (a === A && b === B && c === C) {
+          await browser.close();
+          error = ``;
+          this.quit();
+        }
+      }
+      async fail(reason) {
+        await browser.close();
+        error = reason;
+        this.quit();
+      }
+    }
+
+    const factory = linkClasses(ClientClass, ServerClass);
+    const { webServer } = factory.createServer();
+
+    webServer.listen(0, () => {
+      const PORT = webServer.address().port;
+      const serverURL = `http://localhost:${PORT}`;
+      const { clientWebServer } = factory.createWebClient(
+        serverURL,
+        `${__dirname}/auth`,
+      );
+
+      clientWebServer.listen(0, async () => {
+        const clientURL = `http://localhost:${clientWebServer.address().port}`;
+        browser = await puppeteer.launch({ headless: `new` });
+        const page = await getPage(browser);
+        await page.goto(clientURL);
+      });
+    });
+  });
 });

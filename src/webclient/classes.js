@@ -85,10 +85,19 @@ export function formWebClientClass(ClientClass) {
       super.setState(stateUpdates);
       if (DEBUG)
         console.log(`[WebClientBase] client has browser?`, !!this.browser);
+      let currentState = this.state;
       if (this.browser) {
         if (DEBUG)
           console.log(`[WebClientBase] creating diff as part of setState`);
-        const diff = createPatch(this.__oldState ?? {}, this.state);
+
+        // Don't send any state information if the client needs the
+        // user to be authenticated and they have not yet done so:
+        const authenticated =
+          currentState.authenticated === undefined ||
+          currentState.authenticated === true;
+        if (!authenticated) currentState = { authenticated: false };
+
+        const diff = createPatch(this.__oldState ?? {}, currentState);
         if (diff.length > 0) {
           const payload = {
             diff,
@@ -104,7 +113,7 @@ export function formWebClientClass(ClientClass) {
           if (DEBUG) console.log(`no difference, skipping state sync.`);
         }
       }
-      this.__oldState = deepCopy(this.state);
+      this.__oldState = deepCopy(currentState);
     }
 
     syncState() {

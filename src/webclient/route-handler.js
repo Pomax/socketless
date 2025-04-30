@@ -56,14 +56,14 @@ function generate404(location, response, reason = ``) {
  */
 export function makeRouteHandler(client, publicDir, customRouter) {
   return async (request, response) => {
-    // First off: is this request even allowed through, based on 
+    // First off: is this request even allowed through, based on
     // whether there's an active auth handler or not?
     const { authHandler } = customRouter;
     if (authHandler && !(await authHandler(request))) {
       response.writeHead(403, { [ContentType]: DEFAULT_CONTENT_TYPE });
       return response.end(`Forbidden`, `utf-8`);
     }
-    
+
     // Split off the query parameters as request.params
     request.params = {
       get: (_) => undefined,

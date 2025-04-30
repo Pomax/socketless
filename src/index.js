@@ -269,8 +269,15 @@ export function createWebClient(
       const responseName = getResponseName(eventName);
 
       if (eventName === `syncState`) {
-        const fullState = await client.syncState();
-        // console.log(`Webclient received syncState from browser, sending [${responseName}]`);
+        let fullState = await client.syncState();
+
+        // Don't send any state information if the client needs the
+        // user to be authenticated and they have not yet done so:
+        const authenticated =
+          fullState.authenticated === undefined ||
+          fullState.authenticated === true;
+        if (!authenticated) fullState = { authenticated: false };
+
         return socket.send(
           JSON.stringify({
             name: responseName,

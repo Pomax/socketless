@@ -8,11 +8,60 @@ Socketless _strictly_ adheres to [semver](https://semver.org)'s major.minor.patc
 
 # Current version
 
+## v6.0.0 (30 April 2025)
+
+You can now start a (web)client with an `authenticated:false` state property, which will prevent the full state from being transmitted to any connected browser. There is no predefined "unlocking" mechanism, giving you total freedom on whether you want to set that flag to `true` based on an http call, a websocket protocol, or even something completely different, but as a minimal example:
+
+```js
+class ClientClass {
+  init() {
+    this.setState({
+      authenticated: false,
+      a: 1,
+      b: 2,
+      c: 3,
+    });
+  }
+  authenticate(username, password) {
+    const authenticated = UserManager.verify(username, password);
+    if (authenticated) {
+      this.setState({
+        authenticated: true
+      });
+    }
+  }
+  // ...
+}
+```
+This sets up a client with an initial state that includes the `authenticated` property, set to `false`, signaling that it needs browsers to authenticate before it will send any real state data.
+
+A browser class for this client can check for the `authenticated` flag, and if present _and `false`_ (because if it's not present, the client simply doesn't require authentication) then it can call the `authenticate` function, which will automatically trigger a new state update when it sets `authenticated` to true.
+
+```js
+class BrowserClient {
+  update() {
+    const { authenticated } = this.state;
+    if (authenticated === false) {
+      // Note that we CANNOT use if (!authenticated) { ... } here, because
+      // if there is no `authenticated` flag, then the client simply doesn't
+      // require any form of authentication!
+      const username = prompt(`Please type in your username`)?.trim();
+      const password = prompt(`Please type in your password`)?.trim();
+      return this.client.authenticate(username, password);
+    }
+
+    // ...
+  }
+}
+```
+
+Note that this is a breaking change, as it is quite likely to interfere with anyone who rolled their own auth already, using the rather obvious `authenticated` state property.
+
+# Previous versions
+
 ## v5.2.0 (27 April 2025)
 
 This version adds a `this.client` for web browser clients, to communicate with their underlying client without forwarding those calls on to the server.
-
-# Previous versions
 
 ## v5.1.0 (27 April 2025)
 
